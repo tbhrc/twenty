@@ -4,6 +4,9 @@ describe('isValidUuid', () => {
   it('should return true for a valid UUID', () => {
     expect(isValidUuid('123e4567-e89b-12d3-a456-426614174000')).toBe(true);
     expect(isValidUuid('550e8400-e29b-41d4-a716-446655440000')).toBe(true);
+    expect(isValidUuid('123e4567-e89b-62d3-a456-426614174000')).toBe(true);
+    expect(isValidUuid('123e4567-e89b-72d3-a456-426614174000')).toBe(true);
+    expect(isValidUuid('123e4567-e89b-82d3-a456-426614174000')).toBe(true);
   });
 
   it('should return false for an invalid UUID', () => {
@@ -15,5 +18,6 @@ describe('isValidUuid', () => {
     expect(isValidUuid('123e4567-e89b-12d3-a456-42661417400')).toBe(false);
     expect(isValidUuid('123e4567-e89b-12d3-a456-42661417400)')).toBe(false);
     expect(isValidUuid('123e4567-e89b-12d3-a456-4266141740001')).toBe(false);
+    expect(isValidUuid('123e4567-e89b-92d3-a456-426614174000')).toBe(false);
   });
 });
