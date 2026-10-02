@@ -47,6 +47,14 @@ const StyledWidgetSlot = styled.div<{
   }
 `;
 
+const StyledLiveWidgetContainer = styled.div<{ fillsViewport: boolean }>`
+  display: ${({ fillsViewport }) => (fillsViewport ? 'flex' : 'block')};
+  flex-shrink: ${({ fillsViewport }) => (fillsViewport ? 0 : 'initial')};
+  height: ${({ fillsViewport }) => (fillsViewport ? '100%' : 'auto')};
+  min-height: 0;
+  min-width: ${({ fillsViewport }) => (fillsViewport ? '0' : 'auto')};
+`;
+
 type PageLayoutVerticalListWidgetSlotProps = {
   canAcceptWidgetDrag: (source: Draggable) => boolean;
   index: number;
@@ -89,22 +97,36 @@ export const PageLayoutVerticalListWidgetSlot = ({
         orientation="horizontal"
         compact
       />
-      <DragDropItemSortableCell
-        id={widget.id}
-        index={index}
-        group={tabId}
-        data={widgetDragData}
-        type={PAGE_LAYOUT_WIDGET_DND_TYPE}
-        accept={canAcceptWidgetDrag}
-        allowNativeDragWhenDisabled
-        disabled={!isInEditMode}
-        hasTransition={false}
-        highlightWhileDragging={isInEditMode}
-        orientation="horizontal"
-        fill={fillsViewport}
-      >
-        <WidgetRenderer widget={widget} />
-      </DragDropItemSortableCell>
+      {isInEditMode ? (
+        <DragDropItemSortableCell
+          id={widget.id}
+          index={index}
+          group={tabId}
+          data={widgetDragData}
+          type={PAGE_LAYOUT_WIDGET_DND_TYPE}
+          accept={canAcceptWidgetDrag}
+          allowNativeDragWhenDisabled
+          disabled={false}
+          hasTransition={false}
+          highlightWhileDragging={isInEditMode}
+          orientation="horizontal"
+          fill={fillsViewport}
+        >
+          <WidgetRenderer widget={widget} />
+        </DragDropItemSortableCell>
+      ) : (
+        // A disabled sortable still receives aria-disabled from dnd-kit.
+        // Live widgets contain interactive controls, so do not register their
+        // container as a draggable outside layout edit mode.
+        <StyledLiveWidgetContainer
+          fillsViewport={fillsViewport}
+          className={
+            fillsViewport ? 'page-layout-static-widget-fill' : undefined
+          }
+        >
+          <WidgetRenderer widget={widget} />
+        </StyledLiveWidgetContainer>
+      )}
     </StyledWidgetSlot>
   );
 };

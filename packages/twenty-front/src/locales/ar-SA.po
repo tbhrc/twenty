@@ -492,6 +492,11 @@ msgstr "{fieldsCount} حقول"
 msgid "{fileName} upload rejected"
 msgstr "تم رفض تحميل {fileName}"
 
+#. js-lingui-id: MvqyAJ
+#: src/modules/object-record/record-table-widget/components/RecordTableWidgetToolbar.tsx
+msgid "{filterCount} active filters"
+msgstr ""
+
 #. js-lingui-id: bv2QCV
 #: src/modules/side-panel/pages/page-layout/hooks/useChartSettingsValues.ts
 msgid "{filterRulesCount, plural, one {{filterRulesCount} rule} other {{filterRulesCount} rules}}"
@@ -578,6 +583,11 @@ msgstr "{label} (مهمل)"
 #: src/modules/settings/applications/hooks/useComputeApplicationContentForLayoutAndLogic.ts
 msgid "{label} list"
 msgstr "قائمة {label}"
+
+#. js-lingui-id: +qv/3F
+#: src/modules/object-record/record-table-widget/components/RecordTableWidget.tsx
+msgid "{loadedCount} of {totalNumberOfRecordsToVirtualize} records loaded"
+msgstr ""
 
 #. js-lingui-id: 1DrH/j
 #: src/modules/settings/roles/role-settings/components/SettingsRoleSettingsDeleteRoleConfirmationModalSubtitle.tsx
@@ -3550,6 +3560,11 @@ msgstr "الكتل"
 msgid "Blue"
 msgstr "أزرق"
 
+#. js-lingui-id: QD8opX
+#: src/modules/page-layout/widgets/record-table/components/RecordTableWidgetRendererContent.tsx
+msgid "Board"
+msgstr ""
+
 #. js-lingui-id: bGQplw
 #: src/modules/side-panel/pages/email-block-settings/components/EmailPageStyleSection.tsx
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
@@ -3936,6 +3951,8 @@ msgstr "هل لا يمكنك المسح؟ انسخ الـ"
 #: src/modules/settings/billing/components/UpdatePaymentMethodModal.tsx
 #: src/modules/settings/components/SaveAndCancelButtons/CancelButton.tsx
 #: src/modules/settings/components/SaveAndCancelButtons/CancelButton.tsx
+#: src/modules/settings/config-variables/components/ConfigVariableEdit.tsx
+#: src/modules/settings/profile/components/EmailField.tsx
 #: src/modules/spreadsheet-import/provider/components/SpreadsheetImport.tsx
 #: src/modules/spreadsheet-import/steps/components/ImportDataStep.tsx
 #: src/modules/spreadsheet-import/steps/components/MatchColumnsStep/MatchColumnsStep.tsx
@@ -4568,6 +4585,11 @@ msgstr "إغلاق اللافتة"
 msgid "Close menu"
 msgstr "إغلاق القائمة"
 
+#. js-lingui-id: sUQBA7
+#: src/modules/settings/data-model/graph-overview/components/SettingsDataModelOverview.tsx
+msgid "Close overview"
+msgstr ""
+
 #. js-lingui-id: saip/v
 #: src/modules/side-panel/components/SidePanelCloseButton.tsx
 msgid "Close side panel"
@@ -4638,6 +4660,12 @@ msgstr "طي التفاصيل"
 #: src/modules/settings/accounts/components/message-folders/SettingsMessageFoldersTreeItem.tsx
 msgid "Collapse folder"
 msgstr "طي المجلد"
+
+#. js-lingui-id: XHZdYo
+#: src/modules/page-layout/components/PageLayoutRecordIdentifierBar.tsx
+#: src/modules/page-layout/components/PageLayoutRecordIdentifierBar.tsx
+msgid "Collapse record details"
+msgstr ""
 
 #. js-lingui-id: mkMLq4
 #: src/modules/navigation/hooks/useNavigationDrawerTogglePresentation.ts
@@ -6755,8 +6783,11 @@ msgstr "حذف"
 #: src/modules/settings/data-model/objects/components/SettingsObjectInactiveMenuDropDown.tsx
 #: src/modules/settings/developers/components/SettingsDevelopersWebhookForm.tsx
 #: src/modules/settings/developers/components/SettingsDevelopersWebhookForm.tsx
+#: src/modules/settings/domains/components/SettingPublicDomain.tsx
 #: src/modules/settings/domains/components/SettingPublicDomainRowDropdownMenu.tsx
+#: src/modules/settings/domains/components/SettingsCustomDomain.tsx
 #: src/modules/settings/security/components/sso/SettingsSecuritySsoRowDropdownMenu.tsx
+#: src/modules/side-panel/pages/page-layout/components/record-table-settings/RecordTableSettingsSortsContent.tsx
 #: src/modules/side-panel/pages/page-layout/components/RegularTabSettingsContent.tsx
 #: src/modules/side-panel/pages/page-layout/components/SingleWidgetTabSettingsContent.tsx
 #: src/modules/views/view-picker/components/ViewPickerCreateButton.tsx
@@ -6764,6 +6795,9 @@ msgstr "حذف"
 #: src/modules/views/view-picker/components/ViewPickerOptionDropdown.tsx
 #: src/modules/workflow/workflow-steps/components/WorkflowStepFooter.tsx
 #: src/modules/workflow/workflow-steps/filters/components/WorkflowStepFilterOptionsDropdown.tsx
+#: src/modules/workflow/workflow-steps/workflow-actions/find-records-action/components/WorkflowFindRecordsSorts.tsx
+#: src/modules/workflow/workflow-steps/workflow-actions/http-request-action/components/KeyValuePairInput.tsx
+#: src/modules/workflow/workflow-steps/workflow-actions/http-request-action/components/KeyValuePairInput.tsx
 #: src/pages/settings/admin-panel/SettingsAdminApplicationRegistrationDangerZone.tsx
 #: src/pages/settings/ai/components/SettingsAgentEvalsTab.tsx
 #: src/pages/settings/ai/components/SettingsAgentEvalsTab.tsx
@@ -7641,8 +7675,10 @@ msgstr "eddy@gmail.com, @apple.com"
 #: src/modules/object-record/record-field/ui/form-types/components/FormMultiSelectFieldInput.tsx
 #: src/modules/object-record/record-field/ui/meta-types/input/components/MultiItemFieldMenuItem.tsx
 #: src/modules/object-record/record-group/hooks/useRecordGroupActions.ts
+#: src/modules/settings/config-variables/components/ConfigVariableEdit.tsx
 #: src/modules/settings/data-model/object-details/components/SettingsObjectFieldDisabledActionDropdown.tsx
 #: src/modules/settings/data-model/objects/components/SettingsObjectInactiveMenuDropDown.tsx
+#: src/modules/settings/profile/components/EmailField.tsx
 #: src/modules/settings/roles/role-permissions/object-level-permissions/components/SettingsRolePermissionsObjectLevelTableRowOptionsDropdown.tsx
 #: src/modules/settings/roles/role-permissions/object-level-permissions/field-permissions/components/SettingsRolePermissionsObjectLevelObjectFieldPermissionTable.tsx
 #: src/modules/side-panel/hooks/useSidePanelMenu.ts
@@ -7677,6 +7713,11 @@ msgstr "تحرير هيكل البيانات والحقول"
 #: src/modules/side-panel/pages/email-block-settings/components/EmailBoxSidesInput.tsx
 msgid "Edit each side"
 msgstr "تحرير كل جانب"
+
+#. js-lingui-id: 48e2R8
+#: src/modules/settings/profile/components/EmailField.tsx
+msgid "Edit email"
+msgstr ""
 
 #. js-lingui-id: 9QCQIc
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownHiddenRecordGroupsContent.tsx
@@ -7767,6 +7808,11 @@ msgstr "تعديل العلاقة"
 #: src/modules/settings/translations/components/SettingsTranslationsButton.tsx
 msgid "Edit translations"
 msgstr "تعديل الترجمات"
+
+#. js-lingui-id: 8TA4hU
+#: src/modules/settings/config-variables/components/ConfigVariableEdit.tsx
+msgid "Edit variable"
+msgstr ""
 
 #. js-lingui-id: eMFB6/
 #: src/modules/views/view-picker/components/ViewPickerContentEditMode.tsx
@@ -8798,6 +8844,12 @@ msgstr "توسيع المجلد"
 #: src/modules/side-panel/routing/hooks/useExpandRecordSidePanelPage.ts
 msgid "Expand record"
 msgstr "توسيع السجل"
+
+#. js-lingui-id: H3IDQg
+#: src/modules/page-layout/components/PageLayoutRecordIdentifierBar.tsx
+#: src/modules/page-layout/components/PageLayoutRecordIdentifierBar.tsx
+msgid "Expand record details"
+msgstr ""
 
 #. js-lingui-id: tugdy6
 #: src/modules/navigation/hooks/useNavigationDrawerTogglePresentation.ts
@@ -10116,7 +10168,6 @@ msgid "Go back"
 msgstr "العودة"
 
 #. js-lingui-id: y0SPQU
-#: src/modules/settings/billing/hooks/useWaitForPaymentRecovery.tsx
 #: src/modules/settings/billing/hooks/useWaitForPaymentRecovery.tsx
 msgid "Go to billing"
 msgstr "انتقل إلى الفوترة"
@@ -12274,6 +12325,7 @@ msgid "list"
 msgstr "قائمة"
 
 #. js-lingui-id: 2BBAbc
+#: src/modules/page-layout/widgets/record-table/components/RecordTableWidgetRendererContent.tsx
 #: src/modules/page-layout/widgets/record-table/types/RecordTableWidgetLayoutViewType.ts
 #: src/modules/side-panel/pages/send-campaign/components/SendCampaignForm.tsx
 #: src/modules/views/types/ViewType.ts
@@ -15252,6 +15304,11 @@ msgstr "افتح السجلات في صفحة مخصصة"
 msgid "Open Replit with the Twenty remote server config."
 msgstr "افتح Replit مع تهيئة خادم Twenty البعيد."
 
+#. js-lingui-id: bY2Xkv
+#: src/modules/sign-in-background-mock/components/BackgroundMockPage.tsx
+msgid "Open side panel"
+msgstr ""
+
 #. js-lingui-id: sBd/cl
 #: src/modules/settings/mcp-and-apis/utils/buildMcpSetupCategories.tsx
 msgid "Open Twenty's official ChatGPT integration for your workspace."
@@ -16697,6 +16754,11 @@ msgstr "صورة سجل"
 msgid "Record label"
 msgstr "ملصق السجل"
 
+#. js-lingui-id: LkS1Nz
+#: src/modules/page-layout/widgets/record-table/components/RecordTableWidgetRendererContent.tsx
+msgid "Record layout"
+msgstr ""
+
 #. js-lingui-id: XueM/X
 #: src/modules/settings/data-model/object-details/components/tabs/ObjectLayout.tsx
 msgid "Record page"
@@ -17176,6 +17238,7 @@ msgstr "إعادة إرسال البريد الإلكتروني"
 
 #. js-lingui-id: OfhWJH
 #: src/modules/layout-customization/components/LayoutCustomizationBarResetConfirmationModal.tsx
+#: src/modules/object-record/record-table-widget/components/RecordTableWidgetToolbar.tsx
 #: src/modules/settings/config-variables/components/ConfigVariableEdit.tsx
 #: src/modules/settings/data-model/object-details/components/tabs/ObjectLayout.tsx
 #: src/modules/settings/data-model/object-details/components/tabs/ObjectLayout.tsx
@@ -17615,6 +17678,8 @@ msgstr "السبت"
 
 #. js-lingui-id: tfDRzk
 #: src/modules/settings/components/SaveAndCancelButtons/SaveButton.tsx
+#: src/modules/settings/config-variables/components/ConfigVariableEdit.tsx
+#: src/modules/settings/profile/components/EmailField.tsx
 #: src/pages/settings/data-model/new-field/SettingsObjectNewFieldConfigure.tsx
 msgid "Save"
 msgstr "حفظ"
@@ -17628,6 +17693,11 @@ msgstr "وفّر 25٪ عند الفوترة سنويًا"
 #: src/modules/views/components/UpdateViewButtonGroup.tsx
 msgid "Save as new view"
 msgstr "احفظ كعرض جديد"
+
+#. js-lingui-id: kULUVJ
+#: src/modules/object-record/record-table-widget/components/RecordTableWidgetToolbar.tsx
+msgid "Save for me"
+msgstr ""
 
 #. js-lingui-id: 7byqGp
 #: src/modules/layout-customization/hooks/useEnterLayoutCustomizationMode.ts
@@ -17717,6 +17787,11 @@ msgstr "النتيجة"
 #: src/modules/ai/components/AiChatScrollToBottomButton.tsx
 msgid "Scroll to bottom"
 msgstr "التمرير إلى الأسفل"
+
+#. js-lingui-id: uacRUW
+#: src/modules/object-record/record-table-widget/components/RecordTableWidget.tsx
+msgid "Scroll to load more"
+msgstr ""
 
 #. js-lingui-id: hJjXGo
 #: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
@@ -19189,6 +19264,12 @@ msgstr "ترتيب"
 #: src/modules/side-panel/pages/page-layout/constants/settings/ChartConfigurationSettingLabels.ts
 msgid "Sort by"
 msgstr "الترتيب حسب"
+
+#. js-lingui-id: hBm2XN
+#. placeholder {0}: objectMetadataItem.fields.find((field) => field.id === recordField.fieldMetadataItemId)?.label ?? ''
+#: src/modules/object-record/record-table-widget/components/RecordTableWidgetColumnHead.tsx
+msgid "Sort by {0}"
+msgstr ""
 
 #. js-lingui-id: vKy//U
 #: src/modules/side-panel/pages/page-layout/utils/__tests__/shouldHideChartSetting.test.ts
@@ -22525,7 +22606,6 @@ msgid "View Docs"
 msgstr "عرض الوثائق"
 
 #. js-lingui-id: Mv1YVf
-#: src/modules/error-handler/utils/getToastOptionsFromError.tsx
 #: src/modules/error-handler/utils/getToastOptionsFromError.tsx
 msgid "View existing record"
 msgstr "عرض السجل الموجود"
