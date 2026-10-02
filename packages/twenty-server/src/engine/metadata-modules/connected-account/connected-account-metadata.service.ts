@@ -99,7 +99,7 @@ export class ConnectedAccountMetadataService {
     userWorkspaceId,
     workspaceId,
   }: {
-    userWorkspaceId: string;
+    userWorkspaceId?: string;
     workspaceId: string;
   }): Promise<ConnectedAccountEntity[]> {
     const accounts = await this.repository.find({
@@ -196,7 +196,7 @@ export class ConnectedAccountMetadataService {
     workspaceId,
   }: {
     id: string;
-    userWorkspaceId: string;
+    userWorkspaceId?: string;
     workspaceId: string;
   }): Promise<ConnectedAccountEntity> {
     const connectedAccount = await this.findByIdOrThrow({ id, workspaceId });

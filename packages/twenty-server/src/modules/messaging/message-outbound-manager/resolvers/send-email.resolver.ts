@@ -48,7 +48,8 @@ export class SendEmailResolver {
   async sendEmail(
     @Args('input') input: SendEmailInput,
     @AuthWorkspace() workspace: WorkspaceEntity,
-    @AuthUserWorkspaceId() userWorkspaceId: string,
+    @AuthUserWorkspaceId({ allowUndefined: true })
+    userWorkspaceId: string | undefined,
   ): Promise<SendEmailOutputDTO> {
     try {
       await this.connectedAccountMetadataService.verifyUsableByCaller({
