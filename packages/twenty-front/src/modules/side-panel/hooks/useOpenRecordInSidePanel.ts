@@ -1,3 +1,4 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { useSidePanelMenu } from '@/side-panel/hooks/useSidePanelMenu';
 import { useOpenRoutedPageInSidePanel } from '@/side-panel/routing/hooks/useOpenRoutedPageInSidePanel';
 import { sidePanelNavigationStackState } from '@/side-panel/states/sidePanelNavigationStackState';
@@ -12,7 +13,7 @@ import { useRunWorkflowRunOpeningInSidePanelEffects } from '@/workflow/hooks/use
 import { t } from '@lingui/core/macro';
 import { useStore } from 'jotai';
 import { useCallback } from 'react';
-import { getAppPath, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 import { useIsMobile } from 'twenty-ui/utilities';
 import { useNavigateApp } from '~/hooks/useNavigateApp';
 

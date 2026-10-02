@@ -1,3 +1,4 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { currentUserState } from '@/auth/states/currentUserState';
 import { metadataStoreState } from '@/metadata-store/states/metadataStoreState';
 import { metadataStoreStatusFamilySelector } from '@/metadata-store/states/metadataStoreStatusFamilySelector';
@@ -16,7 +17,7 @@ import { viewsSelector } from '@/views/states/selectors/viewsSelector';
 import isEmpty from 'lodash.isempty';
 import { useCallback, useMemo } from 'react';
 import { AppPath, SettingsPath } from 'twenty-shared/types';
-import { getAppPath, getSettingsPath, isDefined } from 'twenty-shared/utils';
+import { getSettingsPath, isDefined } from 'twenty-shared/utils';
 
 export const useDefaultHomePagePath = () => {
   const currentUser = useAtomStateValue(currentUserState);

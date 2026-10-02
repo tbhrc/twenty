@@ -1,3 +1,4 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { HeadlessConfirmationModalEngineCommandEffect } from '@/command-menu-item/engine-command/components/HeadlessConfirmationModalEngineCommandEffect';
 import { HeadlessEngineCommandWrapperEffect } from '@/command-menu-item/engine-command/components/HeadlessEngineCommandWrapperEffect';
 import { useHeadlessCommandContextApi } from '@/command-menu-item/engine-command/hooks/useHeadlessCommandContextApi';
@@ -5,7 +6,7 @@ import { useCreateDraftFromWorkflowVersion } from '@/workflow/hooks/useCreateDra
 import { useWorkflowWithCurrentVersion } from '@/workflow/hooks/useWorkflowWithCurrentVersion';
 import { useLingui } from '@lingui/react/macro';
 import { AppPath, CoreObjectNameSingular } from 'twenty-shared/types';
-import { getAppPath, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 import { useNavigateApp } from '~/hooks/useNavigateApp';
 
 const UseAsDraftWorkflowVersionSingleRecordCommandContent = ({

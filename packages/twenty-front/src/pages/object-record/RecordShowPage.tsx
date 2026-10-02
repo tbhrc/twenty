@@ -1,4 +1,5 @@
-import { useParams } from 'react-router-dom';
+import { useParams } from '@/app/routing/record-routes/router';
+
 import { FeatureFlagKey } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 

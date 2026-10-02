@@ -3,7 +3,7 @@ import { useDefaultHomePagePath } from '@/navigation/hooks/useDefaultHomePagePat
 import { useOnboardingStatus } from '@/onboarding/hooks/useOnboardingStatus';
 import { useIsWorkspaceActivationStatusEqualsTo } from '@/workspace/hooks/useIsWorkspaceActivationStatusEqualsTo';
 import { useQuery } from '@apollo/client/react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from '@/app/routing/record-routes/router';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { AppPath, SettingsPath } from 'twenty-shared/types';
 import { getAppPath, getSettingsPath } from 'twenty-shared/utils';
@@ -67,8 +67,8 @@ const setupMockUseQuery = (result?: { data?: unknown; loading?: boolean }) => {
   } as ReturnType<typeof useQuery>);
 };
 
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+jest.mock('@/app/routing/record-routes/router', () => ({
+  ...jest.requireActual('@/app/routing/record-routes/router'),
   useLocation: jest.fn(),
 }));
 

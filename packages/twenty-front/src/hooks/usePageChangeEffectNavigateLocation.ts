@@ -1,3 +1,4 @@
+import { matchPath, useLocation } from '@/app/routing/record-routes/router';
 import { verifyEmailRedirectPathState } from '@/app/states/verifyEmailRedirectPathState';
 import { ONBOARDING_PATHS } from '@/auth/constants/OnboardingPaths';
 import { ONGOING_USER_CREATION_PATHS } from '@/auth/constants/OngoingUserCreationPaths';
@@ -16,7 +17,7 @@ import { useIsWorkspaceActivationStatusEqualsTo } from '@/workspace/hooks/useIsW
 import { isValidReturnToPath } from '@/auth/utils/isValidReturnToPath';
 import { useQuery } from '@apollo/client/react';
 import { isNonEmptyString } from '@sniptt/guards';
-import { matchPath, useLocation } from 'react-router-dom';
+
 import { AppPath, SettingsPath } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { WorkspaceActivationStatus } from 'twenty-shared/workspace';

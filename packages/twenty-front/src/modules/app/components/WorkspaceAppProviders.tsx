@@ -40,6 +40,7 @@ import { PageTitle } from '@/ui/utilities/page-title/components/PageTitle';
 import { UserContextProvider } from '@/users/components/UserContextProvider';
 import { WorkspaceProviderEffect } from '@/workspace/components/WorkspaceProviderEffect';
 import { getPageTitleFromPath } from '~/utils/title-utils';
+import { RecordRouteScopeEffect } from '@/app/routing/record-routes/RecordRouteScopeEffect';
 
 export const WorkspaceAppProviders = () => {
   const { pathname } = useLocation();
@@ -55,6 +56,7 @@ export const WorkspaceAppProviders = () => {
         <UserContextProvider>
           <AuthProvider>
             <ApolloCoreProvider>
+              <RecordRouteScopeEffect />
               <ApolloAdminProvider>
                 <SSEProvider>
                   <ApplicationsLoadEffect />

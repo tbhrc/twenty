@@ -48,7 +48,7 @@ export const RecordTableWidgetStatesEffect = ({
       isRecordTableColumnResizableComponentState.atomFamily({
         instanceId: recordTableId,
       }),
-      isPageLayoutInEditMode,
+      true,
     );
 
     store.set(

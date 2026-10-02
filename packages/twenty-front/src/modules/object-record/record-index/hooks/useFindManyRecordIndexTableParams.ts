@@ -1,3 +1,6 @@
+import { useContext } from 'react';
+import { RecordTableWidgetContext } from '@/object-record/record-table-widget/contexts/RecordTableWidgetContext';
+import { useRecordTableWidgetScopeFilter } from '@/object-record/record-table-widget/hooks/useRecordTableWidgetScopeFilter';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
 import { flattenedFieldMetadataItemsSelector } from '@/object-metadata/states/flattenedFieldMetadataItemsSelector';
@@ -25,6 +28,8 @@ export const useFindManyRecordIndexTableParams = (
     objectNameSingular,
   });
   const { objectMetadataItems } = useObjectMetadataItems();
+  const scopeFilter = useRecordTableWidgetScopeFilter();
+  const widgetContext = useContext(RecordTableWidgetContext);
 
   const { recordGroupFilter } = useRecordGroupFilter(
     objectMetadataItem?.fields,
@@ -78,6 +83,7 @@ export const useFindManyRecordIndexTableParams = (
   );
 
   const combinedFilter = combineFilters([
+    scopeFilter,
     currentFilters,
     recordGroupFilter,
     anyFieldFilter,
@@ -88,6 +94,10 @@ export const useFindManyRecordIndexTableParams = (
     filter: combinedFilter,
     orderBy,
     // If we have a current record group definition, we only want to fetch 8 records by page
-    ...(currentRecordGroupDefinition ? { limit: 8 } : {}),
+    ...(currentRecordGroupDefinition
+      ? { limit: 8 }
+      : widgetContext?.scopeView
+        ? { limit: 100 }
+        : {}),
   };
 };

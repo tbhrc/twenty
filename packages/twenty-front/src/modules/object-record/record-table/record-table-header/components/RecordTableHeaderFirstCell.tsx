@@ -1,3 +1,6 @@
+import { RecordTableWidgetContext } from '@/object-record/record-table-widget/contexts/RecordTableWidgetContext';
+import { RecordTableWidgetColumnHead } from '@/object-record/record-table-widget/components/RecordTableWidgetColumnHead';
+import { useContext } from 'react';
 import { styled } from '@linaria/react';
 
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
@@ -34,6 +37,7 @@ const StyledPlusButtonWrapper = styled.div`
 `;
 
 export const RecordTableHeaderFirstCell = () => {
+  const widgetContext = useContext(RecordTableWidgetContext);
   const { objectMetadataItem, visibleRecordFields } =
     useRecordTableContextOrThrow();
 
@@ -101,7 +105,11 @@ export const RecordTableHeaderFirstCell = () => {
       isReadOnly={isRecordTableColumnHeadersReadOnly}
     >
       {isRecordTableColumnHeadersReadOnly ? (
-        <RecordTableColumnHead recordField={recordField} />
+        widgetContext?.scopeView ? (
+          <RecordTableWidgetColumnHead recordField={recordField} />
+        ) : (
+          <RecordTableColumnHead recordField={recordField} />
+        )
       ) : (
         <RecordTableColumnHeadWithDropdown
           recordField={recordField}

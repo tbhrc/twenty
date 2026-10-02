@@ -1,8 +1,9 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { NavigationButton } from '@/ui/input/components/NavigationButton';
 import { isErrorLike } from '@apollo/client/errors';
 import { t } from '@lingui/core/macro';
 import { AppPath } from 'twenty-shared/types';
-import { getAppPath, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 import { type ToastOptions } from 'twenty-ui/primitives/feedback';
 
 import { getConflictingRecordFromApolloError } from '~/utils/get-conflicting-record-from-apollo-error.util';

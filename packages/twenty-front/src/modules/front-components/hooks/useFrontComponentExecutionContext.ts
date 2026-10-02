@@ -1,3 +1,4 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
 import { getFieldMetadataItemById } from '@/object-metadata/utils/getFieldMetadataItemById';
 import { resolveOpenRecordIn } from '@/object-record/record-index/utils/resolveOpenRecordIn';
@@ -45,7 +46,7 @@ import { sidePanelSearchState } from '@/side-panel/states/sidePanelSearchState';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useSetAtomFamilyState } from '@/ui/utilities/state/jotai/hooks/useSetAtomFamilyState';
 import { useStore } from 'jotai';
-import { CustomError, getAppPath, isDefined } from 'twenty-shared/utils';
+import { CustomError, isDefined } from 'twenty-shared/utils';
 import { useToast } from 'twenty-ui/primitives/feedback';
 import { useIcons } from 'twenty-ui/icon';
 import { useIsMobile } from 'twenty-ui/utilities';

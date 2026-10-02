@@ -1,3 +1,7 @@
+jest.mock(
+  '@/object-record/record-table-widget/components/RecordTableWidgetToolbar',
+  () => ({ RecordTableWidgetToolbar: () => <div>widget toolbar</div> }),
+);
 import type * as ReactModule from 'react';
 import userEvent from '@testing-library/user-event';
 import { render, screen } from '@testing-library/react';
@@ -314,4 +318,18 @@ it('keeps read-only relation widgets read-only after a personal layout switch', 
   expect(
     screen.getByRole('button', { name: 'Edit table record' }),
   ).toBeDisabled();
+});
+
+it('requires immutable scope before a live relation view becomes available', () => {
+  mockUseViewById.mockReturnValue({ view: undefined });
+  render(
+    <RecordTableWidgetRendererContent
+      objectMetadataId="applications"
+      viewId="view"
+      widgetId="related-records"
+      isLayoutSwitchEnabled
+    />,
+  );
+  expect(mockProviderProps.mock.lastCall[0].isScopeRequired).toBe(true);
+  expect(mockProviderProps.mock.lastCall[0].scopeView).toBeUndefined();
 });

@@ -1,3 +1,8 @@
+import {
+  matchPath,
+  useLocation,
+  useNavigate,
+} from '@/app/routing/record-routes/router';
 import { useExecuteTasksOnAnyLocationChange } from '@/app/hooks/useExecuteTasksOnAnyLocationChange';
 import { useWorkspaceRouteObjects } from '@/app/routing/components/WorkspaceRouteObjectsProvider';
 import { isAppEffectRedirectEnabledState } from '@/app/states/isAppEffectRedirectEnabledState';
@@ -32,7 +37,7 @@ import { isSafeInternalPath } from '@/ui/navigation/utils/isSafeInternalPath';
 import { currentPageLayoutIdState } from '@/page-layout/states/currentPageLayoutIdState';
 import { useStore } from 'jotai';
 import { useEffect, useState } from 'react';
-import { matchPath, useLocation, useNavigate } from 'react-router-dom';
+
 import { AppBasePath, AppPath, SidePanelPages } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { usePageChangeEffectNavigateLocation } from '~/hooks/usePageChangeEffectNavigateLocation';

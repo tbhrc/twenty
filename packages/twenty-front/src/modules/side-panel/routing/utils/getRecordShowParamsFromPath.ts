@@ -1,4 +1,5 @@
-import { matchPath, parsePath } from 'react-router-dom';
+import { matchPath } from '@/app/routing/record-routes/router';
+import { parsePath } from 'react-router-dom';
 import { AppPath } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 

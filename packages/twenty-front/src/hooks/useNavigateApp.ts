@@ -1,7 +1,8 @@
+import { useNavigate } from '@/app/routing/record-routes/router';
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import { type AppPath, type NavigateOptions } from 'twenty-shared/types';
-import { getAppPath } from 'twenty-shared/utils';
 
 type NavigateAppOptions = NavigateOptions;
 

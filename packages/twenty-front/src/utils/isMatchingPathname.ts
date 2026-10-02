@@ -1,4 +1,4 @@
-import { matchPath } from 'react-router-dom';
+import { matchPath } from '@/app/routing/record-routes/router';
 
 import { isNonEmptyString } from '@sniptt/guards';
 import { type AppBasePath } from 'twenty-shared/types';

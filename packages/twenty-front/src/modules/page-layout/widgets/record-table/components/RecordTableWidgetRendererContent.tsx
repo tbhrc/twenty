@@ -9,6 +9,7 @@ import { useObjectMetadataItemById } from '@/object-metadata/hooks/useObjectMeta
 import { RecordBoardWidget } from '@/object-record/record-board-widget/components/RecordBoardWidget';
 import { RecordCalendarWidget } from '@/object-record/record-calendar-widget/components/RecordCalendarWidget';
 import { RecordListWidget } from '@/object-record/record-list-widget/components/RecordListWidget';
+import { RecordTableWidgetToolbar } from '@/object-record/record-table-widget/components/RecordTableWidgetToolbar';
 import { RecordTableWidget } from '@/object-record/record-table-widget/components/RecordTableWidget';
 import { RecordTableWidgetProvider } from '@/object-record/record-table-widget/components/RecordTableWidgetProvider';
 import {
@@ -151,6 +152,12 @@ export const RecordTableWidgetRendererContent = ({
       nestedRelationCreateThrough={nestedRelationCreateThrough}
       junctionCreateThrough={junctionCreateThrough}
       presentationViewType={presentationViewType}
+      scopeView={
+        isLayoutSwitchEnabled && !isPageLayoutInEditMode
+          ? widgetView
+          : undefined
+      }
+      isScopeRequired={isLayoutSwitchEnabled && !isPageLayoutInEditMode}
       contextStoreViewType={getContextStoreViewType(widgetViewLayout)}
     >
       {canSwitchLayout && (
@@ -171,6 +178,7 @@ export const RecordTableWidgetRendererContent = ({
           />
         </StyledLayoutControl>
       )}
+      {canSwitchLayout && <RecordTableWidgetToolbar />}
       {renderWidgetForLayout[widgetViewLayout]()}
     </RecordTableWidgetProvider>
   );

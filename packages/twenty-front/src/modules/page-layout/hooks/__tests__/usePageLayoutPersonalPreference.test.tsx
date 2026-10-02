@@ -64,3 +64,36 @@ it('does not persist a choice before the authenticated user is known', () => {
   expect(result.current.value).toBeNull();
   expect(JSON.stringify(localStorage)).toBe(previousStorage);
 });
+
+it('keeps saved working rules separate for each widget and current record', () => {
+  mockUserId = 'alice';
+  mockWorkspaceId = 'workspace-a';
+  mockLayoutId = 'layout-a';
+  let preference = 'widget-working:widget-a:record-a';
+  const { result, rerender, unmount } = renderHook(
+    () => usePageLayoutPersonalPreference(preference),
+    { wrapper: createWrapper() },
+  );
+  const workingRules = JSON.stringify({
+    filters: [],
+    filterGroups: [],
+    sorts: [],
+    search: 'Ada',
+  });
+  act(() => result.current.setValue(workingRules));
+  preference = 'widget-working:widget-a:record-b';
+  rerender();
+  expect(result.current.value).toBeNull();
+  preference = 'widget-working:widget-b:record-a';
+  rerender();
+  expect(result.current.value).toBeNull();
+  preference = 'widget-working:widget-a:record-a';
+  rerender();
+  expect(result.current.value).toBe(workingRules);
+  unmount();
+  const remounted = renderHook(
+    () => usePageLayoutPersonalPreference(preference),
+    { wrapper: createWrapper() },
+  );
+  expect(remounted.result.current.value).toBe(workingRules);
+});

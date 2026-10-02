@@ -1,3 +1,5 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
+import { type View } from '@/views/types/View';
 import { type ViewType } from '~/generated-metadata/graphql';
 import { ContextStoreComponentInstanceContext } from '@/context-store/states/contexts/ContextStoreComponentInstanceContext';
 import { type ContextStoreViewType } from '@/context-store/types/ContextStoreViewType';
@@ -25,7 +27,6 @@ import { ViewComponentInstanceContext } from '@/views/states/contexts/ViewCompon
 import { isNonEmptyString } from '@sniptt/guards';
 import { type PropsWithChildren, useCallback, useMemo } from 'react';
 import { AppPath } from 'twenty-shared/types';
-import { getAppPath } from 'twenty-shared/utils';
 
 type RecordTableWidgetProviderProps = PropsWithChildren<{
   objectNameSingular: string;
@@ -35,6 +36,8 @@ type RecordTableWidgetProviderProps = PropsWithChildren<{
   instanceIdSuffix?: string;
   contextStoreViewType?: ContextStoreViewType;
   presentationViewType?: ViewType;
+  scopeView?: View;
+  isScopeRequired?: boolean;
   nestedRelationCreateThrough?: RecordTableWidgetNestedRelationCreateThrough;
   junctionCreateThrough?: RecordTableWidgetJunctionCreateThrough;
 }>;
@@ -47,6 +50,8 @@ export const RecordTableWidgetProvider = ({
   instanceIdSuffix,
   contextStoreViewType,
   presentationViewType,
+  scopeView,
+  isScopeRequired,
   nestedRelationCreateThrough,
   junctionCreateThrough,
   children,
@@ -118,6 +123,9 @@ export const RecordTableWidgetProvider = ({
       isPageLayoutInEditMode,
       pageLayoutId,
       widgetId,
+      scopeView,
+      isScopeRequired,
+      personalPreferenceKey: `widget-working:${widgetId}:${instanceIdSuffix ?? ''}`,
       nestedRelationCreateThrough,
       junctionCreateThrough,
       updateViewDraftField,
@@ -127,6 +135,9 @@ export const RecordTableWidgetProvider = ({
       isPageLayoutInEditMode,
       pageLayoutId,
       widgetId,
+      scopeView,
+      isScopeRequired,
+      instanceIdSuffix,
       nestedRelationCreateThrough,
       junctionCreateThrough,
       updateViewDraftField,

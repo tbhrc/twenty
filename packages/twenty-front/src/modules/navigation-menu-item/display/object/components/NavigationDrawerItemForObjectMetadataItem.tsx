@@ -1,3 +1,4 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { t } from '@lingui/core/macro';
 import { isNonEmptyString } from '@sniptt/guards';
 import { Fragment, type ReactNode, useContext } from 'react';
@@ -29,7 +30,7 @@ import {
   FeatureFlagKey,
   NavigationMenuItemType,
 } from 'twenty-shared/types';
-import { getAppPath, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 import { Avatar } from 'twenty-ui/primitives/data-display';
 import { IconLock, useIcons } from 'twenty-ui/icon';
 import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';

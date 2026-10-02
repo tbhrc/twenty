@@ -1,3 +1,4 @@
+import { useParams } from '@/app/routing/record-routes/router';
 import qs from 'qs';
 import { useCallback, useMemo } from 'react';
 
@@ -5,7 +6,7 @@ import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadata
 import { useObjectNameSingularFromPlural } from '@/object-metadata/hooks/useObjectNameSingularFromPlural';
 import { type RecordSort } from '@/object-record/record-sort/types/RecordSort';
 import { sortUrlQueryParamsSchema } from '@/views/schemas/sortUrlQueryParamsSchema';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { isDefined } from 'twenty-shared/utils';
 import { type ViewSortDirection } from '~/generated-metadata/graphql';
 

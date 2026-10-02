@@ -1,5 +1,6 @@
+import { matchPath } from '@/app/routing/record-routes/router';
 import { type getDefaultStore } from 'jotai';
-import { type Location, matchPath } from 'react-router-dom';
+import { type Location } from 'react-router-dom';
 import { AppPath, CoreObjectNameSingular } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 

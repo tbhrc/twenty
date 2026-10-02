@@ -1,3 +1,4 @@
+import { matchRoutes, useLocation } from '@/app/routing/record-routes/router';
 import { useWorkspaceRouteObjects } from '@/app/routing/components/WorkspaceRouteObjectsProvider';
 import { RouteContextStoreProviderEffect } from '@/context-store/components/RouteContextStoreProviderEffect';
 import { metadataStoreState } from '@/metadata-store/states/metadataStoreState';
@@ -7,7 +8,7 @@ import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMeta
 import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { viewsSelector } from '@/views/states/selectors/viewsSelector';
-import { matchRoutes, useLocation, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { AppPath } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { ViewKey, ViewType } from '~/generated-metadata/graphql';

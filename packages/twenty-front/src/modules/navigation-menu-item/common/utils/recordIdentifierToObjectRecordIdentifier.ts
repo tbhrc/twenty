@@ -1,7 +1,7 @@
 import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { getAvatarShape } from '@/object-metadata/utils/getAvatarShape';
-import { getBasePathToShowPage } from '@/object-metadata/utils/getBasePathToShowPage';
+import { getRecordRoutePath } from '@/app/routing/record-routes/getAppPath';
 import { type ObjectRecordIdentifier } from '@/object-record/types/ObjectRecordIdentifier';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -20,10 +20,6 @@ export const recordIdentifierToObjectRecordIdentifier = ({
 }): ObjectRecordIdentifier => {
   const avatarShape = getAvatarShape(objectMetadataItem);
 
-  const basePathToShowPage = getBasePathToShowPage({
-    objectNameSingular: objectMetadataItem.nameSingular,
-  });
-
   const isWorkspaceMemberObjectMetadata =
     objectMetadataItem.nameSingular === CoreObjectNameSingular.WorkspaceMember;
 
@@ -38,7 +34,10 @@ export const recordIdentifierToObjectRecordIdentifier = ({
     !isWorkspaceMemberObjectMetadata &&
     isDefined(recordIdentifier.id)
   ) {
-    linkToShowPage = `${basePathToShowPage}${recordIdentifier.id}`;
+    linkToShowPage = getRecordRoutePath({
+      objectNameSingular: objectMetadataItem.nameSingular,
+      recordId: recordIdentifier.id,
+    });
   }
 
   return {

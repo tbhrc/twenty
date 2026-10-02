@@ -1,4 +1,5 @@
 import { type AggregateOperations } from '@/object-record/record-table/constants/AggregateOperations';
+import { type View } from '@/views/types/View';
 import { createContext } from 'react';
 import { type RecordGqlOperationFilter } from 'twenty-shared/types';
 
@@ -30,6 +31,10 @@ export type RecordTableWidgetContextValue = {
   isPageLayoutInEditMode: boolean;
   pageLayoutId?: string;
   widgetId: string;
+  // Saved scope is applied independently of optional personal rules.
+  scopeView?: View;
+  isScopeRequired?: boolean;
+  personalPreferenceKey?: string;
   nestedRelationCreateThrough?: RecordTableWidgetNestedRelationCreateThrough;
   junctionCreateThrough?: RecordTableWidgetJunctionCreateThrough;
   updateViewDraftField: (

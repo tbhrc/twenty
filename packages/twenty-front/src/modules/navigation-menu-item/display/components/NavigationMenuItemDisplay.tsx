@@ -20,6 +20,7 @@ export const NavigationMenuItemDisplay = ({
   readOnly,
   orphanIndex,
 }: NavigationMenuItemDisplayProps) => {
+  useRecordRouteVersion();
   switch (item.type) {
     case NavigationMenuItemType.FOLDER:
       return (
@@ -82,3 +83,4 @@ export const NavigationMenuItemDisplay = ({
       );
   }
 };
+import { useRecordRouteVersion } from '@/app/routing/record-routes/router';

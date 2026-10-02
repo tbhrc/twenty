@@ -1,3 +1,4 @@
+import { useParams } from '@/app/routing/record-routes/router';
 import { WorkspaceRouteUnavailable } from '@/app/routing/components/WorkspaceRouteUnavailable';
 import { contextStoreCurrentObjectMetadataItemIdComponentState } from '@/context-store/states/contextStoreCurrentObjectMetadataItemIdComponentState';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
@@ -13,7 +14,7 @@ import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAto
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { isUndefined } from '@sniptt/guards';
 import { lazy, Suspense } from 'react';
-import { useParams } from 'react-router-dom';
+
 import { FeatureFlagKey } from 'twenty-shared/types';
 
 const WorkflowCoreIndexPage = lazy(() =>

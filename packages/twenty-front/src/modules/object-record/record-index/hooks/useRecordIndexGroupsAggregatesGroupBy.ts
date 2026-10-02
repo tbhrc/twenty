@@ -1,3 +1,4 @@
+import { useRecordTableWidgetScopeFilter } from '@/object-record/record-table-widget/hooks/useRecordTableWidgetScopeFilter';
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { flattenedFieldMetadataItemsSelector } from '@/object-metadata/states/flattenedFieldMetadataItemsSelector';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
@@ -41,6 +42,7 @@ export const useRecordIndexGroupsAggregatesGroupBy = ({
   recordIndexGroupAggregateOperation: ExtendedAggregateOperations;
 }) => {
   const apolloCoreClient = useApolloCoreClient();
+  const scopeFilter = useRecordTableWidgetScopeFilter();
 
   const currentRecordFilterGroups = useAtomComponentStateValue(
     currentRecordFilterGroupsComponentState,
@@ -121,6 +123,7 @@ export const useRecordIndexGroupsAggregatesGroupBy = ({
       !isDefined(recordAggregateGqlField),
     variables: {
       filter: combineFilters([
+        scopeFilter,
         anyFieldFilter,
         requestFilters,
         recordGroupOptionsFilter,
