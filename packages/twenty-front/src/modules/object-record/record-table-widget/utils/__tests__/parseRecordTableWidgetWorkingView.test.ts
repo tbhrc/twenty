@@ -1,4 +1,4 @@
-import { parseRecordTableWidgetWorkingView } from '@/object-record/record-table-widget/utils/RecordTableWidgetWorkingView';
+import { parseRecordTableWidgetWorkingView } from '@/object-record/record-table-widget/utils/parseRecordTableWidgetWorkingView';
 
 it('round-trips optional rules, combined groups, sorts and search', () => {
   const view = {

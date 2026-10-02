@@ -1,6 +1,6 @@
 import { RecordTableWidgetContext } from '@/object-record/record-table-widget/contexts/RecordTableWidgetContext';
 import { RecordTableWidgetColumnHead } from '@/object-record/record-table-widget/components/RecordTableWidgetColumnHead';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { styled } from '@linaria/react';
 
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
@@ -26,7 +26,6 @@ import { useAtomComponentFamilyStateValue } from '@/ui/utilities/state/jotai/hoo
 import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { cx } from '@linaria/core';
-import { useState } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 
 const StyledPlusButtonWrapper = styled.div`

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useEffect } from 'react';
+import { useLayoutEffect, useEffect, useMemo } from 'react';
 import { FieldMetadataType } from 'twenty-shared/types';
 import { isValidUuid } from 'twenty-shared/utils';
 
@@ -44,39 +44,43 @@ export const getRecordRouteLookupResult = (
 
 export const RecordRouteScopeEffect = () => {
   const isLogged = useIsLogged();
-  const workspace = useAtomStateValue(currentWorkspaceState);
-  const userWorkspace = useAtomStateValue(currentUserWorkspaceState);
-  const user = useAtomStateValue(currentUserState);
+  const currentWorkspace = useAtomStateValue(currentWorkspaceState);
+  const currentUserWorkspace = useAtomStateValue(currentUserWorkspaceState);
+  const currentUser = useAtomStateValue(currentUserState);
   const { objectMetadataItems } = useObjectMetadataItems();
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
   const client = useApolloCoreClient();
-  const definitions = getRecordRouteDefinitions();
-  const readableDefinitions = definitions.filter((definition) => {
-    const object = objectMetadataItems.find(
-      (item) =>
-        item.nameSingular === definition.objectNameSingular &&
-        item.namePlural === definition.objectNamePlural,
-    );
-    return (
-      object &&
-      getObjectPermissionsForObject(
-        objectPermissionsByObjectMetadataId,
-        object.id,
-      ).canReadObjectRecords &&
-      object.readableFields.some(
-        (field) =>
-          field.isActive &&
-          field.name === definition.recordIdentifierField &&
-          field.type === FieldMetadataType.NUMBER,
-      )
-    );
-  });
+  const definitions = useMemo(getRecordRouteDefinitions, []);
+  const readableDefinitions = useMemo(
+    () =>
+      definitions.filter((definition) => {
+        const object = objectMetadataItems.find(
+          (item) =>
+            item.nameSingular === definition.objectNameSingular &&
+            item.namePlural === definition.objectNamePlural,
+        );
+        return (
+          object &&
+          getObjectPermissionsForObject(
+            objectPermissionsByObjectMetadataId,
+            object.id,
+          ).canReadObjectRecords &&
+          object.readableFields.some(
+            (field) =>
+              field.isActive &&
+              field.name === definition.recordIdentifierField &&
+              field.type === FieldMetadataType.NUMBER,
+          )
+        );
+      }),
+    [definitions, objectMetadataItems, objectPermissionsByObjectMetadataId],
+  );
   const scopeKey =
-    isLogged && workspace?.id && user?.id && userWorkspace
+    isLogged && currentWorkspace?.id && currentUser?.id && currentUserWorkspace
       ? JSON.stringify([
-          workspace.id,
-          user.id,
-          userWorkspace.isImpersonating,
+          currentWorkspace.id,
+          currentUser.id,
+          currentUserWorkspace.isImpersonating,
           readableDefinitions,
           objectPermissionsByObjectMetadataId,
         ])
@@ -146,6 +150,7 @@ export const RecordRouteScopeEffect = () => {
     scopeKey,
     objectMetadataItems,
     objectPermissionsByObjectMetadataId,
+    readableDefinitions,
   ]);
 
   useEffect(() => () => configureRecordRouteScope(null, [], null), []);

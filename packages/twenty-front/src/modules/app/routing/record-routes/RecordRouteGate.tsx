@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState, useMemo } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { WorkspaceRouteUnavailable } from '@/app/routing/components/WorkspaceRouteUnavailable';
@@ -27,11 +27,14 @@ export const RecordRouteGate = ({
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
-  const definition =
-    aliasDefinition ??
-    getRecordRouteDefinitions().find(
-      (item) => item.objectNameSingular === params.objectNameSingular,
-    );
+  const definition = useMemo(
+    () =>
+      aliasDefinition ??
+      getRecordRouteDefinitions().find(
+        (item) => item.objectNameSingular === params.objectNameSingular,
+      ),
+    [aliasDefinition, params.objectNameSingular],
+  );
   const target = aliasDefinition
     ? params.recordIdentifier
     : params.objectRecordId;
@@ -59,13 +62,7 @@ export const RecordRouteGate = ({
     return () => {
       cancelled = true;
     };
-  }, [
-    aliasDefinition,
-    definition?.objectNameSingular,
-    definition?.recordIdentifierField,
-    generation,
-    target,
-  ]);
+  }, [aliasDefinition, definition, generation, target]);
 
   const result =
     resolved?.generation === generation && resolved.target === target
@@ -84,7 +81,7 @@ export const RecordRouteGate = ({
     }
   }, [
     aliasDefinition,
-    definition?.path,
+    definition,
     result,
     navigate,
     location.search,

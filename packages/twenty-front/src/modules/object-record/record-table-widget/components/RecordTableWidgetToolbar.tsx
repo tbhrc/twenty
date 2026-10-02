@@ -40,31 +40,36 @@ const StyledToolbar = styled.div`
 export const RecordTableWidgetToolbar = () => {
   const { recordIndexId } = useRecordIndexContextOrThrow();
   const widgetContext = useContext(RecordTableWidgetContext);
-  const [filters, setFilters] = useAtomComponentState(
+  const [currentRecordFilters, setCurrentRecordFilters] = useAtomComponentState(
     currentRecordFiltersComponentState,
   );
-  const [filterGroups, setFilterGroups] = useAtomComponentState(
-    currentRecordFilterGroupsComponentState,
-  );
-  const [sorts, setSorts] = useAtomComponentState(
+  const [currentRecordFilterGroups, setCurrentRecordFilterGroups] =
+    useAtomComponentState(currentRecordFilterGroupsComponentState);
+  const [currentRecordSorts, setCurrentRecordSorts] = useAtomComponentState(
     currentRecordSortsComponentState,
   );
-  const [search, setSearch] = useAtomComponentState(
+  const [anyFieldFilterValue, setAnyFieldFilterValue] = useAtomComponentState(
     anyFieldFilterValueComponentState,
   );
   const { value: saved, setValue: save } = usePageLayoutPersonalPreference(
     widgetContext?.personalPreferenceKey ?? 'widget-working',
   );
-  const workingView = JSON.stringify({ filters, filterGroups, sorts, search });
+  const workingView = JSON.stringify({
+    filters: currentRecordFilters,
+    filterGroups: currentRecordFilterGroups,
+    sorts: currentRecordSorts,
+    search: anyFieldFilterValue,
+  });
   const filterCount =
-    filters.filter((filter) => !isRecordFilterConsideredEmpty(filter)).length +
-    (search ? 1 : 0);
+    currentRecordFilters.filter(
+      (filter) => !isRecordFilterConsideredEmpty(filter),
+    ).length + (anyFieldFilterValue ? 1 : 0);
 
   const reset = () => {
-    setFilters([]);
-    setFilterGroups([]);
-    setSearch('');
-    setSorts(widgetContext?.scopeView?.viewSorts ?? []);
+    setCurrentRecordFilters([]);
+    setCurrentRecordFilterGroups([]);
+    setAnyFieldFilterValue('');
+    setCurrentRecordSorts(widgetContext?.scopeView?.viewSorts ?? []);
     // Saving a reset replaces a previous personal working view as well.
     save(
       JSON.stringify({
@@ -88,12 +93,14 @@ export const RecordTableWidgetToolbar = () => {
         </ObjectFilterDropdownComponentInstanceContext.Provider>
         <span aria-live="polite">{t`${filterCount} active filters`}</span>
         <ObjectSortDropdownButton />
-        {sorts.map((sort) => (
+        {currentRecordSorts.map((sort) => (
           <EditableSortChip key={sort.id} recordSort={sort} />
         ))}
-        {search && <AnyFieldSearchDropdownButton />}
-        {filterGroups.length > 0 && <AdvancedFilterDropdownButton />}
-        {filters
+        {anyFieldFilterValue && <AnyFieldSearchDropdownButton />}
+        {currentRecordFilterGroups.length > 0 && (
+          <AdvancedFilterDropdownButton />
+        )}
+        {currentRecordFilters
           .filter((filter) => !filter.recordFilterGroupId)
           .map((filter) => (
             <ObjectFilterDropdownComponentInstanceContext.Provider

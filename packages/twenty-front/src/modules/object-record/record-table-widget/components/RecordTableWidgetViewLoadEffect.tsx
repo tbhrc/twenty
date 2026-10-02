@@ -3,7 +3,7 @@ import { currentRecordFiltersComponentState } from '@/object-record/record-filte
 import { currentRecordFilterGroupsComponentState } from '@/object-record/record-filter-group/states/currentRecordFilterGroupsComponentState';
 import { currentRecordSortsComponentState } from '@/object-record/record-sort/states/currentRecordSortsComponentState';
 import { anyFieldFilterValueComponentState } from '@/object-record/record-filter/states/anyFieldFilterValueComponentState';
-import { parseRecordTableWidgetWorkingView } from '@/object-record/record-table-widget/utils/RecordTableWidgetWorkingView';
+import { parseRecordTableWidgetWorkingView } from '@/object-record/record-table-widget/utils/parseRecordTableWidgetWorkingView';
 import { usePageLayoutPersonalPreference } from '@/page-layout/hooks/usePageLayoutPersonalPreference';
 import { useStore } from 'jotai';
 import { ViewType } from '~/generated-metadata/graphql';

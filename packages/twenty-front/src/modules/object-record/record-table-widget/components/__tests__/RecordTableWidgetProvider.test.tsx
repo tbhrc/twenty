@@ -56,13 +56,12 @@ jest.mock(
 );
 
 it('denies the entire native widget when object read permission is absent', () => {
-  const props = {
-    objectNameSingular: 'record',
-    viewId: 'view',
-    widgetId: 'widget',
-  };
   const { rerender } = render(
-    <RecordTableWidgetProvider {...props}>
+    <RecordTableWidgetProvider
+      objectNameSingular="record"
+      viewId="view"
+      widgetId="widget"
+    >
       <span>Native records and controls</span>
     </RecordTableWidgetProvider>,
   );
@@ -71,7 +70,11 @@ it('denies the entire native widget when object read permission is absent', () =
   ).not.toBeInTheDocument();
   mockCanRead = true;
   rerender(
-    <RecordTableWidgetProvider {...props}>
+    <RecordTableWidgetProvider
+      objectNameSingular="record"
+      viewId="view"
+      widgetId="widget"
+    >
       <span>Native records and controls</span>
     </RecordTableWidgetProvider>,
   );

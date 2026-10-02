@@ -13,8 +13,8 @@ import { styled } from '@linaria/react';
 import { useContext } from 'react';
 
 const StyledTableContainer = styled.div`
-  min-height: 0;
   flex: 1;
+  min-height: 0;
   min-width: 0;
   overflow: hidden;
 `;
@@ -39,7 +39,7 @@ export const RecordTableWidget = ({
   const { objectNameSingular, recordIndexId, viewBarInstanceId } =
     useRecordIndexContextOrThrow();
   const recordTableWidgetContext = useContext(RecordTableWidgetContext);
-  const totalCount = useAtomComponentStateValue(
+  const totalNumberOfRecordsToVirtualize = useAtomComponentStateValue(
     totalNumberOfRecordsToVirtualizeComponentState,
     recordIndexId,
   );
@@ -67,12 +67,15 @@ export const RecordTableWidget = ({
           viewBarId={viewBarInstanceId}
         />
       </StyledTableContainer>
-      {recordTableWidgetContext?.scopeView && totalCount !== null && (
-        <StyledLoadingStatus role="status">
-          {t`${loadedCount} of ${totalCount} records loaded`}
-          {loadedCount < totalCount && <> · {t`Scroll to load more`}</>}
-        </StyledLoadingStatus>
-      )}
+      {recordTableWidgetContext?.scopeView &&
+        totalNumberOfRecordsToVirtualize !== null && (
+          <StyledLoadingStatus role="status">
+            {t`${loadedCount} of ${totalNumberOfRecordsToVirtualize} records loaded`}
+            {loadedCount < totalNumberOfRecordsToVirtualize && (
+              <> · {t`Scroll to load more`}</>
+            )}
+          </StyledLoadingStatus>
+        )}
     </>
   );
 };

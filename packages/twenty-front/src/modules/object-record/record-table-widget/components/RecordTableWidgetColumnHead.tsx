@@ -17,10 +17,10 @@ const StyledSortButton = styled.button`
   cursor: pointer;
   display: flex;
   font: inherit;
+  gap: ${themeCssVariables.spacing[1]};
   min-width: 0;
   padding: 0;
   text-align: left;
-  gap: ${themeCssVariables.spacing[1]};
   width: 100%;
 `;
 

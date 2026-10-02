@@ -1,3 +1,5 @@
+/* oxlint-disable twenty/no-navigate-prefer-link */
+// These fixtures test imperative navigation and history hooks directly.
 import {
   act,
   fireEvent,
@@ -19,9 +21,12 @@ import {
   isWorkspaceLocationExpandableFromSidePanel,
 } from '@/app/routing/utils/isWorkspaceLocationAvailableOnSurface';
 
-import { RecordRouteGate } from '../RecordRouteGate';
-import { getRecordRouteLookupResult } from '../RecordRouteScopeEffect';
-import { getAppPath, getRecordRoutePath } from '../getAppPath';
+import { RecordRouteGate } from '@/app/routing/record-routes/RecordRouteGate';
+import { getRecordRouteLookupResult } from '@/app/routing/record-routes/RecordRouteScopeEffect';
+import {
+  getAppPath,
+  getRecordRoutePath,
+} from '@/app/routing/record-routes/getAppPath';
 import {
   configureRecordRouteScope,
   getCachedRecordId,
@@ -29,18 +34,18 @@ import {
   rememberRecordRoute,
   resolveRecordRoute,
   type RecordRouteLookupResult,
-} from '../recordRouteCache';
+} from '@/app/routing/record-routes/recordRouteCache';
 import {
   getRecordRouteDefinitions,
   parseRecordRouteIdentifier,
   type RecordRouteDefinition,
-} from '../recordRouteDefinitions';
+} from '@/app/routing/record-routes/recordRouteDefinitions';
 import {
   getLogicalRecordPathname,
   matchPath,
   useLocation,
   useParams,
-} from '../router';
+} from '@/app/routing/record-routes/router';
 
 jest.mock(
   '@/object-record/record-index/components/RecordIndexSkeletonLoader',
@@ -73,6 +78,15 @@ const Probe = () => {
   const logical = useLocation();
   const params = useParams();
   const navigate = useBrowserNavigate();
+  const navigateToNextRecord = () => {
+    // This fixture exercises imperative browser history and route resolution.
+    // oxlint-disable-next-line twenty/no-navigate-prefer-link
+    navigate(`${definition.path}/2#details`);
+  };
+  const navigateBack = () => {
+    // oxlint-disable-next-line twenty/no-navigate-prefer-link
+    navigate(-1);
+  };
   return (
     <>
       <div data-testid="browser">
@@ -83,10 +97,8 @@ const Probe = () => {
       <div data-testid="logical">{logical.pathname}</div>
       <div data-testid="record-id">{params.objectRecordId ?? 'unresolved'}</div>
       <div data-testid="state">{JSON.stringify(browser.state)}</div>
-      <button onClick={() => navigate(`${definition.path}/2#details`)}>
-        Next
-      </button>
-      <button onClick={() => navigate(-1)}>Back</button>
+      <button onClick={navigateToNextRecord}>Next</button>
+      <button onClick={navigateBack}>Back</button>
     </>
   );
 };

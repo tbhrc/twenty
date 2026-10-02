@@ -1,3 +1,4 @@
+import { isDefined } from 'twenty-shared/utils';
 import { type RecordFilterGroup } from '@/object-record/record-filter-group/types/RecordFilterGroup';
 import { type RecordFilter } from '@/object-record/record-filter/types/RecordFilter';
 import { type RecordSort } from '@/object-record/record-sort/types/RecordSort';
@@ -22,7 +23,7 @@ export const parseRecordTableWidgetWorkingView = (
       typeof parsed.search !== 'string' ||
       !parsed.filters.every(
         (filter: RecordFilter) =>
-          filter &&
+          isDefined(filter) &&
           typeof filter.id === 'string' &&
           typeof filter.fieldMetadataId === 'string' &&
           typeof filter.value === 'string' &&
@@ -30,13 +31,13 @@ export const parseRecordTableWidgetWorkingView = (
       ) ||
       !parsed.filterGroups.every(
         (group: RecordFilterGroup) =>
-          group &&
+          isDefined(group) &&
           typeof group.id === 'string' &&
           ['AND', 'OR'].includes(group.logicalOperator),
       ) ||
       !parsed.sorts.every(
         (sort: RecordSort) =>
-          sort &&
+          isDefined(sort) &&
           typeof sort.id === 'string' &&
           typeof sort.fieldMetadataId === 'string' &&
           ['ASC', 'DESC'].includes(sort.direction),

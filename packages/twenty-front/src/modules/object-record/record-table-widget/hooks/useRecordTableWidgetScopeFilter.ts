@@ -13,7 +13,9 @@ import {
 
 export const useRecordTableWidgetScopeFilter = () => {
   const widgetContext = useContext(RecordTableWidgetContext);
-  const fields = useAtomStateValue(flattenedFieldMetadataItemsSelector);
+  const flattenedFieldMetadataItems = useAtomStateValue(
+    flattenedFieldMetadataItemsSelector,
+  );
   const { filterValueDependencies } = useFilterValueDependencies();
   const scopeView = widgetContext?.scopeView;
   if (widgetContext?.isScopeRequired && !scopeView) {
@@ -23,7 +25,7 @@ export const useRecordTableWidgetScopeFilter = () => {
 
   const recordFilters = mapViewFiltersToFilters(
     scopeView?.viewFilters ?? [],
-    fields,
+    flattenedFieldMetadataItems,
   );
   // Metadata and current-record context can arrive separately. A missing
   // scope dependency must yield no rows during that gap.
@@ -40,7 +42,7 @@ export const useRecordTableWidgetScopeFilter = () => {
     }
     if (isCurrentRecordScope) {
       const resolved = computeRecordGqlOperationFilter({
-        fieldMetadataItems: fields,
+        fieldMetadataItems: flattenedFieldMetadataItems,
         filterValueDependencies,
         recordFilters: [{ ...filter, recordFilterGroupId: undefined }],
         recordFilterGroups: [],
@@ -49,7 +51,7 @@ export const useRecordTableWidgetScopeFilter = () => {
     }
   }
   const scopeFilter = computeRecordGqlOperationFilter({
-    fieldMetadataItems: fields,
+    fieldMetadataItems: flattenedFieldMetadataItems,
     filterValueDependencies,
     recordFilters,
     recordFilterGroups: mapViewFilterGroupsToRecordFilterGroups(
@@ -58,7 +60,7 @@ export const useRecordTableWidgetScopeFilter = () => {
   });
   const { recordGqlOperationFilter: scopeSearch } =
     turnAnyFieldFilterIntoRecordGqlFilter({
-      fields: fields.filter(
+      fields: flattenedFieldMetadataItems.filter(
         (field) => field.objectMetadataId === scopeView?.objectMetadataId,
       ),
       filterValue: scopeView?.anyFieldFilterValue ?? '',
