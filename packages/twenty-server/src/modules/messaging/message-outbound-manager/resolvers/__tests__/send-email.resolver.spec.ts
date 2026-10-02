@@ -76,4 +76,112 @@ describe('SendEmailResolver application caller', () => {
       );
     },
   );
+
+  const receiptFixture = () => {
+    const providerReceipt = {
+      messageExternalId: 'provider-item-id',
+      headerMessageId: '<provider-header@example.test>',
+    };
+    const composeEmail = jest.fn().mockResolvedValue({
+      success: true,
+      data: { shouldPersistMessage: true },
+    });
+    const persistSentMessage = jest.fn().mockResolvedValue({
+      messageId: 'native-message',
+      messageThreadId: 'native-thread',
+    });
+    const getSentMessageThreadId = jest
+      .fn()
+      .mockResolvedValue('fallback-thread');
+    const deleteSentDraft = jest.fn().mockResolvedValue(undefined);
+    const deleteFiles = jest.fn().mockResolvedValue(undefined);
+    const resolver = new SendEmailResolver(
+      {
+        verifyUsableByCaller: jest.fn().mockResolvedValue(undefined),
+      } as unknown as ConnectedAccountMetadataService,
+      { composeEmail } as unknown as EmailComposerService,
+      { deleteFiles } as unknown as FileEmailAttachmentService,
+      {
+        sendComposedEmail: jest.fn().mockResolvedValue(providerReceipt),
+        sendComposedDraft: jest.fn().mockResolvedValue(providerReceipt),
+        persistSentMessage,
+        getSentMessageThreadId,
+        deleteSentDraft,
+      } as unknown as SendEmailService,
+    );
+
+    return {
+      resolver,
+      providerReceipt,
+      persistSentMessage,
+      getSentMessageThreadId,
+      deleteSentDraft,
+      deleteFiles,
+    };
+  };
+
+  it('returns actual provider receipts and the persisted thread for a normal send', async () => {
+    const fixture = receiptFixture();
+
+    await expect(
+      fixture.resolver.sendEmail(input, workspace, undefined),
+    ).resolves.toEqual({
+      success: true,
+      messageThreadId: 'native-thread',
+      providerMessageId: fixture.providerReceipt.messageExternalId,
+      internetMessageId: fixture.providerReceipt.headerMessageId,
+    });
+    expect(fixture.getSentMessageThreadId).not.toHaveBeenCalled();
+  });
+
+  it.each(['undefined', 'throws'])(
+    'retains draft thread lookup when persistence %s',
+    async (failure) => {
+      const fixture = receiptFixture();
+
+      if (failure === 'throws') {
+        fixture.persistSentMessage.mockRejectedValue(new Error('Unavailable'));
+      } else {
+        fixture.persistSentMessage.mockResolvedValue(undefined);
+      }
+
+      const result = await fixture.resolver.sendEmail(
+        { ...input, draftMessageId: 'draft' },
+        workspace,
+        undefined,
+      );
+
+      expect(result).toEqual({
+        success: true,
+        messageThreadId: 'fallback-thread',
+        providerMessageId: fixture.providerReceipt.messageExternalId,
+        internetMessageId: fixture.providerReceipt.headerMessageId,
+      });
+      expect(fixture.getSentMessageThreadId).toHaveBeenCalledWith(
+        fixture.providerReceipt.messageExternalId,
+        workspace.id,
+      );
+    },
+  );
+
+  it('preserves successful receipts when post-send attachment cleanup fails', async () => {
+    const fixture = receiptFixture();
+
+    fixture.deleteFiles.mockRejectedValue(new Error('Cleanup unavailable'));
+
+    const result = await fixture.resolver.sendEmail(
+      { ...input, files: [{ id: 'attachment', name: 'proof.txt' }] },
+      workspace,
+      undefined,
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.messageThreadId).toBe('native-thread');
+    expect(result.providerMessageId).toBe(
+      fixture.providerReceipt.messageExternalId,
+    );
+    expect(result.internetMessageId).toBe(
+      fixture.providerReceipt.headerMessageId,
+    );
+  });
 });
