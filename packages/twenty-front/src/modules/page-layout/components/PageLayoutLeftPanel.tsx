@@ -31,7 +31,18 @@ const StyledContainer = styled.div`
   }
 `;
 
+const StyledExpandedContent = styled.div<{ isCollapsed: boolean }>`
+  display: ${({ isCollapsed }) => (isCollapsed ? 'none' : 'grid')};
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+
+  @media print {
+    display: block;
+  }
+`;
+
 type PageLayoutLeftPanelProps = {
+  isCollapsed?: boolean;
   pageLayoutId: string;
   pinnedLeftTabId: string;
 };
@@ -39,6 +50,7 @@ type PageLayoutLeftPanelProps = {
 export const PageLayoutLeftPanel = ({
   pageLayoutId,
   pinnedLeftTabId,
+  isCollapsed = false,
 }: PageLayoutLeftPanelProps) => {
   const { currentPageLayout } = useCurrentPageLayout();
   const targetRecordIdentifier = useTargetRecord();
@@ -73,22 +85,24 @@ export const PageLayoutLeftPanel = ({
 
       {/* The pinned left panel is always a column of cards, even with a single
           widget: solo presentation is a main-tab-area concept. */}
-      <PageLayoutContentProvider
-        value={{
-          tabId: pinnedLeftTabId,
-          layoutMode,
-          presentation: 'stack',
-        }}
-      >
-        <ScrollWrapper
-          className="page-layout-scroll-wrapper"
-          componentInstanceId={scrollWrapperInstanceId}
-          defaultEnableXScroll={false}
-          defaultEnableYScroll={true}
+      <StyledExpandedContent isCollapsed={isCollapsed}>
+        <PageLayoutContentProvider
+          value={{
+            tabId: pinnedLeftTabId,
+            layoutMode,
+            presentation: 'stack',
+          }}
         >
-          <PageLayoutContent />
-        </ScrollWrapper>
-      </PageLayoutContentProvider>
+          <ScrollWrapper
+            className="page-layout-scroll-wrapper"
+            componentInstanceId={scrollWrapperInstanceId}
+            defaultEnableXScroll={false}
+            defaultEnableYScroll={true}
+          >
+            <PageLayoutContent />
+          </ScrollWrapper>
+        </PageLayoutContentProvider>
+      </StyledExpandedContent>
     </StyledContainer>
   );
 };

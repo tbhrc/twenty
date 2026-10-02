@@ -1,3 +1,4 @@
+import { type ViewType } from '~/generated-metadata/graphql';
 import { ContextStoreComponentInstanceContext } from '@/context-store/states/contexts/ContextStoreComponentInstanceContext';
 import { type ContextStoreViewType } from '@/context-store/types/ContextStoreViewType';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
@@ -33,6 +34,7 @@ type RecordTableWidgetProviderProps = PropsWithChildren<{
   recordLimit?: number;
   instanceIdSuffix?: string;
   contextStoreViewType?: ContextStoreViewType;
+  presentationViewType?: ViewType;
   nestedRelationCreateThrough?: RecordTableWidgetNestedRelationCreateThrough;
   junctionCreateThrough?: RecordTableWidgetJunctionCreateThrough;
 }>;
@@ -44,6 +46,7 @@ export const RecordTableWidgetProvider = ({
   recordLimit,
   instanceIdSuffix,
   contextStoreViewType,
+  presentationViewType,
   nestedRelationCreateThrough,
   junctionCreateThrough,
   children,
@@ -176,6 +179,7 @@ export const RecordTableWidgetProvider = ({
                 viewId={viewId}
                 widgetId={widgetId}
                 objectMetadataItem={objectMetadataItem}
+                presentationViewType={presentationViewType}
               />
               {children}
             </RecordComponentInstanceContextsWrapper>

@@ -1,5 +1,6 @@
 import { RecordIdentifierBarCreatedAt } from '@/object-record/record-show/components/RecordIdentifierBarCreatedAt';
 import { RecordIdentifierBarTitle } from '@/object-record/record-show/components/RecordIdentifierBarTitle';
+import { PAGE_LAYOUT_LEFT_PANEL_COLLAPSED_WIDTH } from '@/page-layout/constants/PageLayoutLeftPanelCollapsedWidth';
 import { PAGE_LAYOUT_LEFT_PANEL_CONTAINER_WIDTH } from '@/page-layout/constants/PageLayoutLeftPanelContainerWidth';
 import { PAGE_LAYOUT_RECORD_IDENTIFIER_BAR_HEIGHT } from '@/page-layout/constants/PageLayoutRecordIdentifierBarHeight';
 import { useOpenPageLayoutTabSettings } from '@/page-layout/hooks/useOpenPageLayoutTabSettings';
@@ -9,8 +10,8 @@ import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
 import { type ReactNode } from 'react';
 import { isDefined } from 'twenty-shared/utils';
-import { IconPinned } from 'twenty-ui/icon';
-import { IconButtonWithTooltip } from 'twenty-ui/primitives/input';
+import { IconPinned, IconChevronLeft, IconChevronRight } from 'twenty-ui/icon';
+import { IconButton, IconButtonWithTooltip } from 'twenty-ui/primitives/input';
 import { TooltipDelay } from 'twenty-ui/primitives/surfaces';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
@@ -21,6 +22,7 @@ const SIDE_TRACK = `min(${PAGE_LAYOUT_LEFT_PANEL_CONTAINER_WIDTH}px, calc(100% /
 const StyledBar = styled.div<{
   hasPinnedTab: boolean;
   hasTabList: boolean;
+  isPinnedPanelCollapsed: boolean;
 }>`
   align-items: stretch;
   background: ${themeCssVariables.background.secondary};
@@ -29,17 +31,46 @@ const StyledBar = styled.div<{
   box-shadow: inset 0 -1px 0 ${themeCssVariables.border.color.light};
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: ${({ hasPinnedTab, hasTabList }) =>
+  grid-template-columns: ${({
+    hasPinnedTab,
+    hasTabList,
+    isPinnedPanelCollapsed,
+  }) =>
     hasPinnedTab
-      ? `${PAGE_LAYOUT_LEFT_PANEL_CONTAINER_WIDTH}px minmax(0, 1fr)`
+      ? `${isPinnedPanelCollapsed ? PAGE_LAYOUT_LEFT_PANEL_COLLAPSED_WIDTH : PAGE_LAYOUT_LEFT_PANEL_CONTAINER_WIDTH}px minmax(0, 1fr)`
       : hasTabList
         ? `${SIDE_TRACK} minmax(0, 1fr) ${SIDE_TRACK}`
         : 'minmax(0, 1fr) auto'};
   height: ${PAGE_LAYOUT_RECORD_IDENTIFIER_BAR_HEIGHT}px;
   width: 100%;
+
+  @media print {
+    grid-template-columns: minmax(0, 1fr);
+  }
 `;
 
-const StyledIdentifierCell = styled.div<{ hasPinnedTab: boolean }>`
+const StyledRecordTitle = styled.div<{ isCollapsed: boolean }>`
+  display: ${({ isCollapsed }) => (isCollapsed ? 'none' : 'flex')};
+  min-width: 0;
+
+  @media print {
+    display: flex;
+  }
+`;
+
+const StyledCollapseControl = styled.div`
+  display: flex;
+  flex-shrink: 0;
+
+  @media print {
+    display: none;
+  }
+`;
+
+const StyledIdentifierCell = styled.div<{
+  hasPinnedTab: boolean;
+  isCollapsed: boolean;
+}>`
   align-items: center;
   border-right: ${({ hasPinnedTab }) =>
     hasPinnedTab
@@ -50,8 +81,10 @@ const StyledIdentifierCell = styled.div<{ hasPinnedTab: boolean }>`
   gap: ${themeCssVariables.spacing[2]};
   justify-content: space-between;
   min-width: 0;
-  padding-left: ${themeCssVariables.spacing[3]};
-  padding-right: ${themeCssVariables.spacing[2]};
+  padding-left: ${({ isCollapsed }) =>
+    isCollapsed ? themeCssVariables.spacing[1] : themeCssVariables.spacing[3]};
+  padding-right: ${({ isCollapsed }) =>
+    isCollapsed ? themeCssVariables.spacing[1] : themeCssVariables.spacing[2]};
 `;
 
 // The pinned-tab control stays over the left panel when editing.
@@ -85,6 +118,8 @@ type PageLayoutRecordIdentifierBarProps = {
   targetRecordIdentifier: TargetRecordIdentifier;
   pinnedTab?: Pick<PageLayoutTab, 'id' | 'title'>;
   isPinnedTabEditable?: boolean;
+  isPinnedPanelCollapsed?: boolean;
+  onTogglePinnedPanel?: () => void;
   tabList?: ReactNode;
 };
 
@@ -92,6 +127,8 @@ export const PageLayoutRecordIdentifierBar = ({
   targetRecordIdentifier,
   pinnedTab,
   isPinnedTabEditable = false,
+  isPinnedPanelCollapsed = false,
+  onTogglePinnedPanel,
   tabList,
 }: PageLayoutRecordIdentifierBarProps) => {
   const { t } = useLingui();
@@ -103,12 +140,43 @@ export const PageLayoutRecordIdentifierBar = ({
   );
 
   return (
-    <StyledBar hasPinnedTab={hasPinnedTab} hasTabList={hasTabList}>
-      <StyledIdentifierCell hasPinnedTab={hasPinnedTab}>
-        <RecordIdentifierBarTitle
-          objectNameSingular={targetRecordIdentifier.targetObjectNameSingular}
-          objectRecordId={targetRecordIdentifier.id}
-        />
+    <StyledBar
+      hasPinnedTab={hasPinnedTab}
+      hasTabList={hasTabList}
+      isPinnedPanelCollapsed={isPinnedPanelCollapsed}
+    >
+      <StyledIdentifierCell
+        hasPinnedTab={hasPinnedTab}
+        isCollapsed={hasPinnedTab && isPinnedPanelCollapsed}
+      >
+        <StyledRecordTitle isCollapsed={hasPinnedTab && isPinnedPanelCollapsed}>
+          <RecordIdentifierBarTitle
+            objectNameSingular={targetRecordIdentifier.targetObjectNameSingular}
+            objectRecordId={targetRecordIdentifier.id}
+          />
+        </StyledRecordTitle>
+
+        {hasPinnedTab && !isPinnedTabEditable && onTogglePinnedPanel && (
+          <StyledCollapseControl>
+            <IconButton
+              Icon={isPinnedPanelCollapsed ? IconChevronRight : IconChevronLeft}
+              ariaLabel={
+                isPinnedPanelCollapsed
+                  ? t`Expand record details`
+                  : t`Collapse record details`
+              }
+              title={
+                isPinnedPanelCollapsed
+                  ? t`Expand record details`
+                  : t`Collapse record details`
+              }
+              aria-expanded={!isPinnedPanelCollapsed}
+              onClick={onTogglePinnedPanel}
+              size="small"
+              variant="tertiary"
+            />
+          </StyledCollapseControl>
+        )}
 
         {isPinnedTabEditable && isDefined(pinnedTab) && (
           <StyledPinnedTab>

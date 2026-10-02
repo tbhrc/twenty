@@ -1,14 +1,24 @@
+import type * as ReactModule from 'react';
+import userEvent from '@testing-library/user-event';
 import { render, screen } from '@testing-library/react';
 
 import { RecordTableWidgetRendererContent } from '@/page-layout/widgets/record-table/components/RecordTableWidgetRendererContent';
-import { ViewCalendarLayout, ViewType } from '~/generated-metadata/graphql';
+import {
+  FieldMetadataType,
+  ViewCalendarLayout,
+  ViewType,
+} from '~/generated-metadata/graphql';
 
+const mockProviderProps = jest.fn();
 const mockUseViewById = jest.fn();
 const mockIsPageLayoutInEditMode = jest.fn();
 
 jest.mock('@/object-metadata/hooks/useObjectMetadataItemById', () => ({
   useObjectMetadataItemById: jest.fn(() => ({
-    objectMetadataItem: { nameSingular: 'company' },
+    objectMetadataItem: {
+      nameSingular: 'company',
+      fields: [{ id: 'stage', type: FieldMetadataType.SELECT, isActive: true }],
+    },
   })),
 }));
 jest.mock('@/page-layout/hooks/useIsPageLayoutInEditMode', () => ({
@@ -24,17 +34,33 @@ jest.mock('@/views/hooks/useViewById', () => ({
 jest.mock(
   '@/object-record/record-table-widget/components/RecordTableWidgetProvider',
   () => ({
-    RecordTableWidgetProvider: ({ children }: { children: React.ReactNode }) =>
-      children,
+    RecordTableWidgetProvider: (props: { children: React.ReactNode }) => {
+      mockProviderProps(props);
+      return props.children;
+    },
   }),
 );
 jest.mock(
   '@/object-record/record-table-widget/components/RecordTableWidget',
-  () => ({ RecordTableWidget: () => <div>record table widget</div> }),
+  () => ({
+    RecordTableWidget: ({ isUIEditable }: { isUIEditable: boolean }) => (
+      <div>
+        record table widget
+        <button disabled={!isUIEditable}>Edit table record</button>
+      </div>
+    ),
+  }),
 );
 jest.mock(
   '@/object-record/record-board-widget/components/RecordBoardWidget',
-  () => ({ RecordBoardWidget: () => <div>record board widget</div> }),
+  () => ({
+    RecordBoardWidget: ({ isUIEditable }: { isUIEditable: boolean }) => (
+      <div>
+        record board widget
+        <button disabled={!isUIEditable}>Edit board record</button>
+      </div>
+    ),
+  }),
 );
 jest.mock(
   '@/object-record/record-list-widget/components/RecordListWidget',
@@ -53,6 +79,38 @@ jest.mock(
     ),
   }),
 );
+
+jest.mock('@/page-layout/hooks/usePageLayoutPersonalPreference', () => ({
+  usePageLayoutPersonalPreference: () => {
+    const { useState } = jest.requireActual<typeof ReactModule>('react');
+    const [value, setValue] = useState<string | boolean | null>(null);
+    return { value, setValue };
+  },
+}));
+
+jest.mock('twenty-ui/primitives/input', () => ({
+  SegmentedControl: ({
+    options,
+    onChange,
+    value,
+  }: {
+    options: { value: string; label: string }[];
+    onChange: (value: string) => void;
+    value: string;
+  }) => (
+    <div>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          aria-pressed={option.value === value}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  ),
+}));
 
 const renderWidgetForViewType = (viewType: ViewType | undefined) => {
   mockUseViewById.mockReturnValue({
@@ -134,4 +192,126 @@ describe('RecordTableWidgetRendererContent', () => {
 
     expect(screen.getByText('record table widget')).toBeVisible();
   });
+});
+
+describe('personal relation layout', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockIsPageLayoutInEditMode.mockReturnValue(false);
+    mockUseViewById.mockReturnValue({
+      view: {
+        id: 'job-view',
+        type: ViewType.KANBAN_WIDGET,
+        mainGroupByFieldMetadataId: 'stage',
+      },
+    });
+  });
+
+  it('switches editable Board and List without selecting another view or record scope', async () => {
+    const user = userEvent.setup();
+    render(
+      <RecordTableWidgetRendererContent
+        objectMetadataId="applications"
+        viewId="job-view"
+        widgetId="candidates"
+        instanceIdSuffix="vacancy-a"
+        isLayoutSwitchEnabled
+        isUIEditable
+      />,
+    );
+    expect(screen.getByText('record board widget')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Edit board record' }),
+    ).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'List' }));
+    expect(screen.getByText('record table widget')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Edit table record' }),
+    ).toBeEnabled();
+    expect(mockProviderProps).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        viewId: 'job-view',
+        widgetId: 'candidates',
+        instanceIdSuffix: 'vacancy-a',
+        presentationViewType: ViewType.TABLE_WIDGET,
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Board' }));
+    expect(screen.getByText('record board widget')).toBeVisible();
+    expect(mockProviderProps).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        viewId: 'job-view',
+        instanceIdSuffix: 'vacancy-a',
+        presentationViewType: ViewType.KANBAN_WIDGET,
+      }),
+    );
+  });
+
+  it('uses saved layout while editing and restores the personal choice afterwards', async () => {
+    const user = userEvent.setup();
+    const widget = () => (
+      <RecordTableWidgetRendererContent
+        objectMetadataId="applications"
+        viewId="job-view"
+        widgetId="candidates"
+        isLayoutSwitchEnabled
+      />
+    );
+    const { rerender } = render(widget());
+    await user.click(screen.getByRole('button', { name: 'List' }));
+    mockIsPageLayoutInEditMode.mockReturnValue(true);
+    rerender(widget());
+    expect(
+      screen.queryByRole('button', { name: 'List' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('record board widget')).toBeVisible();
+    mockIsPageLayoutInEditMode.mockReturnValue(false);
+    rerender(widget());
+    expect(screen.getByText('record table widget')).toBeVisible();
+  });
+
+  it('does not offer Board for a view without a configured Select grouping', () => {
+    mockUseViewById.mockReturnValue({
+      view: { id: 'job-view', type: ViewType.TABLE_WIDGET },
+    });
+    render(
+      <RecordTableWidgetRendererContent
+        objectMetadataId="applications"
+        viewId="job-view"
+        widgetId="candidates"
+        isLayoutSwitchEnabled
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Board' }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+it('keeps read-only relation widgets read-only after a personal layout switch', async () => {
+  mockIsPageLayoutInEditMode.mockReturnValue(false);
+  mockUseViewById.mockReturnValue({
+    view: {
+      id: 'view',
+      type: ViewType.KANBAN_WIDGET,
+      mainGroupByFieldMetadataId: 'stage',
+    },
+  });
+  const user = userEvent.setup();
+  render(
+    <RecordTableWidgetRendererContent
+      objectMetadataId="applications"
+      viewId="view"
+      widgetId="read-only"
+      isLayoutSwitchEnabled
+      isUIEditable={false}
+    />,
+  );
+  expect(
+    screen.getByRole('button', { name: 'Edit board record' }),
+  ).toBeDisabled();
+  await user.click(screen.getByRole('button', { name: 'List' }));
+  expect(
+    screen.getByRole('button', { name: 'Edit table record' }),
+  ).toBeDisabled();
 });

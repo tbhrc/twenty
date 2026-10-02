@@ -251,6 +251,7 @@ export const FieldWidgetRelationTable = ({
           widgetId={widget.id}
           isUIEditable={!isPageLayoutInEditMode && isUIEditable}
           isEmptyStateHidden
+          isLayoutSwitchEnabled
           instanceIdSuffix={`${recordId}${isInSidePanel ? '-side-panel' : ''}`}
           nestedRelationCreateThrough={nestedRelationCreateThrough}
           junctionCreateThrough={junctionCreateThrough}

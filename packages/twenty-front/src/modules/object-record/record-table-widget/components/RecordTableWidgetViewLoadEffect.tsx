@@ -1,3 +1,4 @@
+import { type ViewType } from '~/generated-metadata/graphql';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
 import { useLoadRecordIndexStates } from '@/object-record/record-index/hooks/useLoadRecordIndexStates';
@@ -10,19 +11,21 @@ import { useAtomComponentFamilySelectorValue } from '@/ui/utilities/state/jotai/
 import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
 import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
 import { viewFromViewIdFamilySelector } from '@/views/states/selectors/viewFromViewIdFamilySelector';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 
 type RecordTableWidgetViewLoadEffectProps = {
   viewId: string;
   widgetId: string;
   objectMetadataItem: EnrichedObjectMetadataItem;
+  presentationViewType?: ViewType;
 };
 
 export const RecordTableWidgetViewLoadEffect = ({
   viewId,
   widgetId,
   objectMetadataItem,
+  presentationViewType,
 }: RecordTableWidgetViewLoadEffectProps) => {
   const { loadRecordIndexStates } = useLoadRecordIndexStates();
 
@@ -50,7 +53,18 @@ export const RecordTableWidgetViewLoadEffect = ({
     { viewId },
   );
 
-  const currentView = viewFromDraft ?? viewFromSelector;
+  const sourceView = viewFromDraft ?? viewFromSelector;
+  // Presentation is personal; the saved filters and relation context remain
+  // authoritative even when metadata reloads while another layout is selected.
+  const currentView = useMemo(
+    () =>
+      !isPageLayoutInEditMode &&
+      isDefined(sourceView) &&
+      isDefined(presentationViewType)
+        ? { ...sourceView, type: presentationViewType }
+        : sourceView,
+    [sourceView, presentationViewType, isPageLayoutInEditMode],
+  );
 
   const viewHasFields =
     isDefined(currentView) && currentView.viewFields.length > 0;

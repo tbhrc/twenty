@@ -1,3 +1,9 @@
+import { usePageLayoutPersonalPreference } from '@/page-layout/hooks/usePageLayoutPersonalPreference';
+import { styled } from '@linaria/react';
+import { t } from '@lingui/core/macro';
+import { IconLayoutKanban, IconList } from 'twenty-ui/icon';
+import { SegmentedControl } from 'twenty-ui/primitives/input';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { getContextStoreViewType } from '@/context-store/utils/getContextStoreViewType';
 import { useObjectMetadataItemById } from '@/object-metadata/hooks/useObjectMetadataItemById';
 import { RecordBoardWidget } from '@/object-record/record-board-widget/components/RecordBoardWidget';
@@ -20,13 +26,29 @@ import { useAtomComponentFamilySelectorValue } from '@/ui/utilities/state/jotai/
 import { useViewById } from '@/views/hooks/useViewById';
 import { type ReactNode } from 'react';
 import { isDefined } from 'twenty-shared/utils';
-import { ViewCalendarLayout, ViewType } from '~/generated-metadata/graphql';
+import {
+  FieldMetadataType,
+  ViewCalendarLayout,
+  ViewType,
+} from '~/generated-metadata/graphql';
+
+const StyledLayoutControl = styled.div`
+  border-bottom: 1px solid ${themeCssVariables.border.color.light};
+  display: flex;
+  flex-shrink: 0;
+  padding: ${themeCssVariables.spacing[2]};
+
+  @media print {
+    display: none;
+  }
+`;
 
 type RecordTableWidgetRendererContentProps = {
   objectMetadataId: string;
   viewId: string;
   widgetId: string;
   isUIEditable?: boolean;
+  isLayoutSwitchEnabled?: boolean;
   isEmptyStateHidden?: boolean;
   recordLimit?: number;
   instanceIdSuffix?: string;
@@ -39,12 +61,15 @@ export const RecordTableWidgetRendererContent = ({
   viewId,
   widgetId,
   isUIEditable = false,
+  isLayoutSwitchEnabled = false,
   isEmptyStateHidden = false,
   recordLimit,
   instanceIdSuffix,
   nestedRelationCreateThrough,
   junctionCreateThrough,
 }: RecordTableWidgetRendererContentProps) => {
+  const { value: preferredLayout, setValue: setPreferredLayout } =
+    usePageLayoutPersonalPreference(`widget-layout:${widgetId}`);
   const { objectMetadataItem } = useObjectMetadataItemById({
     objectId: objectMetadataId,
   });
@@ -63,7 +88,28 @@ export const RecordTableWidgetRendererContent = ({
       ? constructViewFromRecordTableWidgetViewSnapshot(draftSnapshot)
       : persistedView;
 
-  const widgetViewLayout = getRecordTableWidgetLayout(widgetView?.type);
+  const persistedLayout = getRecordTableWidgetLayout(widgetView?.type);
+  const canSwitchLayout =
+    isLayoutSwitchEnabled &&
+    !isPageLayoutInEditMode &&
+    (persistedLayout === ViewType.TABLE ||
+      persistedLayout === ViewType.KANBAN) &&
+    objectMetadataItem.fields.some(
+      (field) =>
+        field.id === widgetView?.mainGroupByFieldMetadataId &&
+        field.type === FieldMetadataType.SELECT &&
+        field.isActive,
+    );
+  const widgetViewLayout =
+    canSwitchLayout &&
+    (preferredLayout === ViewType.TABLE || preferredLayout === ViewType.KANBAN)
+      ? preferredLayout
+      : persistedLayout;
+  const presentationViewType = canSwitchLayout
+    ? widgetViewLayout === ViewType.KANBAN
+      ? ViewType.KANBAN_WIDGET
+      : ViewType.TABLE_WIDGET
+    : undefined;
 
   const isCalendarLayout = widgetViewLayout === ViewType.CALENDAR;
 
@@ -104,8 +150,26 @@ export const RecordTableWidgetRendererContent = ({
       instanceIdSuffix={instanceIdSuffix}
       nestedRelationCreateThrough={nestedRelationCreateThrough}
       junctionCreateThrough={junctionCreateThrough}
+      presentationViewType={presentationViewType}
       contextStoreViewType={getContextStoreViewType(widgetViewLayout)}
     >
+      {canSwitchLayout && (
+        <StyledLayoutControl>
+          <SegmentedControl
+            ariaLabel={t`Record layout`}
+            value={widgetViewLayout}
+            onChange={setPreferredLayout}
+            options={[
+              {
+                value: ViewType.KANBAN,
+                label: t`Board`,
+                Icon: IconLayoutKanban,
+              },
+              { value: ViewType.TABLE, label: t`List`, Icon: IconList },
+            ]}
+          />
+        </StyledLayoutControl>
+      )}
       {renderWidgetForLayout[widgetViewLayout]()}
     </RecordTableWidgetProvider>
   );
