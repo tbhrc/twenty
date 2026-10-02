@@ -157,6 +157,7 @@ export const RecordTableWidgetRendererContent = ({
         <StyledLayoutControl>
           <SegmentedControl
             ariaLabel={t`Record layout`}
+            itemWidth="content"
             value={widgetViewLayout}
             onChange={setPreferredLayout}
             options={[
