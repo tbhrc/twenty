@@ -7,9 +7,15 @@ import { useSubscribeTimelineToParticipantChanges } from '@/activities/hooks/use
 import { WidgetHeaderCountEffect } from '@/page-layout/widgets/components/WidgetHeaderCountEffect';
 import { useTargetRecord } from '@/ui/layout/contexts/useTargetRecord';
 import { type TimelineCalendarEventsWithTotal } from '~/generated/graphql';
+import { type ActivityTargetableObject } from '@/activities/types/ActivityTargetableEntity';
 
-export const CalendarEventsCard = () => {
-  const targetRecord = useTargetRecord();
+export const CalendarEventsCard = ({
+  targetRecord: suppliedTarget,
+}: {
+  targetRecord?: ActivityTargetableObject;
+}) => {
+  const layoutTarget = useTargetRecord();
+  const targetRecord = suppliedTarget ?? layoutTarget;
 
   const {
     data,
