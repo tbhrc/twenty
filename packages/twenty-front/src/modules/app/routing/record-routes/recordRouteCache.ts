@@ -7,6 +7,7 @@ import { isValidUuid } from 'twenty-shared/utils';
 
 export type RecordRouteLookupResult =
   | { status: 'ready'; recordId: string; recordIdentifier: number }
+  | { status: 'unidentified'; recordId: string }
   | { status: 'missing' | 'duplicate' | 'denied' | 'error' };
 export type RecordRouteLookup = (
   definition: RecordRouteDefinition,
@@ -146,6 +147,13 @@ export const resolveRecordRoute = (
     .catch((): RecordRouteLookupResult => ({ status: 'error' }))
     .then((result): RecordRouteLookupResult => {
       if (expectedGeneration !== generation) return { status: 'denied' };
+      if (
+        result.status === 'unidentified' &&
+        (!definition.allowUnidentifiedRecords ||
+          !('recordId' in target) ||
+          result.recordId !== target.recordId)
+      )
+        result = { status: 'error' };
       if (result.status === 'ready') {
         rememberRecordRoute(
           definition.objectNameSingular,

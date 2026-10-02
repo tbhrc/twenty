@@ -87,6 +87,7 @@ const Probe = () => {
     // oxlint-disable-next-line twenty/no-navigate-prefer-link
     navigate(-1);
   };
+  const navigateForward = () => navigate(1);
   return (
     <>
       <div data-testid="browser">
@@ -99,13 +100,16 @@ const Probe = () => {
       <div data-testid="state">{JSON.stringify(browser.state)}</div>
       <button onClick={navigateToNextRecord}>Next</button>
       <button onClick={navigateBack}>Back</button>
+      <button onClick={navigateForward}>Forward</button>
     </>
   );
 };
 
 const RouteFixture = ({
   entry = '/tickets/1?viewId=view#details',
+  routeDefinition = definition,
 }: {
+  routeDefinition?: RecordRouteDefinition;
   entry?:
     | string
     | { pathname: string; search?: string; hash?: string; state?: unknown };
@@ -118,7 +122,7 @@ const RouteFixture = ({
       <Route
         path="/tickets/:recordIdentifier"
         element={
-          <RecordRouteGate definition={definition}>
+          <RecordRouteGate definition={routeDefinition}>
             <Probe />
           </RecordRouteGate>
         }
@@ -177,6 +181,43 @@ describe('configured record routes', () => {
         objectRecordId: recordId,
       }),
     ).toBe(`/object/ticket/${recordId}`);
+  });
+
+  it('registers only detail aliases when the index alias is disabled', () => {
+    const detailOnly = { ...definition, indexRoute: false };
+    setDefinitions([detailOnly]);
+    const routes = createWorkspaceRouteObjects({});
+    expect(routes.some((route) => route.path === '/tickets')).toBe(false);
+    for (const surface of ['main', 'side-panel'] as const)
+      expect(
+        isWorkspaceLocationAvailableOnSurface(routes, surface, '/tickets/1'),
+      ).toBe(true);
+    expect(
+      isWorkspaceLocationAvailableOnSurface(routes, 'side-panel', '/tickets'),
+    ).toBe(false);
+    expect(getLogicalRecordPathname('/tickets')).toBe('/tickets');
+    expect(getLogicalRecordPathname('/tickets/')).toBe('/tickets/');
+    expect(
+      getAppPath(
+        AppPath.RecordIndexPage,
+        { objectNamePlural: 'tickets' },
+        { viewId: 'view' },
+      ),
+    ).toBe('/objects/tickets?viewId=view');
+  });
+
+  it('validates optional flags without enabling malformed definitions', () => {
+    const flagged = {
+      ...definition,
+      indexRoute: false,
+      allowUnidentifiedRecords: true,
+    };
+    setDefinitions([
+      { ...definition, indexRoute: 'false' },
+      { ...definition, allowUnidentifiedRecords: 1 },
+      flagged,
+    ]);
+    expect(getRecordRouteDefinitions()).toEqual([flagged]);
   });
 
   it('rejects reserved routes, duplicate definitions and unsafe numeric identifiers', () => {
@@ -319,7 +360,167 @@ describe('configured record routes', () => {
     expect(screen.getByTestId('browser')).toHaveTextContent(
       '/tickets/1?viewId=view#details',
     );
+    fireEvent.click(screen.getByText('Forward'));
+    await waitFor(() =>
+      expect(screen.getByTestId('record-id')).toHaveTextContent(secondId),
+    );
+    expect(screen.getByTestId('browser')).toHaveTextContent(
+      '/tickets/2#details',
+    );
   });
+
+  it('canonicalizes numbered native records and resolves detail-only aliases after reload', async () => {
+    const flagged = {
+      ...definition,
+      indexRoute: false,
+      allowUnidentifiedRecords: true,
+    };
+    setDefinitions([flagged]);
+    const lookup = jest.fn(async () => ready);
+    configureRecordRouteScope('workspace-a:user-a', ['ticket'], lookup);
+    const firstRender = render(
+      <RouteFixture
+        routeDefinition={flagged}
+        entry={`/object/ticket/${recordId}?viewId=view#details`}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('browser')).toHaveTextContent(
+        '/tickets/1?viewId=view#details',
+      ),
+    );
+    firstRender.unmount();
+    configureRecordRouteScope(null, [], null);
+    configureRecordRouteScope('workspace-a:user-a', ['ticket'], lookup);
+    expect(getCachedRecordId('ticket', 1)).toBeUndefined();
+    render(<RouteFixture routeDefinition={flagged} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('record-id')).toHaveTextContent(recordId),
+    );
+    expect(screen.getByTestId('browser')).toHaveTextContent(
+      '/tickets/1?viewId=view#details',
+    );
+  });
+
+  it('keeps authorized null-number records native across direct load, reload and history', async () => {
+    const flagged = {
+      ...definition,
+      indexRoute: false,
+      allowUnidentifiedRecords: true,
+    };
+    setDefinitions([flagged]);
+    const nativePath = `/object/ticket/${recordId}?viewId=view#details`;
+    const secondId = '22222222-2222-4222-8222-222222222222';
+    const lookup = jest.fn(async (_definition, target) =>
+      'recordId' in target
+        ? getRecordRouteLookupResult(
+            [{ id: recordId, ticketNumber: null }],
+            'ticketNumber',
+            true,
+          )
+        : ({
+            status: 'ready',
+            recordId: secondId,
+            recordIdentifier: 2,
+          } as const),
+    );
+    configureRecordRouteScope('workspace-a:user-a', ['ticket'], lookup);
+    const firstRender = render(
+      <RouteFixture routeDefinition={flagged} entry={nativePath} />,
+    );
+    await screen.findByTestId('record-id');
+    expect(screen.getByTestId('browser')).toHaveTextContent(nativePath);
+    expect(screen.getByTestId('record-id')).toHaveTextContent(recordId);
+    expect(getCachedRecordIdentifier('ticket', recordId)).toBeUndefined();
+    fireEvent.click(screen.getByText('Next'));
+    await waitFor(() =>
+      expect(screen.getByTestId('record-id')).toHaveTextContent(secondId),
+    );
+    fireEvent.click(screen.getByText('Back'));
+    await waitFor(() =>
+      expect(screen.getByTestId('browser')).toHaveTextContent(nativePath),
+    );
+    expect(screen.getByTestId('record-id')).toHaveTextContent(recordId);
+    firstRender.unmount();
+    configureRecordRouteScope(null, [], null);
+    configureRecordRouteScope('workspace-a:user-a', ['ticket'], lookup);
+    render(<RouteFixture routeDefinition={flagged} entry={nativePath} />);
+    await screen.findByTestId('record-id');
+    expect(screen.getByTestId('browser')).toHaveTextContent(nativePath);
+    expect(getCachedRecordIdentifier('ticket', recordId)).toBeUndefined();
+  });
+
+  it('keeps native page permissions when an optional identifier is unreadable, but denies aliases', async () => {
+    const flagged = { ...definition, allowUnidentifiedRecords: true };
+    setDefinitions([flagged]);
+    const lookup = jest.fn(async () => ready);
+    configureRecordRouteScope('workspace-a:user-a', [], lookup);
+    const nativeRender = render(
+      <RouteFixture
+        routeDefinition={flagged}
+        entry={`/object/ticket/${recordId}`}
+      />,
+    );
+    expect(screen.getByTestId('record-id')).toHaveTextContent(recordId);
+    expect(screen.getByTestId('browser')).toHaveTextContent(
+      `/object/ticket/${recordId}`,
+    );
+    expect(lookup).not.toHaveBeenCalled();
+    nativeRender.unmount();
+    render(<RouteFixture routeDefinition={flagged} />);
+    expect(await screen.findByText('Unavailable route')).toBeInTheDocument();
+    expect(lookup).not.toHaveBeenCalled();
+    expect(getCachedRecordId('ticket', 1)).toBeUndefined();
+  });
+
+  it('creates native hrefs for null-number records and numeric hrefs for numbered records', async () => {
+    const flagged = { ...definition, allowUnidentifiedRecords: true };
+    setDefinitions([flagged]);
+    configureRecordRouteScope(
+      'workspace-a:user-a',
+      ['ticket'],
+      async () => ready,
+    );
+    await resolveRecordRoute(flagged, { recordId });
+    expect(
+      getRecordRoutePath({
+        objectNameSingular: 'ticket',
+        recordId,
+        record: { id: recordId, ticketNumber: null },
+      }),
+    ).toBe(`/object/ticket/${recordId}`);
+    expect(
+      getRecordRoutePath({
+        objectNameSingular: 'ticket',
+        recordId,
+        record: { id: recordId, ticketNumber: 1 },
+      }),
+    ).toBe('/tickets/1');
+    configureRecordRouteScope('workspace-a:user-a', ['ticket'], async () => ({
+      status: 'unidentified',
+      recordId,
+    }));
+    expect(await resolveRecordRoute(flagged, { recordId })).toEqual({
+      status: 'unidentified',
+      recordId,
+    });
+    expect(getCachedRecordIdentifier('ticket', recordId)).toBeUndefined();
+    expect(getCachedRecordId('ticket', 1)).toBeUndefined();
+  });
+
+  it.each([definition, { ...definition, allowUnidentifiedRecords: true }])(
+    'never accepts an unidentified result for a numeric alias',
+    async (routeDefinition) => {
+      setDefinitions([routeDefinition]);
+      configureRecordRouteScope('workspace-a:user-a', ['ticket'], async () => ({
+        status: 'unidentified',
+        recordId,
+      }));
+      render(<RouteFixture routeDefinition={routeDefinition} />);
+      expect(await screen.findByText('Unavailable route')).toBeInTheDocument();
+      expect(getCachedRecordId('ticket', 1)).toBeUndefined();
+    },
+  );
 
   it.each(['missing', 'duplicate', 'denied', 'error'] as const)(
     'fails closed on %s lookup',
@@ -411,5 +612,26 @@ describe('configured record routes', () => {
         'ticketNumber',
       ),
     ).toEqual(ready);
+    expect(
+      getRecordRouteLookupResult(
+        [{ id: recordId, ticketNumber: null }],
+        'ticketNumber',
+        true,
+      ),
+    ).toEqual({ status: 'unidentified', recordId });
+    for (const value of [undefined, 0, 'bad'])
+      expect(
+        getRecordRouteLookupResult(
+          [{ id: recordId, ticketNumber: value }],
+          'ticketNumber',
+          true,
+        ),
+      ).toEqual({ status: 'error' });
+    expect(
+      getRecordRouteLookupResult(
+        [{ id: recordId, ticketNumber: null }],
+        'ticketNumber',
+      ),
+    ).toEqual({ status: 'error' });
   });
 });

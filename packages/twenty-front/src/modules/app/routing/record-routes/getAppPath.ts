@@ -29,6 +29,12 @@ export const getRecordRoutePath = ({
     (item) => item.objectNameSingular === objectNameSingular,
   );
   if (!definition || !recordId) return nativePath;
+  if (
+    definition.allowUnidentifiedRecords &&
+    record?.id === recordId &&
+    record[definition.recordIdentifierField] === null
+  )
+    return nativePath;
   const identifier = getCachedRecordIdentifier(objectNameSingular, recordId);
   if (identifier !== undefined) return `${definition.path}/${identifier}`;
   const hint =
@@ -47,7 +53,9 @@ export const getFriendlyRecordPath = (path: string) => {
   const pathname = parsed.pathname ?? '';
   const indexMatch = matchPath(AppPath.RecordIndexPage, pathname);
   const indexDefinition = getRecordRouteDefinitions().find(
-    (item) => item.objectNamePlural === indexMatch?.params.objectNamePlural,
+    (item) =>
+      item.indexRoute !== false &&
+      item.objectNamePlural === indexMatch?.params.objectNamePlural,
   );
   if (indexDefinition)
     return createPath({ ...parsed, pathname: indexDefinition.path });

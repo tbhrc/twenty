@@ -74,18 +74,22 @@ export const createWorkspaceRouteObjects = ({
   return [
     ...getRecordRouteDefinitions().flatMap(
       (definition): WorkspaceRouteObject[] => [
-        {
-          path: definition.path,
-          element: (
-            <LazyRoute fallback={<RecordIndexSkeletonLoader />}>
-              <RecordIndexPage />
-            </LazyRoute>
-          ),
-          handle: {
-            workspaceSurfaces: MAIN_AND_SIDE_PANEL,
-            isLocationExpandableFromSidePanel: true,
-          },
-        },
+        ...(definition.indexRoute === false
+          ? []
+          : [
+              {
+                path: definition.path,
+                element: (
+                  <LazyRoute fallback={<RecordIndexSkeletonLoader />}>
+                    <RecordIndexPage />
+                  </LazyRoute>
+                ),
+                handle: {
+                  workspaceSurfaces: MAIN_AND_SIDE_PANEL,
+                  isLocationExpandableFromSidePanel: true,
+                },
+              },
+            ]),
         {
           path: `${definition.path}/:recordIdentifier`,
           element: (

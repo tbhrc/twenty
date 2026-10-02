@@ -3,6 +3,8 @@ export type RecordRouteDefinition = {
   objectNameSingular: string;
   objectNamePlural: string;
   recordIdentifierField: string;
+  indexRoute?: boolean;
+  allowUnidentifiedRecords?: boolean;
 };
 
 const RESERVED_SEGMENTS = new Set([
@@ -51,6 +53,8 @@ export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
       objectNameSingular,
       objectNamePlural,
       recordIdentifierField,
+      indexRoute,
+      allowUnidentifiedRecords,
     } = candidate;
     if (
       typeof path !== 'string' ||
@@ -63,6 +67,9 @@ export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
       !/^[A-Za-z][A-Za-z0-9_]*$/.test(objectNamePlural) ||
       typeof recordIdentifierField !== 'string' ||
       !/^[A-Za-z][A-Za-z0-9_]*$/.test(recordIdentifierField) ||
+      (indexRoute !== undefined && typeof indexRoute !== 'boolean') ||
+      (allowUnidentifiedRecords !== undefined &&
+        typeof allowUnidentifiedRecords !== 'boolean') ||
       names.has(objectNameSingular) ||
       names.has(objectNamePlural)
     )
@@ -75,6 +82,10 @@ export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
       objectNameSingular,
       objectNamePlural,
       recordIdentifierField,
+      ...(indexRoute === undefined ? {} : { indexRoute }),
+      ...(allowUnidentifiedRecords === undefined
+        ? {}
+        : { allowUnidentifiedRecords }),
     });
   }
   return definitions;

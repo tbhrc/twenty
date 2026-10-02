@@ -28,17 +28,17 @@ import {
 export const getRecordRouteLookupResult = (
   records: Record<string, unknown>[],
   identifierField: string,
+  allowUnidentifiedRecords = false,
 ): RecordRouteLookupResult => {
   if (records.length === 0) return { status: 'missing' };
   if (records.length !== 1) return { status: 'duplicate' };
   const record = records[0];
-  const number = parseRecordRouteIdentifier(record[identifierField]);
-  if (
-    typeof record.id !== 'string' ||
-    !isValidUuid(record.id) ||
-    number === null
-  )
+  if (typeof record.id !== 'string' || !isValidUuid(record.id))
     return { status: 'error' };
+  if (allowUnidentifiedRecords && record[identifierField] === null)
+    return { status: 'unidentified', recordId: record.id };
+  const number = parseRecordRouteIdentifier(record[identifierField]);
+  if (number === null) return { status: 'error' };
   return { status: 'ready', recordId: record.id, recordIdentifier: number };
 };
 
@@ -141,6 +141,7 @@ export const RecordRouteScopeEffect = () => {
             return getRecordRouteLookupResult(
               records,
               definition.recordIdentifierField,
+              'recordId' in target && definition.allowUnidentifiedRecords,
             );
           }
         : null,

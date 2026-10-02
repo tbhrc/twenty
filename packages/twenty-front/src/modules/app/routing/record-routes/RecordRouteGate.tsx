@@ -6,6 +6,7 @@ import { RecordIndexSkeletonLoader } from '@/object-record/record-index/componen
 
 import {
   getRecordRouteGeneration,
+  isRecordRouteReadable,
   resolveRecordRoute,
   type RecordRouteLookupResult,
 } from './recordRouteCache';
@@ -39,6 +40,13 @@ export const RecordRouteGate = ({
     ? params.recordIdentifier
     : params.objectRecordId;
   const generation = getRecordRouteGeneration();
+  // An optional identifier must not narrow access to ordinary native records.
+  // Native pages retain their existing authentication and record permissions;
+  // aliases always require identifier-field read permission.
+  const retainNativePermissions =
+    !aliasDefinition &&
+    definition?.allowUnidentifiedRecords &&
+    !isRecordRouteReadable(definition.objectNameSingular);
   const [resolved, setResolved] = useState<{
     generation: number;
     target: string | undefined;
@@ -46,7 +54,7 @@ export const RecordRouteGate = ({
   } | null>(null);
 
   useEffect(() => {
-    if (!definition) return;
+    if (!definition || retainNativePermissions) return;
     let cancelled = false;
     const number = aliasDefinition ? parseRecordRouteIdentifier(target) : null;
     if (!target || (aliasDefinition && number === null)) {
@@ -62,14 +70,25 @@ export const RecordRouteGate = ({
     return () => {
       cancelled = true;
     };
-  }, [aliasDefinition, definition, generation, target]);
+  }, [
+    aliasDefinition,
+    definition,
+    generation,
+    target,
+    retainNativePermissions,
+  ]);
 
   const result =
     resolved?.generation === generation && resolved.target === target
       ? resolved.result
       : null;
   useEffect(() => {
-    if (!aliasDefinition && definition && result?.status === 'ready') {
+    if (
+      !aliasDefinition &&
+      !retainNativePermissions &&
+      definition &&
+      result?.status === 'ready'
+    ) {
       navigate(
         {
           pathname: `${definition.path}/${result.recordIdentifier}`,
@@ -81,6 +100,7 @@ export const RecordRouteGate = ({
     }
   }, [
     aliasDefinition,
+    retainNativePermissions,
     definition,
     result,
     navigate,
@@ -89,8 +109,14 @@ export const RecordRouteGate = ({
     location.state,
   ]);
 
-  if (!definition) return children;
+  if (!definition || retainNativePermissions) return children;
   if (!result) return <RecordIndexSkeletonLoader />;
+  if (
+    !aliasDefinition &&
+    definition.allowUnidentifiedRecords &&
+    result.status === 'unidentified'
+  )
+    return children;
   if (result.status !== 'ready') return <WorkspaceRouteUnavailable />;
   return children;
 };

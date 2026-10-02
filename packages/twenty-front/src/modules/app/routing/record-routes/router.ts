@@ -30,7 +30,10 @@ export const useRecordRouteVersion = () =>
 
 export const getFriendlyRouteParameters = (pathname: string) => {
   for (const definition of getRecordRouteDefinitions()) {
-    if (pathname === definition.path || pathname === `${definition.path}/`) {
+    if (
+      definition.indexRoute !== false &&
+      (pathname === definition.path || pathname === `${definition.path}/`)
+    ) {
       return {
         objectNamePlural: definition.objectNamePlural,
         objectNameSingular: undefined,
