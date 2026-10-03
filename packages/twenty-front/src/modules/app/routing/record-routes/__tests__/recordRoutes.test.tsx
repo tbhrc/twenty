@@ -7,6 +7,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {
   MemoryRouter,
   Route,
@@ -518,6 +519,98 @@ describe('configured record routes', () => {
     expect(lookup).toHaveBeenCalledWith(definition, { recordIdentifier: 1 });
   });
 
+  it.each(['missing', 'denied'] as const)(
+    'withholds the previous identity on rapid A to B to Back A until a fresh %s read completes',
+    async (status) => {
+      const user = userEvent.setup();
+      let finishNext!: (result: RecordRouteLookupResult) => void;
+      let finishBack!: (result: RecordRouteLookupResult) => void;
+      const lookup = jest
+        .fn()
+        .mockResolvedValueOnce(ready)
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              finishNext = resolve;
+            }),
+        )
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              finishBack = resolve;
+            }),
+        );
+      configureRecordRouteScope('workspace-a:user-a', ['ticket'], lookup);
+      const renderedIdentity = jest.fn();
+      const IdentityProbe = () => {
+        renderedIdentity(useParams().objectRecordId);
+        return <Probe />;
+      };
+      const Navigation = () => {
+        const navigate = useBrowserNavigate();
+        const location = useBrowserLocation();
+        return (
+          <>
+            <div data-testid="history-key">{location.key}</div>
+            <div data-testid="history-location">
+              {location.pathname}
+              {location.search}
+              {location.hash}
+            </div>
+            <button onClick={() => navigate('/tickets/2#details')}>
+              Go to B
+            </button>
+            <button onClick={() => navigate(-1)}>Go back to A</button>
+          </>
+        );
+      };
+      render(
+        <MemoryRouter initialEntries={['/tickets/1?viewId=view#details']}>
+          <Navigation />
+          <Routes>
+            <Route
+              path="/tickets/:recordIdentifier"
+              element={
+                <RecordRouteGate definition={definition}>
+                  <IdentityProbe />
+                </RecordRouteGate>
+              }
+            />
+          </Routes>
+        </MemoryRouter>,
+      );
+      expect(await screen.findByTestId('record-id')).toHaveTextContent(
+        recordId,
+      );
+      const originalKey = screen.getByTestId('history-key').textContent;
+      renderedIdentity.mockClear();
+      await user.click(screen.getByText('Go to B'));
+      expect(screen.getByText('Loading route')).toBeInTheDocument();
+      await user.click(screen.getByText('Go back to A'));
+      expect(lookup).toHaveBeenCalledTimes(3);
+      expect(screen.getByTestId('history-key').textContent).toBe(originalKey);
+      expect(screen.getByTestId('history-location')).toHaveTextContent(
+        '/tickets/1?viewId=view#details',
+      );
+      expect(renderedIdentity).not.toHaveBeenCalled();
+      expect(screen.queryByTestId('record-id')).not.toBeInTheDocument();
+      expect(screen.getByText('Loading route')).toBeInTheDocument();
+      await act(async () =>
+        finishNext({
+          status: 'ready',
+          recordId: '22222222-2222-4222-8222-222222222222',
+          recordIdentifier: 2,
+        }),
+      );
+      expect(renderedIdentity).not.toHaveBeenCalled();
+      expect(screen.getByText('Loading route')).toBeInTheDocument();
+      await act(async () => finishBack({ status }));
+      expect(screen.getByText('Unavailable route')).toBeInTheDocument();
+      expect(renderedIdentity).not.toHaveBeenCalled();
+      expect(getCachedRecordId('ticket', 1)).toBeUndefined();
+    },
+  );
+
   it('keeps browser back/forward history friendly while logical identity changes', async () => {
     const secondId = '22222222-2222-4222-8222-222222222222';
     configureRecordRouteScope(
@@ -772,6 +865,59 @@ describe('configured record routes', () => {
     expect(getCachedRecordId('ticket', 1)).toBeUndefined();
     expect(getCachedRecordIdentifier('ticket', recordId)).toBeUndefined();
     expect(getCachedRecordIdentifier('ticket', anotherId)).toBeUndefined();
+  });
+
+  it('recovers a reconciled collision only after a fresh authoritative integer lookup', async () => {
+    const anotherId = '22222222-2222-4222-8222-222222222222';
+    const lookup = jest.fn(async () => ready);
+    configureRecordRouteScope('workspace-a:user-a', ['ticket'], lookup);
+    rememberRecordRoute('ticket', { id: recordId, ticketNumber: 1 });
+    rememberRecordRoute('ticket', { id: anotherId, ticketNumber: 1 });
+    expect(await resolveRecordRoute(definition, { recordId })).toEqual({
+      status: 'duplicate',
+    });
+    expect(getCachedRecordId('ticket', 1)).toBeUndefined();
+    expect(
+      await resolveRecordRoute(definition, { recordIdentifier: 1 }),
+    ).toEqual(ready);
+    expect(getCachedRecordId('ticket', 1)).toBe(recordId);
+    expect(getCachedRecordIdentifier('ticket', recordId)).toBe(1);
+    expect(getCachedRecordIdentifier('ticket', anotherId)).toBeUndefined();
+    expect(lookup).toHaveBeenNthCalledWith(2, definition, {
+      recordIdentifier: 1,
+    });
+  });
+
+  it('continues denying an actual collision through integer and UUID reads', async () => {
+    const anotherId = '22222222-2222-4222-8222-222222222222';
+    configureRecordRouteScope(
+      'workspace-a:user-a',
+      ['ticket'],
+      async (_definition, target) =>
+        'recordIdentifier' in target
+          ? getRecordRouteLookupResult(
+              [
+                { id: recordId, ticketNumber: 1 },
+                { id: anotherId, ticketNumber: 1 },
+              ],
+              'ticketNumber',
+            )
+          : ready,
+    );
+    rememberRecordRoute('ticket', { id: recordId, ticketNumber: 1 });
+    rememberRecordRoute('ticket', { id: anotherId, ticketNumber: 1 });
+    for (const target of [
+      { recordIdentifier: 1 },
+      { recordId },
+      { recordIdentifier: 1 },
+    ]) {
+      expect(await resolveRecordRoute(definition, target)).toEqual({
+        status: 'duplicate',
+      });
+      expect(getCachedRecordId('ticket', 1)).toBeUndefined();
+      expect(getCachedRecordIdentifier('ticket', recordId)).toBeUndefined();
+      expect(getCachedRecordIdentifier('ticket', anotherId)).toBeUndefined();
+    }
   });
 
   it('classifies bounded lookup results without assuming uniqueness', () => {

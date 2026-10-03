@@ -51,9 +51,19 @@ export const RecordRouteGate = ({
     !aliasDefinition &&
     definition?.allowUnidentifiedRecords &&
     !isRecordRouteReadable(definition.objectNameSingular);
+  // Returning to the same target starts a new read even when history keys repeat.
+  const readIdentity = useMemo(
+    () => ({
+      aliasDefinition,
+      definition,
+      generation,
+      target,
+      retainNativePermissions,
+    }),
+    [aliasDefinition, definition, generation, target, retainNativePermissions],
+  );
   const [resolved, setResolved] = useState<{
-    generation: number;
-    target: string | undefined;
+    readIdentity: typeof readIdentity;
     result: RecordRouteLookupResult;
   } | null>(null);
 
@@ -62,14 +72,14 @@ export const RecordRouteGate = ({
     let cancelled = false;
     const number = aliasDefinition ? parseRecordRouteIdentifier(target) : null;
     if (!target || (aliasDefinition && number === null)) {
-      setResolved({ generation, target, result: { status: 'missing' } });
+      setResolved({ readIdentity, result: { status: 'missing' } });
       return;
     }
     void resolveRecordRoute(
       definition,
       aliasDefinition ? { recordIdentifier: number! } : { recordId: target },
     ).then((result) => {
-      if (!cancelled) setResolved({ generation, target, result });
+      if (!cancelled) setResolved({ readIdentity, result });
     });
     return () => {
       cancelled = true;
@@ -80,12 +90,11 @@ export const RecordRouteGate = ({
     generation,
     target,
     retainNativePermissions,
+    readIdentity,
   ]);
 
   const result =
-    resolved?.generation === generation && resolved.target === target
-      ? resolved.result
-      : null;
+    resolved?.readIdentity === readIdentity ? resolved.result : null;
   useEffect(() => {
     const canonicalLocation =
       definition && result?.status === 'ready'
