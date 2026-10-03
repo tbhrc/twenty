@@ -119,6 +119,31 @@ const RouteFixture = ({
     future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
   >
     <Routes>
+      {(routeDefinition.aliases ?? []).map((path) => (
+        <Route
+          key={path}
+          path={`${path}/:recordIdentifier`}
+          element={
+            <RecordRouteGate definition={routeDefinition}>
+              <Probe />
+            </RecordRouteGate>
+          }
+        />
+      ))}
+      {[routeDefinition.path, ...(routeDefinition.aliases ?? [])].flatMap(
+        (path) =>
+          Object.keys(routeDefinition.views ?? {}).map((view) => (
+            <Route
+              key={`${path}/${view}`}
+              path={`${path}/:recordIdentifier/${view}`}
+              element={
+                <RecordRouteGate definition={routeDefinition}>
+                  <Probe />
+                </RecordRouteGate>
+              }
+            />
+          )),
+      )}
       <Route
         path="/tickets/:recordIdentifier"
         element={
@@ -219,6 +244,165 @@ describe('configured record routes', () => {
     ]);
     expect(getRecordRouteDefinitions()).toEqual([flagged]);
   });
+
+  it('validates aliases as unique, unreserved paths across all objects', () => {
+    const aliased = { ...definition, aliases: ['/legacy-tickets'] };
+    setDefinitions([
+      { ...definition, aliases: '/legacy-tickets' },
+      { ...definition, aliases: ['/settings'] },
+      { ...definition, aliases: ['/tickets'] },
+      { ...definition, aliases: ['/legacy-tickets', '/legacy-tickets'] },
+      aliased,
+      {
+        path: '/legacy-tickets',
+        objectNameSingular: 'case',
+        objectNamePlural: 'cases',
+        recordIdentifierField: 'caseNumber',
+      },
+    ]);
+    expect(getRecordRouteDefinitions()).toEqual([aliased]);
+  });
+
+  it('registers legacy aliases on both surfaces and respects detail-only configuration', () => {
+    setDefinitions([
+      { ...definition, aliases: ['/legacy-tickets'], indexRoute: false },
+    ]);
+    const routes = createWorkspaceRouteObjects({});
+    for (const surface of ['main', 'side-panel'] as const) {
+      expect(
+        isWorkspaceLocationAvailableOnSurface(
+          routes,
+          surface,
+          '/legacy-tickets/1',
+        ),
+      ).toBe(true);
+    }
+    expect(routes.some((route) => route.path === '/legacy-tickets')).toBe(
+      false,
+    );
+    expect(
+      isWorkspaceLocationAvailableOnSurface(
+        routes,
+        'side-panel',
+        '/legacy-tickets',
+      ),
+    ).toBe(false);
+    expect(
+      isWorkspaceLocationExpandableFromSidePanel(routes, '/legacy-tickets/1'),
+    ).toBe(false);
+  });
+
+  it('canonicalizes a legacy numeric alias after lookup preserving identity and location', async () => {
+    const aliased = { ...definition, aliases: ['/legacy-tickets'] };
+    setDefinitions([aliased]);
+    const lookup = jest.fn(async () => ready);
+    configureRecordRouteScope('workspace-a:user-a', ['ticket'], lookup);
+    render(
+      <RouteFixture
+        routeDefinition={aliased}
+        entry={{
+          pathname: '/legacy-tickets/1/',
+          search: '?viewId=view',
+          hash: '#details',
+          state: { parent: 'index' },
+        }}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('browser')).toHaveTextContent(
+        '/tickets/1?viewId=view#details',
+      ),
+    );
+    expect(screen.getByTestId('record-id')).toHaveTextContent(recordId);
+    expect(screen.getByTestId('state')).toHaveTextContent('index');
+    expect(getLogicalRecordPathname('/legacy-tickets/1')).toBe(
+      `/object/ticket/${recordId}`,
+    );
+    expect(lookup).toHaveBeenCalledWith(aliased, { recordIdentifier: 1 });
+  });
+
+  it('resolves named views to the same authorized native identity and preserves them on legacy redirects', async () => {
+    const viewed = {
+      ...definition,
+      aliases: ['/legacy-tickets'],
+      views: { history: recordId },
+    };
+    setDefinitions([viewed]);
+    configureRecordRouteScope(
+      'workspace-a:user-a',
+      ['ticket'],
+      async () => ready,
+    );
+    render(
+      <RouteFixture
+        routeDefinition={viewed}
+        entry="/legacy-tickets/1/history?viewId=view"
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('browser')).toHaveTextContent(
+        '/tickets/1/history?viewId=view',
+      ),
+    );
+    expect(screen.getByTestId('logical')).toHaveTextContent(
+      `/object/ticket/${recordId}`,
+    );
+    expect(screen.getByTestId('record-id')).toHaveTextContent(recordId);
+    const routes = createWorkspaceRouteObjects({});
+    expect(
+      isWorkspaceLocationAvailableOnSurface(
+        routes,
+        'side-panel',
+        '/tickets/1/history',
+      ),
+    ).toBe(true);
+    expect(
+      isWorkspaceLocationAvailableOnSurface(
+        routes,
+        'side-panel',
+        '/tickets/1/unknown',
+      ),
+    ).toBe(false);
+  });
+
+  it('replaces an existing native tab hash with its configured named view after identity lookup', async () => {
+    const viewed = { ...definition, views: { history: recordId } };
+    setDefinitions([viewed]);
+    configureRecordRouteScope(
+      'workspace-a:user-a',
+      ['ticket'],
+      async () => ready,
+    );
+    render(
+      <RouteFixture
+        routeDefinition={viewed}
+        entry={`/object/ticket/${recordId}?viewId=view#${recordId}`}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('browser')).toHaveTextContent(
+        '/tickets/1/history?viewId=view',
+      ),
+    );
+    expect(screen.getByTestId('browser')).not.toHaveTextContent('#');
+    expect(screen.getByTestId('record-id')).toHaveTextContent(recordId);
+  });
+
+  it.each(['denied', 'duplicate', 'missing'] as const)(
+    'does not redirect or render a legacy alias when lookup is %s',
+    async (status) => {
+      const aliased = { ...definition, aliases: ['/legacy-tickets'] };
+      setDefinitions([aliased]);
+      configureRecordRouteScope('workspace-a:user-a', ['ticket'], async () => ({
+        status,
+      }));
+      render(
+        <RouteFixture routeDefinition={aliased} entry="/legacy-tickets/1" />,
+      );
+      expect(await screen.findByText('Unavailable route')).toBeInTheDocument();
+      expect(screen.queryByTestId('record-id')).not.toBeInTheDocument();
+    },
+  );
 
   it('rejects reserved routes, duplicate definitions and unsafe numeric identifiers', () => {
     setDefinitions([

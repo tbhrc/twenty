@@ -1,4 +1,5 @@
 import { useDragDropMonitor } from '@dnd-kit/react';
+import { getRecordRouteTabLocation } from '@/app/routing/record-routes/recordRouteViews';
 import { css } from '@linaria/core';
 import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
@@ -192,7 +193,10 @@ export const PageLayoutTabList = ({
     (tabId: string) => {
       if (workspaceSurface.ownsRouteLocation) {
         navigate(
-          { search: location.search, hash: `#${tabId}` },
+          {
+            search: location.search,
+            ...getRecordRouteTabLocation(location.pathname, tabId),
+          },
           {
             replace: workspaceSurface.type === 'side-panel',
             state: location.state,
@@ -205,6 +209,7 @@ export const PageLayoutTabList = ({
     [
       navigate,
       location.search,
+      location.pathname,
       location.state,
       onChangeTab,
       setActiveTabId,
@@ -217,7 +222,10 @@ export const PageLayoutTabList = ({
     (tabId: string) => {
       if (behaveAsLinks) {
         navigate(
-          { search: location.search, hash: `#${tabId}` },
+          {
+            search: location.search,
+            ...getRecordRouteTabLocation(location.pathname, tabId),
+          },
           {
             replace: workspaceSurface.type === 'side-panel',
             state: location.state,
@@ -232,6 +240,7 @@ export const PageLayoutTabList = ({
     [
       behaveAsLinks,
       location.search,
+      location.pathname,
       location.state,
       selectTab,
       navigate,

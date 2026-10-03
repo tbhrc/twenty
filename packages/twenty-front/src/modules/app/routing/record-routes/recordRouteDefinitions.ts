@@ -1,5 +1,9 @@
+import { isValidUuid } from 'twenty-shared/utils';
+
 export type RecordRouteDefinition = {
   path: string;
+  aliases?: string[];
+  views?: Record<string, string>;
   objectNameSingular: string;
   objectNamePlural: string;
   recordIdentifierField: string;
@@ -33,6 +37,16 @@ const RESERVED_SEGMENTS = new Set([
   'book-call',
 ]);
 
+export const getRecordRoutePaths = (definition: RecordRouteDefinition) => [
+  definition.path,
+  ...(definition.aliases ?? []),
+];
+
+const isRecordRoutePath = (path: unknown): path is string =>
+  typeof path === 'string' &&
+  /^\/[a-z][a-z0-9-]*$/.test(path) &&
+  !RESERVED_SEGMENTS.has(path.slice(1));
+
 // Deployment-owned configuration is independent of the generated environment
 // file. No product names or UUID aliases are part of the platform source.
 export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
@@ -50,6 +64,8 @@ export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
     if (!candidate || typeof candidate !== 'object') continue;
     const {
       path,
+      aliases,
+      views,
       objectNameSingular,
       objectNamePlural,
       recordIdentifierField,
@@ -57,10 +73,20 @@ export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
       allowUnidentifiedRecords,
     } = candidate;
     if (
-      typeof path !== 'string' ||
-      !/^\/[a-z][a-z0-9-]*$/.test(path) ||
-      RESERVED_SEGMENTS.has(path.slice(1)) ||
-      paths.has(path) ||
+      !isRecordRoutePath(path) ||
+      (aliases !== undefined &&
+        (!Array.isArray(aliases) || !aliases.every(isRecordRoutePath))) ||
+      (views !== undefined &&
+        (views === null ||
+          typeof views !== 'object' ||
+          Array.isArray(views) ||
+          Object.entries(views).some(
+            ([name, tabId]) =>
+              !/^[a-z][a-z0-9-]*$/.test(name) ||
+              typeof tabId !== 'string' ||
+              !isValidUuid(tabId),
+          ) ||
+          new Set(Object.values(views)).size !== Object.keys(views).length)) ||
       typeof objectNameSingular !== 'string' ||
       !/^[A-Za-z][A-Za-z0-9_]*$/.test(objectNameSingular) ||
       typeof objectNamePlural !== 'string' ||
@@ -74,11 +100,19 @@ export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
       names.has(objectNamePlural)
     )
       continue;
-    paths.add(path);
+    const candidatePaths: string[] = [path, ...(aliases ?? [])];
+    if (
+      new Set(candidatePaths).size !== candidatePaths.length ||
+      candidatePaths.some((candidatePath) => paths.has(candidatePath))
+    )
+      continue;
+    candidatePaths.forEach((candidatePath) => paths.add(candidatePath));
     names.add(objectNameSingular);
     names.add(objectNamePlural);
     definitions.push({
       path,
+      ...(aliases === undefined ? {} : { aliases: [...aliases] }),
+      ...(views === undefined ? {} : { views: { ...views } }),
       objectNameSingular,
       objectNamePlural,
       recordIdentifierField,
