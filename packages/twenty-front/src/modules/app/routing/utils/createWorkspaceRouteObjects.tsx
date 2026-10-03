@@ -15,6 +15,8 @@ import {
   getRecordRoutePaths,
 } from '@/app/routing/record-routes/recordRouteDefinitions';
 import { RecordRouteGate } from '@/app/routing/record-routes/RecordRouteGate';
+import { RecordContextRouteGate } from '@/app/routing/record-routes/RecordContextRouteGate';
+import { getRecordContextRouteDefinitions } from '@/app/routing/record-routes/recordContextRoutes';
 
 const WorkflowCoreIndexPage = lazy(() =>
   import('~/pages/object-core/WorkflowCoreIndexPage').then((module) => ({
@@ -75,6 +77,17 @@ export const createWorkspaceRouteObjects = ({
   });
 
   return [
+    ...getRecordContextRouteDefinitions().map((definition) => ({
+      path: definition.path,
+      element: (
+        <RecordContextRouteGate definition={definition}>
+          <LazyRoute>
+            <RecordShowPage />
+          </LazyRoute>
+        </RecordContextRouteGate>
+      ),
+      handle: { workspaceSurfaces: MAIN_AND_SIDE_PANEL },
+    })),
     ...getRecordRouteDefinitions().flatMap(
       (definition): WorkspaceRouteObject[] =>
         getRecordRoutePaths(definition).flatMap((path) => [
@@ -144,11 +157,13 @@ export const createWorkspaceRouteObjects = ({
     {
       path: AppPath.RecordShowPage,
       element: (
-        <RecordRouteGate>
-          <LazyRoute>
-            <RecordShowPage />
-          </LazyRoute>
-        </RecordRouteGate>
+        <RecordContextRouteGate>
+          <RecordRouteGate>
+            <LazyRoute>
+              <RecordShowPage />
+            </LazyRoute>
+          </RecordRouteGate>
+        </RecordContextRouteGate>
       ),
       handle: { workspaceSurfaces: MAIN_AND_SIDE_PANEL },
     },

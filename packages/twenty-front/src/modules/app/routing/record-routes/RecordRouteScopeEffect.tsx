@@ -1,5 +1,7 @@
 import { useLayoutEffect, useEffect, useMemo } from 'react';
-import { FieldMetadataType } from 'twenty-shared/types';
+import { FieldMetadataType, RelationType } from 'twenty-shared/types';
+import { getRecordContextRouteDefinitions } from './recordContextRoutes';
+import { resolveNativeRecordContext } from './resolveNativeRecordContext';
 import { isValidUuid } from 'twenty-shared/utils';
 
 import { useIsLogged } from '@/auth/hooks/useIsLogged';
@@ -51,6 +53,7 @@ export const RecordRouteScopeEffect = () => {
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
   const client = useApolloCoreClient();
   const definitions = useMemo(getRecordRouteDefinitions, []);
+  const contextDefinitions = useMemo(getRecordContextRouteDefinitions, []);
   const readableDefinitions = useMemo(
     () =>
       definitions.filter((definition) => {
@@ -75,6 +78,45 @@ export const RecordRouteScopeEffect = () => {
       }),
     [definitions, objectMetadataItems, objectPermissionsByObjectMetadataId],
   );
+  const readableContextDefinitions = useMemo(
+    () =>
+      contextDefinitions.filter((definition) => {
+        const object = objectMetadataItems.find(
+          (item) =>
+            item.nameSingular === definition.objectNameSingular &&
+            item.namePlural === definition.objectNamePlural,
+        );
+        return (
+          object &&
+          getObjectPermissionsForObject(
+            objectPermissionsByObjectMetadataId,
+            object.id,
+          ).canReadObjectRecords &&
+          definition.relations.every(
+            (relation) =>
+              readableDefinitions.some(
+                (endpoint) =>
+                  endpoint.objectNameSingular === relation.objectNameSingular,
+              ) &&
+              object.readableFields.some(
+                (field) =>
+                  field.isActive &&
+                  field.name === relation.field &&
+                  field.type === FieldMetadataType.RELATION &&
+                  field.relation?.type === RelationType.MANY_TO_ONE &&
+                  field.relation.targetObjectMetadata.nameSingular ===
+                    relation.objectNameSingular,
+              ),
+          )
+        );
+      }),
+    [
+      contextDefinitions,
+      readableDefinitions,
+      objectMetadataItems,
+      objectPermissionsByObjectMetadataId,
+    ],
+  );
   const scopeKey =
     isLogged && currentWorkspace?.id && currentUser?.id && currentUserWorkspace
       ? JSON.stringify([
@@ -82,6 +124,7 @@ export const RecordRouteScopeEffect = () => {
           currentUser.id,
           currentUserWorkspace.isImpersonating,
           readableDefinitions,
+          readableContextDefinitions,
           objectPermissionsByObjectMetadataId,
         ])
       : null;
@@ -145,6 +188,55 @@ export const RecordRouteScopeEffect = () => {
             );
           }
         : null,
+      readableContextDefinitions.map(
+        (definition) => definition.objectNameSingular,
+      ),
+      scopeKey
+        ? async (definition, target) => {
+            if (
+              !readableContextDefinitions.some(
+                (item) =>
+                  item.objectNameSingular === definition.objectNameSingular,
+              )
+            )
+              return { status: 'denied' };
+            return resolveNativeRecordContext(definition, target, {
+              endpoints: readableDefinitions,
+              read: async (objectNameSingular, fields, filter) => {
+                const object = objectMetadataItems.find(
+                  (item) => item.nameSingular === objectNameSingular,
+                );
+                if (
+                  !object ||
+                  !getObjectPermissionsForObject(
+                    objectPermissionsByObjectMetadataId,
+                    object.id,
+                  ).canReadObjectRecords
+                )
+                  throw new Error('denied');
+                const result =
+                  await client.query<RecordGqlOperationFindManyResult>({
+                    query: generateFindManyRecordsQuery({
+                      objectMetadataItem: object,
+                      objectMetadataItems,
+                      recordGqlFields: Object.fromEntries(
+                        fields.map((field) => [field, true]),
+                      ),
+                      objectPermissionsByObjectMetadataId,
+                    }),
+                    variables: { filter, limit: 2 },
+                    fetchPolicy: 'network-only',
+                    errorPolicy: 'none',
+                  });
+                const connection = result.data?.[object.namePlural];
+                if (!connection) throw new Error('error');
+                return getRecordsFromRecordConnection({
+                  recordConnection: connection,
+                });
+              },
+            });
+          }
+        : null,
     );
   }, [
     client,
@@ -152,6 +244,7 @@ export const RecordRouteScopeEffect = () => {
     objectMetadataItems,
     objectPermissionsByObjectMetadataId,
     readableDefinitions,
+    readableContextDefinitions,
   ]);
 
   useEffect(() => () => configureRecordRouteScope(null, [], null), []);

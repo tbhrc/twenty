@@ -12,8 +12,10 @@ import {
 
 import { getFriendlyRecordTo } from './getAppPath';
 import { getRecordRouteMatch } from './recordRouteViews';
+import { getRecordContextRouteMatch } from './recordContextRoutes';
 import {
   getCachedRecordId,
+  getCachedContextRecordId,
   getRecordRouteVersion,
   subscribeRecordRoutes,
 } from './recordRouteCache';
@@ -31,6 +33,16 @@ export const useRecordRouteVersion = () =>
   );
 
 export const getFriendlyRouteParameters = (pathname: string) => {
+  const context = getRecordContextRouteMatch(pathname);
+  if (context)
+    return {
+      objectNameSingular: context.definition.objectNameSingular,
+      objectNamePlural: context.definition.objectNamePlural,
+      objectRecordId: getCachedContextRecordId(
+        context.definition.objectNameSingular,
+        pathname,
+      ),
+    };
   const match = getRecordRouteMatch(pathname);
   if (match) {
     const number = parseRecordRouteIdentifier(match.recordIdentifier);
