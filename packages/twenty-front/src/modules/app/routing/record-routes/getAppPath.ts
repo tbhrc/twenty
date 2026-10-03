@@ -4,6 +4,8 @@ import { getAppPath as getNativeAppPath } from 'twenty-shared/utils';
 
 import {
   getCachedRecordIdentifier,
+  getCachedContextRecordPath,
+  requestRecordContextHref,
   isRecordRouteReadable,
   requestRecordRouteHref,
 } from './recordRouteCache';
@@ -11,6 +13,7 @@ import {
   getRecordRouteDefinitions,
   parseRecordRouteIdentifier,
 } from './recordRouteDefinitions';
+import { getRecordContextRouteDefinitions } from './recordContextRoutes';
 
 export const getRecordRoutePath = ({
   objectNameSingular,
@@ -28,6 +31,15 @@ export const getRecordRoutePath = ({
   const definition = getRecordRouteDefinitions().find(
     (item) => item.objectNameSingular === objectNameSingular,
   );
+  const contextDefinition = getRecordContextRouteDefinitions().find(
+    (item) => item.objectNameSingular === objectNameSingular,
+  );
+  if (contextDefinition) {
+    const path = getCachedContextRecordPath(objectNameSingular, recordId);
+    if (path) return path;
+    requestRecordContextHref(contextDefinition, recordId);
+    return nativePath;
+  }
   if (!definition || !recordId) return nativePath;
   if (
     definition.allowUnidentifiedRecords &&

@@ -16,6 +16,10 @@ import {
   type RecordRouteDefinition,
 } from './recordRouteDefinitions';
 import { useRecordRouteVersion } from './router';
+import {
+  getRecordRouteMatch,
+  getRecordRouteViewLocation,
+} from './recordRouteViews';
 
 export const RecordRouteGate = ({
   definition: aliasDefinition,
@@ -83,17 +87,27 @@ export const RecordRouteGate = ({
       ? resolved.result
       : null;
   useEffect(() => {
+    const canonicalLocation =
+      definition && result?.status === 'ready'
+        ? getRecordRouteViewLocation({
+            definition,
+            recordIdentifier: result.recordIdentifier,
+            view: getRecordRouteMatch(location.pathname)?.view,
+            hash: location.hash,
+          })
+        : null;
     if (
-      !aliasDefinition &&
       !retainNativePermissions &&
       definition &&
-      result?.status === 'ready'
+      result?.status === 'ready' &&
+      canonicalLocation &&
+      (location.pathname.replace(/\/$/, '') !== canonicalLocation.pathname ||
+        location.hash !== canonicalLocation.hash)
     ) {
       navigate(
         {
-          pathname: `${definition.path}/${result.recordIdentifier}`,
+          ...canonicalLocation,
           search: location.search,
-          hash: location.hash,
         },
         { replace: true, state: location.state },
       );
@@ -105,6 +119,7 @@ export const RecordRouteGate = ({
     result,
     navigate,
     location.search,
+    location.pathname,
     location.hash,
     location.state,
   ]);
