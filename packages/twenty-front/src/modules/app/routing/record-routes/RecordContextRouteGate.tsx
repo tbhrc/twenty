@@ -51,9 +51,25 @@ export const RecordContextRouteGate = ({
         ]),
       )
     : params.objectRecordId;
+  // Returning to the same target starts a new read even when history keys repeat.
+  const readIdentity = useMemo(
+    () => ({
+      definition,
+      configuredDefinition,
+      generation,
+      targetKey,
+      retainNativePermissions,
+    }),
+    [
+      definition,
+      configuredDefinition,
+      generation,
+      targetKey,
+      retainNativePermissions,
+    ],
+  );
   const [resolved, setResolved] = useState<{
-    generation: number;
-    targetKey: string | undefined;
+    readIdentity: typeof readIdentity;
     result: RecordContextResult;
   } | null>(null);
   useEffect(() => {
@@ -76,7 +92,7 @@ export const RecordContextRouteGate = ({
         : ({ status: 'missing' } as const);
     };
     void resolve().then((result) => {
-      if (!cancelled) setResolved({ generation, targetKey, result });
+      if (!cancelled) setResolved({ readIdentity, result });
     });
     return () => {
       cancelled = true;
@@ -90,11 +106,10 @@ export const RecordContextRouteGate = ({
     generation,
     targetKey,
     retainNativePermissions,
+    readIdentity,
   ]);
   const result =
-    resolved?.generation === generation && resolved.targetKey === targetKey
-      ? resolved.result
-      : null;
+    resolved?.readIdentity === readIdentity ? resolved.result : null;
   useEffect(() => {
     if (
       result?.status === 'ready' &&
