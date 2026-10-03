@@ -289,6 +289,15 @@ export const resolveRecordRoute = (
       )
         result = { status: 'error' };
       if (result.status === 'ready') {
+        // Only a matching integer read proves a previous collision was reconciled.
+        if (
+          'recordIdentifier' in target &&
+          target.recordIdentifier === result.recordIdentifier &&
+          isValidUuid(result.recordId)
+        )
+          duplicates.delete(
+            `${definition.objectNameSingular}:${target.recordIdentifier}`,
+          );
         rememberRecordRoute(
           definition.objectNameSingular,
           {
