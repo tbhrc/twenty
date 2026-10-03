@@ -1,9 +1,9 @@
-import { getRecordRouteDefinitions } from '../recordRouteDefinitions';
+import { getRecordRouteDefinitions } from '@/app/routing/record-routes/recordRouteDefinitions';
 import {
   getRecordRouteMatch,
   getRecordRouteTabId,
   getRecordRouteTabLocation,
-} from '../recordRouteViews';
+} from '@/app/routing/record-routes/recordRouteViews';
 
 const historyTab = '11111111-1111-4111-8111-111111111111';
 const notesTab = '22222222-2222-4222-8222-222222222222';

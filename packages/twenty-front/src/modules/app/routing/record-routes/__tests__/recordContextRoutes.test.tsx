@@ -6,24 +6,24 @@ import {
   useLocation as useBrowserLocation,
 } from 'react-router-dom';
 
-import { RecordContextRouteGate } from '../RecordContextRouteGate';
+import { RecordContextRouteGate } from '@/app/routing/record-routes/RecordContextRouteGate';
 import {
   getRecordContextRouteDefinitions,
   type RecordContextRouteDefinition,
-} from '../recordContextRoutes';
+} from '@/app/routing/record-routes/recordContextRoutes';
 import {
   configureRecordRouteScope,
   getCachedContextRecordId,
   getCachedContextRecordPath,
   resolveRecordContextRoute,
-} from '../recordRouteCache';
-import { type RecordRouteDefinition } from '../recordRouteDefinitions';
+} from '@/app/routing/record-routes/recordRouteCache';
+import { type RecordRouteDefinition } from '@/app/routing/record-routes/recordRouteDefinitions';
 import {
   resolveNativeRecordContext,
   type NativeContextRead,
   type RecordContextResult,
-} from '../resolveNativeRecordContext';
-import { useParams } from '../router';
+} from '@/app/routing/record-routes/resolveNativeRecordContext';
+import { useParams } from '@/app/routing/record-routes/router';
 
 jest.mock(
   '@/object-record/record-index/components/RecordIndexSkeletonLoader',
