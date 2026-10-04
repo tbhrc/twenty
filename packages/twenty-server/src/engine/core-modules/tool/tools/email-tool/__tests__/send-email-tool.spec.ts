@@ -123,4 +123,23 @@ describe('SendEmailTool', () => {
       messageThreadId: undefined,
     });
   });
+
+  it('reports success when persistence throws after the provider accepted the email', async () => {
+    mockComposeEmail.mockResolvedValue({
+      success: true,
+      data: buildComposedEmail(true),
+    });
+    mockPersistSentMessage.mockRejectedValue(new Error('database unavailable'));
+
+    const result = await tool.execute(baseInput, {
+      workspaceId: 'workspace-1',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.result).toMatchObject({
+      headerMessageId: '<sent-message@mail.example.com>',
+      threadExternalId: 'provider-thread-id',
+      messageId: undefined,
+    });
+  });
 });
