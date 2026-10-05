@@ -9,6 +9,7 @@ import {
 } from '@nestjs/graphql';
 
 import { PermissionFlagType } from 'twenty-shared/constants';
+import { ObjectOpenRecordIn } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 
 import { MetadataResolver } from 'src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator';
@@ -49,6 +50,7 @@ import { type CursorConnection } from 'src/engine/metadata-modules/pagination/dt
 import { applyMetadataFilterToQueryBuilder } from 'src/engine/metadata-modules/pagination/utils/apply-metadata-filter-to-query-builder.util';
 import { findManyWithCursorPagination } from 'src/engine/metadata-modules/pagination/utils/find-many-with-cursor-pagination.util';
 import { getEffectiveImageIdentifierFieldMetadataId } from 'src/engine/metadata-modules/object-metadata/utils/get-effective-image-identifier-field-metadata-id.util';
+import { getEffectiveObjectOpenRecordIn } from 'src/engine/metadata-modules/object-metadata/utils/get-effective-object-open-record-in.util';
 import { MostlyEmptyFieldsService } from 'src/engine/metadata-modules/object-metadata/mostly-empty-fields.service';
 import { ObjectMetadataService } from 'src/engine/metadata-modules/object-metadata/object-metadata.service';
 import { ObjectRecordCountService } from 'src/engine/metadata-modules/object-metadata/object-record-count.service';
@@ -237,6 +239,25 @@ export class ObjectMetadataResolver {
 
       return [];
     }
+  }
+
+  @ResolveField(() => ObjectOpenRecordIn)
+  async openRecordIn(
+    @Parent() objectMetadata: ObjectMetadataDTO,
+    @Context() context: { loaders: IDataloaders } & I18nContext,
+    @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
+  ): Promise<ObjectOpenRecordIn> {
+    const authorContext =
+      await this.applicationTranslationCatalogService.buildEffectiveEntityI18nContext(
+        {
+          applicationId: objectMetadata.applicationId ?? undefined,
+          loaders: context.loaders,
+          locale: context.req.locale,
+          workspaceId,
+        },
+      );
+
+    return getEffectiveObjectOpenRecordIn(objectMetadata, authorContext);
   }
 
   private async resolveStandardOverride(
