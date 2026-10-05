@@ -77,8 +77,9 @@ export const createWorkspaceRouteObjects = ({
   });
 
   return [
-    ...getRecordContextRouteDefinitions().map((definition) => ({
-      path: definition.path,
+    ...getRecordContextRouteDefinitions().flatMap((definition) =>
+      [undefined, ...Object.keys(definition.views ?? {})].map((view) => ({
+      path: `${definition.path}${view ? `/${view}` : ''}`,
       element: (
         <RecordContextRouteGate definition={definition}>
           <LazyRoute>
@@ -87,7 +88,7 @@ export const createWorkspaceRouteObjects = ({
         </RecordContextRouteGate>
       ),
       handle: { workspaceSurfaces: MAIN_AND_SIDE_PANEL },
-    })),
+    }))),
     ...getRecordRouteDefinitions().flatMap(
       (definition): WorkspaceRouteObject[] =>
         getRecordRoutePaths(definition).flatMap((path) => [

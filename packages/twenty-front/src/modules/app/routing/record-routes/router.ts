@@ -40,7 +40,7 @@ export const getFriendlyRouteParameters = (pathname: string) => {
       objectNamePlural: context.definition.objectNamePlural,
       objectRecordId: getCachedContextRecordId(
         context.definition.objectNameSingular,
-        pathname,
+        context.path,
       ),
     };
   const match = getRecordRouteMatch(pathname);

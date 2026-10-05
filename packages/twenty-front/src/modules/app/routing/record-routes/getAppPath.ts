@@ -14,6 +14,7 @@ import {
   parseRecordRouteIdentifier,
 } from './recordRouteDefinitions';
 import { getRecordContextRouteDefinitions } from './recordContextRoutes';
+import { getRecordRouteTabLocation } from './recordRouteViews';
 
 export const getRecordRoutePath = ({
   objectNameSingular,
@@ -73,12 +74,14 @@ export const getFriendlyRecordPath = (path: string) => {
     return createPath({ ...parsed, pathname: indexDefinition.path });
   const showMatch = matchPath(AppPath.RecordShowPage, pathname);
   if (showMatch?.params.objectNameSingular && showMatch.params.objectRecordId) {
+    const pathname = getRecordRoutePath({
+      objectNameSingular: showMatch.params.objectNameSingular,
+      recordId: showMatch.params.objectRecordId,
+    });
     return createPath({
       ...parsed,
-      pathname: getRecordRoutePath({
-        objectNameSingular: showMatch.params.objectNameSingular,
-        recordId: showMatch.params.objectRecordId,
-      }),
+      pathname,
+      ...(parsed.hash ? getRecordRouteTabLocation(pathname, parsed.hash.slice(1)) : {}),
     });
   }
   return path;

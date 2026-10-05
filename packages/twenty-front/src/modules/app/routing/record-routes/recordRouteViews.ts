@@ -1,4 +1,5 @@
 import { matchPath } from 'react-router-dom';
+import { getRecordContextRouteMatch } from './recordContextRoutes';
 
 import {
   getRecordRouteDefinitions,
@@ -27,6 +28,8 @@ export const getRecordRouteMatch = (pathname: string) => {
 };
 
 export const getRecordRouteTabId = (pathname: string) => {
+  const context = getRecordContextRouteMatch(pathname);
+  if (context?.view) return context.definition.views?.[context.view];
   const match = getRecordRouteMatch(pathname);
   return match?.view ? match.definition.views?.[match.view] : undefined;
 };
@@ -56,6 +59,11 @@ export const getRecordRouteViewLocation = ({
 // Called only by the native tab UI: its current tab list remains the authority
 // for tab availability. Configuration gives stable names, never record access.
 export const getRecordRouteTabLocation = (pathname: string, tabId: string) => {
+  const context = getRecordContextRouteMatch(pathname);
+  if (context) {
+    const view = Object.entries(context.definition.views ?? {}).find(([, id]) => id === tabId)?.[0];
+    return { pathname: `${context.path}${view ? `/${view}` : ''}`, hash: view ? '' : `#${tabId}` };
+  }
   const match = getRecordRouteMatch(pathname);
   if (!match?.recordIdentifier) return { hash: `#${tabId}` };
   return getRecordRouteViewLocation({

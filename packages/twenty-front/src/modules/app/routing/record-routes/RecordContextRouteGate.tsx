@@ -6,6 +6,7 @@ import { RecordIndexSkeletonLoader } from '@/object-record/record-index/componen
 
 import {
   getRecordContextRouteDefinitions,
+  getRecordContextRouteMatch,
   type RecordContextRouteDefinition,
 } from './recordContextRoutes';
 import {
@@ -110,18 +111,23 @@ export const RecordContextRouteGate = ({
   ]);
   const result =
     resolved?.readIdentity === readIdentity ? resolved.result : null;
+  const view = getRecordContextRouteMatch(location.pathname)?.view ??
+    Object.entries(definition?.views ?? {}).find(([, tabId]) => location.hash === `#${tabId}`)?.[0];
+  const canonicalPath = result?.status === 'ready' ? `${result.path}${view ? `/${view}` : ''}` : undefined;
   useEffect(() => {
     if (
       result?.status === 'ready' &&
-      location.pathname.replace(/\/$/, '') !== result.path
+      (location.pathname.replace(/\/$/, '') !== canonicalPath || (view && location.hash))
     ) {
       navigate(
-        { pathname: result.path, search: location.search, hash: location.hash },
+        { pathname: canonicalPath, search: location.search, hash: view ? '' : location.hash },
         { replace: true, state: location.state },
       );
     }
   }, [
     result,
+    canonicalPath,
+    view,
     navigate,
     location.pathname,
     location.search,

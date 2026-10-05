@@ -1,10 +1,12 @@
 import { matchPath } from 'react-router-dom';
+import { isValidUuid } from 'twenty-shared/utils';
 
 export type RecordContextRouteDefinition = {
   path: string;
   objectNameSingular: string;
   objectNamePlural: string;
   relations: { parameter: string; objectNameSingular: string; field: string }[];
+  views?: Record<string, string>;
 };
 
 const name = (value: unknown): value is string =>
@@ -23,7 +25,7 @@ export const getRecordContextRouteDefinitions =
     const paths = new Set<string>();
     for (const candidate of configured) {
       if (!candidate || typeof candidate !== 'object') continue;
-      const { path, objectNameSingular, objectNamePlural, relations } =
+      const { path, objectNameSingular, objectNamePlural, relations, views } =
         candidate;
       if (
         typeof path !== 'string' ||
@@ -42,6 +44,11 @@ export const getRecordContextRouteDefinitions =
             !name(relation.objectNameSingular) ||
             !name(relation.field),
         ) ||
+        (views !== undefined &&
+          (!views || typeof views !== 'object' || Array.isArray(views) ||
+            Object.entries(views).some(([view, tabId]) =>
+              !/^[a-z][a-z0-9-]*$/.test(view) || typeof tabId !== 'string' || !isValidUuid(tabId)) ||
+            new Set(Object.values(views)).size !== Object.keys(views).length)) ||
         paths.has(path) ||
         objects.has(objectNameSingular)
       )
@@ -81,6 +88,7 @@ export const getRecordContextRouteDefinitions =
         objectNameSingular,
         objectNamePlural,
         relations: relations.map((relation) => ({ ...relation })),
+        ...(views === undefined ? {} : { views: { ...views } }),
       });
     }
     return definitions;
@@ -88,8 +96,12 @@ export const getRecordContextRouteDefinitions =
 
 export const getRecordContextRouteMatch = (pathname: string) => {
   for (const definition of getRecordContextRouteDefinitions()) {
-    const match = matchPath(definition.path, pathname);
-    if (match) return { definition, parameters: match.params };
+    for (const view of [undefined, ...Object.keys(definition.views ?? {})]) {
+      const match = matchPath(`${definition.path}${view ? `/${view}` : ''}`, pathname);
+      if (match) return { definition, parameters: match.params, view,
+        path: definition.path.replace(/:([A-Za-z][A-Za-z0-9_]*)/g,
+          (_, parameter: string) => match.params[parameter] ?? '') };
+    }
   }
   return null;
 };
