@@ -44,6 +44,7 @@ const definition: RecordContextRouteDefinition = {
   path: '/projects/:projectNumber/contacts/:contactNumber',
   objectNameSingular: 'participation',
   objectNamePlural: 'participations',
+  views: { screening: '55555555-5555-4555-8555-555555555555' },
   relations: [
     {
       parameter: 'projectNumber',
@@ -107,14 +108,17 @@ const Fixture = ({ entry }: { entry: string }) => (
     future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
   >
     <Routes>
-      <Route
-        path={definition.path}
-        element={
-          <RecordContextRouteGate definition={definition}>
-            <Probe />
-          </RecordContextRouteGate>
-        }
-      />
+      {[definition.path, `${definition.path}/screening`].map((path) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            <RecordContextRouteGate definition={definition}>
+              <Probe />
+            </RecordContextRouteGate>
+          }
+        />
+      ))}
       <Route
         path="/object/:objectNameSingular/:objectRecordId"
         element={
@@ -136,6 +140,30 @@ describe('native record context routes', () => {
     await act(async () => configureRecordRouteScope(null, [], null));
     setDefinitions(undefined);
   });
+
+  it.each([
+    '/projects/1/contacts/2/screening?viewId=view',
+    '/projects/1/contacts/2?viewId=view#55555555-5555-4555-8555-555555555555',
+    `/object/participation/${relationId}?viewId=view#55555555-5555-4555-8555-555555555555`,
+  ])(
+    'opens or redirects %s to the named tab with the native relationship ID',
+    async (entry) => {
+      configureRecordRouteScope(
+        'workspace-a:user-a',
+        [],
+        null,
+        ['participation'],
+        async () => ready,
+      );
+      render(<Fixture entry={entry} />);
+      await waitFor(() =>
+        expect(screen.getByTestId('browser').textContent).toBe(
+          '/projects/1/contacts/2/screening?viewId=view',
+        ),
+      );
+      expect(screen.getByTestId('native')).toHaveTextContent(relationId);
+    },
+  );
 
   it('reads both endpoints independently then exactly one relationship', async () => {
     const read = jest.fn(sourceRead);

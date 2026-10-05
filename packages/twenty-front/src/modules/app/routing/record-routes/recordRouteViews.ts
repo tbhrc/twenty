@@ -61,8 +61,13 @@ export const getRecordRouteViewLocation = ({
 export const getRecordRouteTabLocation = (pathname: string, tabId: string) => {
   const context = getRecordContextRouteMatch(pathname);
   if (context) {
-    const view = Object.entries(context.definition.views ?? {}).find(([, id]) => id === tabId)?.[0];
-    return { pathname: `${context.path}${view ? `/${view}` : ''}`, hash: view ? '' : `#${tabId}` };
+    const view = Object.entries(context.definition.views ?? {}).find(
+      ([, id]) => id === tabId,
+    )?.[0];
+    return {
+      pathname: `${context.path}${view ? `/${view}` : ''}`,
+      hash: view ? '' : `#${tabId}`,
+    };
   }
   const match = getRecordRouteMatch(pathname);
   if (!match?.recordIdentifier) return { hash: `#${tabId}` };

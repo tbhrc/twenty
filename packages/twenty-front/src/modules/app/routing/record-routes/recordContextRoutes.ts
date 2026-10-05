@@ -45,10 +45,17 @@ export const getRecordContextRouteDefinitions =
             !name(relation.field),
         ) ||
         (views !== undefined &&
-          (!views || typeof views !== 'object' || Array.isArray(views) ||
-            Object.entries(views).some(([view, tabId]) =>
-              !/^[a-z][a-z0-9-]*$/.test(view) || typeof tabId !== 'string' || !isValidUuid(tabId)) ||
-            new Set(Object.values(views)).size !== Object.keys(views).length)) ||
+          (!views ||
+            typeof views !== 'object' ||
+            Array.isArray(views) ||
+            Object.entries(views).some(
+              ([view, tabId]) =>
+                !/^[a-z][a-z0-9-]*$/.test(view) ||
+                typeof tabId !== 'string' ||
+                !isValidUuid(tabId),
+            ) ||
+            new Set(Object.values(views)).size !==
+              Object.keys(views).length)) ||
         paths.has(path) ||
         objects.has(objectNameSingular)
       )
@@ -97,10 +104,20 @@ export const getRecordContextRouteDefinitions =
 export const getRecordContextRouteMatch = (pathname: string) => {
   for (const definition of getRecordContextRouteDefinitions()) {
     for (const view of [undefined, ...Object.keys(definition.views ?? {})]) {
-      const match = matchPath(`${definition.path}${view ? `/${view}` : ''}`, pathname);
-      if (match) return { definition, parameters: match.params, view,
-        path: definition.path.replace(/:([A-Za-z][A-Za-z0-9_]*)/g,
-          (_, parameter: string) => match.params[parameter] ?? '') };
+      const match = matchPath(
+        `${definition.path}${view ? `/${view}` : ''}`,
+        pathname,
+      );
+      if (match)
+        return {
+          definition,
+          parameters: match.params,
+          view,
+          path: definition.path.replace(
+            /:([A-Za-z][A-Za-z0-9_]*)/g,
+            (_, parameter: string) => match.params[parameter] ?? '',
+          ),
+        };
     }
   }
   return null;

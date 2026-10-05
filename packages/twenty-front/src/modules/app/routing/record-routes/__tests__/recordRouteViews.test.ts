@@ -4,7 +4,10 @@ import {
   getRecordRouteTabId,
   getRecordRouteTabLocation,
 } from '@/app/routing/record-routes/recordRouteViews';
-import { getRecordContextRouteDefinitions, getRecordContextRouteMatch } from '@/app/routing/record-routes/recordContextRoutes';
+import {
+  getRecordContextRouteDefinitions,
+  getRecordContextRouteMatch,
+} from '@/app/routing/record-routes/recordContextRoutes';
 
 const historyTab = '11111111-1111-4111-8111-111111111111';
 const notesTab = '22222222-2222-4222-8222-222222222222';
@@ -59,23 +62,63 @@ describe('configured native record views', () => {
 });
 
 describe('named relationship record tabs', () => {
-  const setContext = (views: unknown = { screening: historyTab, notes: notesTab }) => {
-    (window as Window & { __TWENTY_RECORD_CONTEXT_ROUTES__?: unknown }).__TWENTY_RECORD_CONTEXT_ROUTES__ = [{
-      path:'/projects/:projectNumber/contacts/:contactNumber', objectNameSingular:'participation', objectNamePlural:'participations',
-      relations:[{parameter:'projectNumber',objectNameSingular:'project',field:'project'},
-        {parameter:'contactNumber',objectNameSingular:'contact',field:'contact'}], views,
-    }];
+  const setContext = (
+    views: unknown = { screening: historyTab, notes: notesTab },
+  ) => {
+    (
+      window as Window & { __TWENTY_RECORD_CONTEXT_ROUTES__?: unknown }
+    ).__TWENTY_RECORD_CONTEXT_ROUTES__ = [
+      {
+        path: '/projects/:projectNumber/contacts/:contactNumber',
+        objectNameSingular: 'participation',
+        objectNamePlural: 'participations',
+        relations: [
+          {
+            parameter: 'projectNumber',
+            objectNameSingular: 'project',
+            field: 'project',
+          },
+          {
+            parameter: 'contactNumber',
+            objectNameSingular: 'contact',
+            field: 'contact',
+          },
+        ],
+        views,
+      },
+    ];
   };
   beforeEach(() => setContext());
-  afterEach(() => { (window as Window & { __TWENTY_RECORD_CONTEXT_ROUTES__?: unknown }).__TWENTY_RECORD_CONTEXT_ROUTES__ = undefined; });
-  it('resolves named relationship tabs and retains the base identity for API cache lookup', () => {
-    expect(getRecordRouteTabId('/projects/1/contacts/367/screening/')).toBe(historyTab);
-    expect(getRecordContextRouteMatch('/projects/1/contacts/367/screening')?.path).toBe('/projects/1/contacts/367');
-    expect(getRecordRouteTabLocation('/projects/1/contacts/367/screening',notesTab)).toEqual({pathname:'/projects/1/contacts/367/notes',hash:''});
-    expect(getRecordContextRouteMatch('/projects/1/contacts/367/unknown')).toBeNull();
-    expect(getRecordContextRouteMatch('/projects/1/contacts/367/screening/extra')).toBeNull();
+  afterEach(() => {
+    (
+      window as Window & { __TWENTY_RECORD_CONTEXT_ROUTES__?: unknown }
+    ).__TWENTY_RECORD_CONTEXT_ROUTES__ = undefined;
   });
-  it.each([null,[],{screening:'invalid'},{'bad/path':historyTab},{screening:historyTab,notes:historyTab}])('rejects malformed or ambiguous tab mappings: %p', views => {
-    setContext(views); expect(getRecordContextRouteDefinitions()).toEqual([]);
+  it('resolves named relationship tabs and retains the base identity for API cache lookup', () => {
+    expect(getRecordRouteTabId('/projects/1/contacts/367/screening/')).toBe(
+      historyTab,
+    );
+    expect(
+      getRecordContextRouteMatch('/projects/1/contacts/367/screening')?.path,
+    ).toBe('/projects/1/contacts/367');
+    expect(
+      getRecordRouteTabLocation('/projects/1/contacts/367/screening', notesTab),
+    ).toEqual({ pathname: '/projects/1/contacts/367/notes', hash: '' });
+    expect(
+      getRecordContextRouteMatch('/projects/1/contacts/367/unknown'),
+    ).toBeNull();
+    expect(
+      getRecordContextRouteMatch('/projects/1/contacts/367/screening/extra'),
+    ).toBeNull();
+  });
+  it.each([
+    null,
+    [],
+    { screening: 'invalid' },
+    { 'bad/path': historyTab },
+    { screening: historyTab, notes: historyTab },
+  ])('rejects malformed or ambiguous tab mappings: %p', (views) => {
+    setContext(views);
+    expect(getRecordContextRouteDefinitions()).toEqual([]);
   });
 });

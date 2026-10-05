@@ -111,16 +111,27 @@ export const RecordContextRouteGate = ({
   ]);
   const result =
     resolved?.readIdentity === readIdentity ? resolved.result : null;
-  const view = getRecordContextRouteMatch(location.pathname)?.view ??
-    Object.entries(definition?.views ?? {}).find(([, tabId]) => location.hash === `#${tabId}`)?.[0];
-  const canonicalPath = result?.status === 'ready' ? `${result.path}${view ? `/${view}` : ''}` : undefined;
+  const view =
+    getRecordContextRouteMatch(location.pathname)?.view ??
+    Object.entries(definition?.views ?? {}).find(
+      ([, tabId]) => location.hash === `#${tabId}`,
+    )?.[0];
+  const canonicalPath =
+    result?.status === 'ready'
+      ? `${result.path}${view ? `/${view}` : ''}`
+      : undefined;
   useEffect(() => {
     if (
       result?.status === 'ready' &&
-      (location.pathname.replace(/\/$/, '') !== canonicalPath || (view && location.hash))
+      (location.pathname.replace(/\/$/, '') !== canonicalPath ||
+        (view && location.hash))
     ) {
       navigate(
-        { pathname: canonicalPath, search: location.search, hash: view ? '' : location.hash },
+        {
+          pathname: canonicalPath,
+          search: location.search,
+          hash: view ? '' : location.hash,
+        },
         { replace: true, state: location.state },
       );
     }
