@@ -50,6 +50,10 @@ describe('AppToaster', () => {
     });
 
     expect(screen.getByRole('status')).toHaveTextContent('Record saved');
+    expect(screen.getByLabelText('Notifications')).toHaveStyle({
+      insetBlockStart: '48px',
+      insetBlockEnd: 'auto',
+    });
     expect(screen.getByText('Your changes are available')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(onAction).toHaveBeenCalledTimes(1);

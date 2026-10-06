@@ -1,3 +1,11 @@
+import { useLingui } from '@lingui/react/macro';
+import { useToast } from 'twenty-ui/components';
+import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
+import {
+  CANDIDATE_STAGE_EMAIL_QUERY,
+  getCandidateStageEmailNotice,
+  type CandidateStageEmailQueryResult,
+} from '@/object-record/record-field/ui/utils/getCandidateStageEmailNotice';
 import { useStore } from 'jotai';
 import { useCallback } from 'react';
 
@@ -70,6 +78,9 @@ export const usePersistField = ({
   const { objectMetadataItems } = useObjectMetadataItems();
 
   const { updateOneRecord } = useUpdateOneRecord();
+  const apolloCoreClient = useApolloCoreClient();
+  const { enqueueToast, closeToast } = useToast();
+  const { i18n } = useLingui();
 
   const store = useStore();
   const { upsertRecordsInStore } = useUpsertRecordsInStore();
@@ -269,13 +280,111 @@ export const usePersistField = ({
           return;
         }
 
-        updateOneRecord({
+        const update = updateOneRecord({
           objectNameSingular: objectMetadataItem.nameSingular,
           idToUpdate: recordId,
           updateOneRecordInput: {
             [fieldName]: valueToPersist,
           },
         });
+        if (
+          objectMetadataItem.nameSingular === 'application' &&
+          fieldName === 'stage' &&
+          fieldIsSelect &&
+          typeof valueToPersist === 'string'
+        ) {
+          const stage = valueToPersist;
+          const stageLabel =
+            fieldDefinition.metadata.options.find(
+              (option) => option.value === stage,
+            )?.label ?? stage;
+          const isCurrent = () =>
+            store.get(
+              recordStoreFamilySelector.selectorFamily({ recordId, fieldName }),
+            ) === stage;
+          void update
+            .then(async (saved) => {
+              if (!isCurrent()) return;
+              if (
+                !saved ||
+                saved.stage !== stage ||
+                typeof saved.updatedAt !== 'string'
+              ) {
+                enqueueToast({
+                  variant: 'warning',
+                  children: i18n._({
+                    id: 'Stage change could not be confirmed. Check candidate status before retrying.',
+                    message:
+                      'Stage change could not be confirmed. Check candidate status before retrying.',
+                    values: {},
+                  }),
+                });
+                return;
+              }
+              const checking = enqueueToast({
+                variant: 'info',
+                duration: 10000,
+                children: i18n._({
+                  id: 'Stage changed to {stageLabel}. Checking email automation…',
+                  message:
+                    'Stage changed to {stageLabel}. Checking email automation…',
+                  values: { stageLabel },
+                }),
+              });
+              try {
+                const notice = await getCandidateStageEmailNotice({
+                  applicationId: recordId,
+                  stage,
+                  stageLabel,
+                  savedAt: saved.updatedAt,
+                  read: async () => {
+                    const response =
+                      await apolloCoreClient.query<CandidateStageEmailQueryResult>(
+                        {
+                          query: CANDIDATE_STAGE_EMAIL_QUERY,
+                          variables: {
+                            applicationFilter: { id: { eq: recordId } },
+                            dispatchFilter: {
+                              applicationId: { eq: recordId },
+                              toStage: { eq: stage },
+                            },
+                          },
+                          fetchPolicy: 'network-only',
+                        },
+                      );
+                    return {
+                      stage:
+                        response.data?.applications.edges[0]?.node.stage ??
+                        null,
+                      dispatch:
+                        response.data?.stageEmailDispatches.edges[0]?.node ??
+                        null,
+                    };
+                  },
+                });
+                if (notice && isCurrent())
+                  enqueueToast({
+                    variant: notice.variant,
+                    children: i18n._(notice.message),
+                    duration: 8000,
+                  });
+              } finally {
+                closeToast(checking);
+              }
+            })
+            .catch(() => {
+              if (isCurrent())
+                enqueueToast({
+                  variant: 'warning',
+                  children: i18n._({
+                    id: 'Stage change could not be confirmed. Check candidate status before retrying.',
+                    message:
+                      'Stage change could not be confirmed. Check candidate status before retrying.',
+                    values: {},
+                  }),
+                });
+            });
+        }
 
         store.set(
           recordStoreFamilySelector.selectorFamily({ recordId, fieldName }),
@@ -292,6 +401,10 @@ export const usePersistField = ({
       }
     },
     [
+      apolloCoreClient,
+      enqueueToast,
+      closeToast,
+      i18n,
       objectMetadataItem?.nameSingular,
       objectMetadataItems,
       store,
