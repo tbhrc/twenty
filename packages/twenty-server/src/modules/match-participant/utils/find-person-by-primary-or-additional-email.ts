@@ -8,8 +8,9 @@ export const findPersonByPrimaryOrAdditionalEmail = ({
   email: string;
 }): PersonWorkspaceEntity | undefined => {
   const lowercaseEmail = email.toLowerCase();
+  const activePeople = people.filter((person) => person.deletedAt == null);
 
-  const personWithPrimaryEmail = people.find(
+  const personWithPrimaryEmail = activePeople.find(
     (person) => person.emails?.primaryEmail?.toLowerCase() === lowercaseEmail,
   );
 
@@ -17,7 +18,7 @@ export const findPersonByPrimaryOrAdditionalEmail = ({
     return personWithPrimaryEmail;
   }
 
-  const personWithAdditionalEmail = people.find((person) => {
+  const personWithAdditionalEmail = activePeople.find((person) => {
     const additionalEmails = person.emails?.additionalEmails;
 
     if (!Array.isArray(additionalEmails)) {

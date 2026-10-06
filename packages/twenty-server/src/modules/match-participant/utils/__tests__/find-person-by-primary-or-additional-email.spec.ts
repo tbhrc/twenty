@@ -2,6 +2,36 @@ import { findPersonByPrimaryOrAdditionalEmail } from 'src/modules/match-particip
 import { type PersonWorkspaceEntity } from 'src/modules/person/standard-objects/person.workspace-entity';
 
 describe('findPersonByPrimaryOrAdditionalEmail', () => {
+  it('matches an active additional email instead of a deleted primary email', () => {
+    const people = [
+      {
+        id: 'retired',
+        deletedAt: new Date(),
+        emails: { primaryEmail: 'alias@example.com' },
+      },
+      {
+        id: 'active',
+        deletedAt: null,
+        emails: {
+          primaryEmail: 'main@example.com',
+          additionalEmails: ['alias@example.com'],
+        },
+      },
+    ] as PersonWorkspaceEntity[];
+    expect(
+      findPersonByPrimaryOrAdditionalEmail({
+        people,
+        email: 'alias@example.com',
+      }),
+    ).toBe(people[1]);
+    expect(
+      findPersonByPrimaryOrAdditionalEmail({
+        people: [people[0]],
+        email: 'alias@example.com',
+      }),
+    ).toBeUndefined();
+  });
+
   const mockPeople = [
     {
       id: 'person-1',

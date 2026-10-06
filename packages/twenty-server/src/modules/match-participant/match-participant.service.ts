@@ -264,15 +264,10 @@ export class MatchParticipantService<
             },
           });
 
-          const rematchedParticipants = participants.map((participant) => ({
-            ...participant,
-            workspaceMemberId: null,
-          })) as ParticipantWorkspaceEntity[];
-
           await this.matchParticipants({
             matchWith: 'workspaceMemberOnly',
-            participants: rematchedParticipants,
-            sourceRecordIds: this.getSourceRecordIds(rematchedParticipants),
+            participants,
+            sourceRecordIds: this.getSourceRecordIds(participants),
             objectMetadataName,
             transactionScope,
           });
@@ -324,19 +319,10 @@ export class MatchParticipantService<
             ]),
           ];
 
-          const tobeRematchedParticipants = uniqueParticipants.map(
-            (participant) => {
-              return {
-                ...participant,
-                personId: null,
-              };
-            },
-          );
-
           await this.matchParticipants({
             matchWith: 'personOnly',
-            participants: tobeRematchedParticipants,
-            sourceRecordIds: this.getSourceRecordIds(tobeRematchedParticipants),
+            participants: uniqueParticipants,
+            sourceRecordIds: this.getSourceRecordIds(uniqueParticipants),
             objectMetadataName,
             transactionScope,
           });
