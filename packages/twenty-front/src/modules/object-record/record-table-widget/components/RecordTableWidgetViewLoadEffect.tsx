@@ -83,10 +83,6 @@ export const RecordTableWidgetViewLoadEffect = ({
               ? {
                   mainGroupByFieldMetadataId: undefined,
                   viewGroups: [],
-                  viewFields: sourceView.viewFields.map((field) => ({
-                    ...field,
-                    size: Math.max(field.size ?? 180, 180),
-                  })),
                 }
               : {}),
             ...(isWorkingViewEnabled

@@ -1,3 +1,4 @@
+import { RecordTableWidgetSelectionToolbar } from '@/object-record/record-table-widget/components/RecordTableWidgetSelectionToolbar';
 import { totalNumberOfRecordsToVirtualizeComponentState } from '@/object-record/record-table/virtualization/states/totalNumberOfRecordsToVirtualizeComponentState';
 import { recordIndexAllRecordIdsComponentSelector } from '@/object-record/record-index/states/selectors/recordIndexAllRecordIdsComponentSelector';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
@@ -59,6 +60,9 @@ export const RecordTableWidget = ({
         }
         isEmptyStateHidden={isEmptyStateHidden}
       />
+      {!recordTableWidgetContext?.isPageLayoutInEditMode && (
+        <RecordTableWidgetSelectionToolbar />
+      )}
       <RecordIndexTableContainerEffect />
       <StyledTableContainer>
         <RecordTableWithWrappers

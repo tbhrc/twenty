@@ -41,7 +41,7 @@ export const RecordTableWidgetStatesEffect = ({
       isRecordTableCheckboxColumnHiddenComponentState.atomFamily({
         instanceId: recordTableId,
       }),
-      true,
+      isPageLayoutInEditMode,
     );
 
     store.set(
