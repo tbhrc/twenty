@@ -41,14 +41,14 @@ export const RecordTableWidgetStatesEffect = ({
       isRecordTableCheckboxColumnHiddenComponentState.atomFamily({
         instanceId: recordTableId,
       }),
-      true,
+      isPageLayoutInEditMode,
     );
 
     store.set(
       isRecordTableColumnResizableComponentState.atomFamily({
         instanceId: recordTableId,
       }),
-      isPageLayoutInEditMode,
+      true,
     );
 
     store.set(

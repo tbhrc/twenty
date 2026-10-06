@@ -24,7 +24,13 @@ import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/use
 import { atom, useStore } from 'jotai';
 import { isDeeplyEqual } from '~/utils/isDeeplyEqual';
 
-export const RecordIndexFiltersToContextStoreEffect = () => {
+type RecordIndexFiltersToContextStoreEffectProps = {
+  forceExplicitSelection?: boolean;
+};
+
+export const RecordIndexFiltersToContextStoreEffect = ({
+  forceExplicitSelection = false,
+}: RecordIndexFiltersToContextStoreEffectProps) => {
   const { recordIndexId } = useRecordIndexContextOrThrow();
 
   const store = useStore();
@@ -97,7 +103,7 @@ export const RecordIndexFiltersToContextStoreEffect = () => {
         ) => {
           let newRule: ContextStoreTargetedRecordsRule;
 
-          if (hasUserSelectedAllRows) {
+          if (hasUserSelectedAllRows && !forceExplicitSelection) {
             newRule = {
               mode: 'exclusion',
               excludedRecordIds: unselectedRowIds,
@@ -155,6 +161,7 @@ export const RecordIndexFiltersToContextStoreEffect = () => {
         },
       ),
     [
+      forceExplicitSelection,
       hasUserSelectedAllRows,
       selectedRowIds,
       unselectedRowIds,

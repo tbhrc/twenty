@@ -1,3 +1,4 @@
+import { RecordTableWidgetSelectionToolbar } from '@/object-record/record-table-widget/components/RecordTableWidgetSelectionToolbar';
 import { RecordIndexTableContainerEffect } from '@/object-record/record-index/components/RecordIndexTableContainerEffect';
 import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
 import { RecordTableWidgetStatesEffect } from '@/object-record/record-table-widget/components/RecordTableWidgetStatesEffect';
@@ -34,6 +35,9 @@ export const RecordTableWidget = ({
         }
         isEmptyStateHidden={isEmptyStateHidden}
       />
+      {!recordTableWidgetContext?.isPageLayoutInEditMode && (
+        <RecordTableWidgetSelectionToolbar />
+      )}
       <RecordIndexTableContainerEffect />
       <StyledTableContainer>
         <RecordTableWithWrappers
