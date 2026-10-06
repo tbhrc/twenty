@@ -190,7 +190,9 @@ export const useResizeTableHeader = () => {
         size: nextWidth,
       });
 
-      const persistTarget = getViewPersistTarget(recordTableWidgetContext);
+      const persistTarget = getViewPersistTarget(recordTableWidgetContext, {
+        persistLiveColumnWidth: true,
+      });
 
       if (persistTarget.target === 'api') {
         saveRecordFields([updatedRecordField]);

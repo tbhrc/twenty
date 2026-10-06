@@ -37,7 +37,7 @@ const StyledInputModeOnlyContainer = styled.div`
   display: flex;
   height: 100%;
   overflow: hidden;
-  padding-left: 8px;
+  padding-left: 4px;
   width: 100%;
 `;
 
