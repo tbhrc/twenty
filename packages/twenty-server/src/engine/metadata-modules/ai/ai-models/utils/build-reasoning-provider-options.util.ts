@@ -8,6 +8,7 @@ import {
   AI_SDK_GOOGLE,
   AI_SDK_MISTRAL,
   AI_SDK_OPENAI,
+  AI_SDK_OPENAI_COMPATIBLE,
   AI_SDK_XAI,
 } from 'src/engine/metadata-modules/ai/ai-models/constants/ai-sdk-package.const';
 import { type RegisteredAiModel } from 'src/engine/metadata-modules/ai/ai-models/services/ai-model-registry.service';
@@ -50,6 +51,10 @@ export const buildReasoningProviderOptions = (
       };
     case AI_SDK_OPENAI:
       return isDefined(effort) ? { openai: { reasoningEffort: effort } } : {};
+    case AI_SDK_OPENAI_COMPATIBLE:
+      return isDefined(effort)
+        ? { openaiCompatible: { reasoningEffort: effort } }
+        : {};
     case AI_SDK_AZURE:
       return isDefined(effort) ? { azure: { reasoningEffort: effort } } : {};
     case AI_SDK_GOOGLE:

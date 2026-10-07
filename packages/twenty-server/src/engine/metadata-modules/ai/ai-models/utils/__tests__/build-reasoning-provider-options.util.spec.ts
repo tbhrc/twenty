@@ -5,6 +5,7 @@ import {
   AI_SDK_GOOGLE,
   AI_SDK_MISTRAL,
   AI_SDK_OPENAI,
+  AI_SDK_OPENAI_COMPATIBLE,
   AI_SDK_XAI,
 } from 'src/engine/metadata-modules/ai/ai-models/constants/ai-sdk-package.const';
 import { buildReasoningProviderOptions } from 'src/engine/metadata-modules/ai/ai-models/utils/build-reasoning-provider-options.util';
@@ -115,6 +116,12 @@ describe('buildReasoningProviderOptions', () => {
       'openai/gpt-5.6-sol@xhigh',
       'xhigh',
       { openai: { reasoningEffort: 'xhigh' } },
+    ],
+    [
+      AI_SDK_OPENAI_COMPATIBLE,
+      'custom/controller-auto@high',
+      'high',
+      { openaiCompatible: { reasoningEffort: 'high' } },
     ],
     [
       AI_SDK_AZURE,

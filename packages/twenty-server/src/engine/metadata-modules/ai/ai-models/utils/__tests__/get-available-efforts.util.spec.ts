@@ -18,12 +18,12 @@ describe('getAvailableEfforts', () => {
     expect(getAvailableEfforts({ sdkPackage: AI_SDK_XAI })).toEqual([]);
   });
 
-  it('offers nothing for an SDK without an effort option', () => {
+  it('offers declared efforts for an OpenAI-compatible model', () => {
     expect(
       getAvailableEfforts({
         sdkPackage: AI_SDK_OPENAI_COMPATIBLE,
         efforts: ['low', 'high'],
       }),
-    ).toEqual([]);
+    ).toEqual(['low', 'high']);
   });
 });
