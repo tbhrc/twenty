@@ -27,7 +27,7 @@ export const RecordTableWidgetStatesEffect = ({
       isRecordTableColumnHeadersReadOnlyComponentState.atomFamily({
         instanceId: recordTableId,
       }),
-      true,
+      isPageLayoutInEditMode,
     );
 
     store.set(
