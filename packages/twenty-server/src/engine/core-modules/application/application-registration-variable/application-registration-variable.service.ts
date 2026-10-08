@@ -134,6 +134,21 @@ export class ApplicationRegistrationVariableService {
       where: { applicationRegistrationId },
     });
 
+    // A partial manifest must not silently erase live integration credentials.
+    const omittedConfiguredVariables = existingVariables.filter(
+      (variable) =>
+        !declaredKeys.includes(variable.key) && this.isVariableFilled(variable),
+    );
+
+    if (omittedConfiguredVariables.length > 0) {
+      throw new ApplicationRegistrationException(
+        `Manifest omits configured server variables: ${omittedConfiguredVariables
+          .map((variable) => variable.key)
+          .join(', ')}. Preserve their declarations or explicitly reset them before removal.`,
+        ApplicationRegistrationExceptionCode.INVALID_INPUT,
+      );
+    }
+
     const existingByKey = new Map(
       existingVariables.map((variable) => [variable.key, variable]),
     );
