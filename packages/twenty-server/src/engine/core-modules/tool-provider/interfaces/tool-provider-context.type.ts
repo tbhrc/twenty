@@ -13,6 +13,8 @@ export type ToolProviderContext = {
   rolePermissionConfig: RolePermissionConfig;
   authContext?: WorkspaceAuthContext;
   application?: FlatApplication;
+  // Set only by the authenticated MCP transport, never by tool arguments.
+  authenticatedMcpClient?: FlatApplication;
   actorContext?: ActorMetadata;
   userId?: string;
   userWorkspaceId?: string;

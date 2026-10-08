@@ -43,6 +43,7 @@ import { buildApplicationLogEnvelopes } from 'src/engine/core-modules/event-logs
 import { parseApplicationLogLines } from 'src/engine/core-modules/event-logs/producers/application-log/parse-application-log-lines';
 import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
 import { LogicFunctionDriverFactory } from 'src/engine/core-modules/logic-function/logic-function-drivers/logic-function-driver.factory';
+import { buildInquiryExecutionBinding } from 'src/engine/core-modules/logic-function/logic-function-executor/utils/build-inquiry-execution-binding.util';
 import { computeLogicFunctionExecutionCreditsMicro } from 'src/engine/core-modules/logic-function/logic-function-executor/utils/compute-logic-function-execution-credits-micro.util';
 import { resolveWorkspaceMemberIdForUser } from 'src/engine/core-modules/logic-function/logic-function-executor/utils/resolve-workspace-member-id-for-user.util';
 import { SecretEncryptionService } from 'src/engine/core-modules/secret-encryption/secret-encryption.service';
@@ -133,6 +134,7 @@ export class LogicFunctionExecutorService {
     userId,
     userWorkspaceId,
     executionMode,
+    authenticatedMcpClient,
     workspaceDeletionRequestTimestamp,
     retry = { retryCount: 0, maxRetries: 0 },
     shouldEnforceUsageLimits = true,
@@ -142,6 +144,7 @@ export class LogicFunctionExecutorService {
     payload: object;
     userId?: string;
     userWorkspaceId?: string;
+    authenticatedMcpClient?: FlatApplication;
     executionMode?: LogicFunctionExecutionMode;
     workspaceDeletionRequestTimestamp?: string;
     retry?: LogicFunctionRetryContext;
@@ -182,6 +185,21 @@ export class LogicFunctionExecutorService {
       userId,
       userWorkspaceId,
     });
+
+    if (
+      flatApplication.universalIdentifier === 'a898a95a-d43e-51bd-8c70-3a5f75e4635d' &&
+      flatLogicFunction.universalIdentifier === 'dd904cc9-33cf-4480-9668-ae14588faec1'
+    ) {
+      // This capability belongs to this invocation; persisted values cannot attest
+      // the transport's client, exact selection, or current server execution.
+      envVariables.MARKETING_INQUIRY_EXECUTION_BINDING =
+        buildInquiryExecutionBinding({
+          caller: context,
+          payload,
+          client: authenticatedMcpClient,
+          executionKey: envVariables.MARKETING_INQUIRY_EXECUTION_KEY,
+        }) ?? '';
+    }
 
     const driver = this.logicFunctionDriverFactory.getCurrentDriver();
 
@@ -442,7 +460,7 @@ export class LogicFunctionExecutorService {
     userId?: string;
     userWorkspaceId?: string;
     workspaceDeletionRequestTimestamp?: string;
-  }) {
+  }): Promise<Record<string, string>> {
     // Two tokens so a handler can choose per call which access it acts with,
     // rather than the whole run being locked to one of them.
     const hasTriggeringPerson = isDefined(userId) && isDefined(userWorkspaceId);

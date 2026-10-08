@@ -348,6 +348,7 @@ export class ToolExecutorService {
       payload: args,
       userId: context.userId,
       userWorkspaceId: context.userWorkspaceId,
+      authenticatedMcpClient: context.authenticatedMcpClient,
     });
 
     if (result.error) {

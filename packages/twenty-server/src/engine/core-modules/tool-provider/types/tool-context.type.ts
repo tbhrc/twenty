@@ -14,6 +14,7 @@ export type ToolContext = {
   rolePermissionConfig?: RolePermissionConfig;
   authContext?: WorkspaceAuthContext;
   application?: FlatApplication;
+  authenticatedMcpClient?: FlatApplication;
   actorContext?: ActorMetadata;
   userId?: string;
   userWorkspaceId?: string;

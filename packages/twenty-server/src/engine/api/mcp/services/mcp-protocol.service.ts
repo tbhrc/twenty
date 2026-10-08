@@ -248,6 +248,7 @@ export class McpProtocolService {
       rolePermissionConfig,
       authContext: options?.authContext,
       application: options?.application,
+      authenticatedMcpClient: options?.application,
       userId: options?.userId,
       userWorkspaceId: options?.userWorkspaceId,
       actorContext,
