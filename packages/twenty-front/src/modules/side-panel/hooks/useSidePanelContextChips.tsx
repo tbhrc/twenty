@@ -16,6 +16,7 @@ import { isDefined } from 'twenty-shared/utils';
 import { useTheme, themeCssVariables } from 'twenty-ui/theme';
 
 export const useSidePanelContextChips = () => {
+  useRecordRouteVersion();
   const theme = useTheme();
   const iconSizeSm = theme.icon.size.sm;
   const sidePanelNavigationStack = useAtomStateValue(
@@ -148,3 +149,4 @@ export const useSidePanelContextChips = () => {
     contextChips,
   };
 };
+import { useRecordRouteVersion } from '@/app/routing/record-routes/router';

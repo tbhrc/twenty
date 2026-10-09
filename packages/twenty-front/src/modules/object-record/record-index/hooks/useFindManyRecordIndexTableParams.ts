@@ -1,3 +1,6 @@
+import { useContext } from 'react';
+import { RecordTableWidgetContext } from '@/object-record/record-table-widget/contexts/RecordTableWidgetContext';
+import { useRecordTableWidgetScopeFilter } from '@/object-record/record-table-widget/hooks/useRecordTableWidgetScopeFilter';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
 import { flattenedFieldMetadataItemsSelector } from '@/object-metadata/states/flattenedFieldMetadataItemsSelector';
@@ -27,6 +30,8 @@ export const useFindManyRecordIndexTableParams = (
     objectNameSingular,
   });
   const { objectMetadataItems } = useObjectMetadataItems();
+  const scopeFilter = useRecordTableWidgetScopeFilter();
+  const widgetContext = useContext(RecordTableWidgetContext);
 
   const { recordGroupFilter } = useRecordGroupFilter(
     objectMetadataItem?.fields,
@@ -85,6 +90,7 @@ export const useFindManyRecordIndexTableParams = (
   );
 
   const combinedFilter = combineFilters([
+    scopeFilter,
     currentFilters,
     recordGroupFilter,
     anyFieldFilter,
@@ -97,6 +103,6 @@ export const useFindManyRecordIndexTableParams = (
     // Omitting limit lets ungrouped views fall through to QUERY_DEFAULT_LIMIT_RECORDS
     ...(isDefined(currentRecordGroupDefinition)
       ? { limit: recordIndexGroupLoadLimit }
-      : {}),
+      : widgetContext?.scopeView ? { limit: 100 } : {}),
   };
 };

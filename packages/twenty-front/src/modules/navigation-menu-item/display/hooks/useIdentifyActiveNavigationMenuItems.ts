@@ -1,7 +1,13 @@
+import {
+  useLocation,
+  useParams,
+  getLogicalRecordPath,
+} from '@/app/routing/record-routes/router';
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { useMemo } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+
 import { AppPath, NavigationMenuItemType } from 'twenty-shared/types';
-import { getAppPath, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 
 import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
@@ -88,7 +94,8 @@ export const useIdentifyActiveNavigationMenuItems = (): {
             )?.id;
 
           const pathMatches =
-            currentPathWithSearch === lastClickedNavigationMenuItemLink;
+            currentPathWithSearch ===
+            getLogicalRecordPath(lastClickedNavigationMenuItemLink);
           const objectMatchesOnShowPage =
             isOnRecordShowPage &&
             isDefined(lastClickedObjectMetadataId) &&
@@ -118,7 +125,7 @@ export const useIdentifyActiveNavigationMenuItems = (): {
               lastVisitedViewPerObjectMetadataItem,
               isInitialObjectViewEnabled,
             });
-            return link === currentPath;
+            return getLogicalRecordPath(link) === currentPath;
           })
           .map((item) => item.id);
 

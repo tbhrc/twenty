@@ -1,4 +1,4 @@
-import { getBasePathToShowPage } from '@/object-metadata/utils/getBasePathToShowPage';
+import { getRecordRoutePath } from '@/app/routing/record-routes/getAppPath';
 import { useIsRecordReadOnly } from '@/object-record/read-only/hooks/useIsRecordReadOnly';
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
 import { RecordTableRowContextProvider } from '@/object-record/record-table/contexts/RecordTableRowContext';
@@ -55,10 +55,10 @@ export const RecordTableTr = forwardRef<HTMLDivElement, RecordTableTrProps>(
         value={{
           recordId: recordId,
           rowIndex: focusIndex,
-          pathToShowPage:
-            getBasePathToShowPage({
-              objectNameSingular: objectMetadataItem.nameSingular,
-            }) + recordId,
+          pathToShowPage: getRecordRoutePath({
+            objectNameSingular: objectMetadataItem.nameSingular,
+            recordId,
+          }),
           objectNameSingular: objectMetadataItem.nameSingular,
           isSelected: isRowSelected,
           isRecordReadOnly,

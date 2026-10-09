@@ -1,3 +1,4 @@
+import { useParams } from '@/app/routing/record-routes/router';
 import { isNonEmptyString, isObject } from '@sniptt/guards';
 import qs from 'qs';
 
@@ -11,7 +12,7 @@ import { type ViewFilter } from '@/views/types/ViewFilter';
 import { deserializeUrlRecursiveFilterGroup } from '@/views/utils/deserializeUrlRecursiveFilterGroup';
 import { splitFieldNameIntoBaseAndSubField } from '@/views/utils/splitFieldNameIntoBaseAndSubField';
 import { useCallback } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { type ViewFilterOperand } from 'twenty-shared/types';
 import { isDefined, isExpectedSubFieldName } from 'twenty-shared/utils';
 

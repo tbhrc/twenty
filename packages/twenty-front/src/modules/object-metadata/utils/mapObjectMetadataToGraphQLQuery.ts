@@ -3,6 +3,7 @@ import { getObjectPermissionsForObject } from '@/object-metadata/utils/getObject
 import { getRelationIdFieldNames } from '@/object-metadata/utils/getRelationIdFieldNames';
 import { mapFieldMetadataToGraphQLQuery } from '@/object-metadata/utils/mapFieldMetadataToGraphQLQuery';
 import { shouldFieldBeQueried } from '@/object-metadata/utils/shouldFieldBeQueried';
+import { getRecordRouteDefinitions } from '@/app/routing/record-routes/recordRouteDefinitions';
 import { type RecordGqlFields } from '@/object-record/graphql/record-gql-fields/types/RecordGqlFields';
 import { isRecordGqlFieldsNode } from '@/object-record/graphql/utils/isRecordGraphlFieldsNode';
 import {
@@ -118,9 +119,14 @@ export const mapObjectMetadataToGraphQLQuery = ({
         ),
     );
 
+  const routeIdentifierField = getRecordRouteDefinitions().find(
+    (definition) =>
+      definition.objectNameSingular === objectMetadataItem.nameSingular,
+  )?.recordIdentifierField;
   const gqlFieldWithFieldMetadataThatSouldBeQueried =
     gqlFieldWithFieldMetadataThatCouldBeQueried.filter(
       (gqlFieldWithFieldMetadata) =>
+        gqlFieldWithFieldMetadata.gqlField === routeIdentifierField ||
         shouldFieldBeQueried({
           gqlField: gqlFieldWithFieldMetadata.gqlField,
           fieldMetadata: gqlFieldWithFieldMetadata.fieldMetadata,

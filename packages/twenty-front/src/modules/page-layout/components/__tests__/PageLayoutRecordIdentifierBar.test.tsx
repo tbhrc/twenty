@@ -32,6 +32,17 @@ jest.mock('twenty-ui/components', () => ({
   IconButton: ({
     'aria-label': ariaLabel,
     onClick,
+    'aria-expanded': expanded,
+  }: {
+    'aria-label': string;
+    onClick: () => void;
+    'aria-expanded': boolean;
+  }) => (
+    <button aria-label={ariaLabel} aria-expanded={expanded} onClick={onClick} />
+  ),
+  IconButtonWithTooltip: ({
+    'aria-label': ariaLabel,
+    onClick,
   }: {
     'aria-label': string;
     onClick: () => void;
@@ -182,7 +193,8 @@ describe('PageLayoutRecordIdentifierBar', () => {
       { wrapper: Wrapper },
     );
 
-    const identifierCell = screen.getByText('Google').parentElement;
+    const identifierCell =
+      screen.getByText('Google').parentElement?.parentElement;
     const bar = identifierCell?.parentElement;
 
     expect(bar).toHaveTextContent('GoogleCreated 2 days ago');
@@ -203,4 +215,49 @@ describe('PageLayoutRecordIdentifierBar', () => {
     expect(screen.getByText('Google')).toBeVisible();
     expect(screen.queryByText(/^Created /)).not.toBeInTheDocument();
   });
+});
+
+it('offers keyboard-operable expand and collapse without entering shared layout settings', async () => {
+  const user = userEvent.setup();
+  const onToggle = jest.fn();
+  const { rerender } = render(
+    <PageLayoutRecordIdentifierBar
+      targetRecordIdentifier={TARGET_RECORD_IDENTIFIER}
+      pinnedTab={PINNED_TAB}
+      onTogglePinnedPanel={onToggle}
+    />,
+    { wrapper: Wrapper },
+  );
+  const collapse = screen.getByRole('button', {
+    name: 'Collapse record details',
+  });
+  expect(collapse).toHaveAttribute('aria-expanded', 'true');
+  collapse.focus();
+  await user.keyboard('{Enter}');
+  expect(onToggle).toHaveBeenCalledTimes(1);
+  rerender(
+    <PageLayoutRecordIdentifierBar
+      targetRecordIdentifier={TARGET_RECORD_IDENTIFIER}
+      pinnedTab={PINNED_TAB}
+      onTogglePinnedPanel={onToggle}
+      isPinnedPanelCollapsed
+    />,
+  );
+  expect(
+    screen.getByRole('button', { name: 'Expand record details' }),
+  ).toHaveAttribute('aria-expanded', 'false');
+  rerender(
+    <PageLayoutRecordIdentifierBar
+      targetRecordIdentifier={TARGET_RECORD_IDENTIFIER}
+      pinnedTab={PINNED_TAB}
+      onTogglePinnedPanel={onToggle}
+      isPinnedTabEditable
+    />,
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Expand record details' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Collapse record details' }),
+  ).not.toBeInTheDocument();
 });

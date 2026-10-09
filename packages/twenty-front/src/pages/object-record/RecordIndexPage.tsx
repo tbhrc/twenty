@@ -1,3 +1,4 @@
+import { useParams } from '@/app/routing/record-routes/router';
 import { WorkspaceRouteUnavailable } from '@/app/routing/components/WorkspaceRouteUnavailable';
 import { contextStoreCurrentObjectMetadataItemIdComponentState } from '@/context-store/states/contextStoreCurrentObjectMetadataItemIdComponentState';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
@@ -12,8 +13,10 @@ import { metadataStoreState } from '@/metadata-store/states/metadataStoreState';
 import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { isUndefined } from '@sniptt/guards';
-import { lazy, Suspense } from 'react';
-import { useParams } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { createPath, useLocation, useNavigate } from 'react-router-dom';
+import { getFriendlyRecordPath } from '@/app/routing/record-routes/getAppPath';
+
 import { FeatureFlagKey } from 'twenty-shared/types';
 
 const WorkflowCoreIndexPage = lazy(() =>
@@ -23,6 +26,14 @@ const WorkflowCoreIndexPage = lazy(() =>
 );
 
 export const RecordIndexPage = () => {
+  const actualLocation = useLocation();
+  const navigate = useNavigate();
+  const currentPath = createPath(actualLocation);
+  const canonicalPath = getFriendlyRecordPath(currentPath);
+  useEffect(() => {
+    if (canonicalPath !== currentPath)
+      navigate(canonicalPath, { replace: true, state: actualLocation.state });
+  }, [canonicalPath, currentPath, navigate, actualLocation.state]);
   const workspaceSurface = useWorkspaceSurface();
   const { objectNamePlural } = useParams<{ objectNamePlural: string }>();
 

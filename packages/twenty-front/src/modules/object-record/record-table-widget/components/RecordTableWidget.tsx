@@ -1,4 +1,10 @@
 import { RecordTableWidgetSelectionToolbar } from '@/object-record/record-table-widget/components/RecordTableWidgetSelectionToolbar';
+import { totalNumberOfRecordsToVirtualizeComponentState } from '@/object-record/record-table/virtualization/states/totalNumberOfRecordsToVirtualizeComponentState';
+import { recordIndexAllRecordIdsComponentSelector } from '@/object-record/record-index/states/selectors/recordIndexAllRecordIdsComponentSelector';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { t } from '@lingui/core/macro';
+import { themeCssVariables } from 'twenty-ui/theme';
 import { RecordIndexTableContainerEffect } from '@/object-record/record-index/components/RecordIndexTableContainerEffect';
 import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
 import { RecordTableWidgetStatesEffect } from '@/object-record/record-table-widget/components/RecordTableWidgetStatesEffect';
@@ -8,8 +14,18 @@ import { styled } from '@linaria/react';
 import { useContext } from 'react';
 
 const StyledTableContainer = styled.div`
+  flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
+`;
+
+const StyledLoadingStatus = styled.div`
+  border-top: 1px solid ${themeCssVariables.border.color.light};
+  color: ${themeCssVariables.font.color.secondary};
+  flex-shrink: 0;
+  font-size: ${themeCssVariables.font.size.sm};
+  padding: ${themeCssVariables.spacing[2]};
 `;
 
 type RecordTableWidgetProps = {
@@ -24,6 +40,15 @@ export const RecordTableWidget = ({
   const { objectNameSingular, recordIndexId, viewBarInstanceId } =
     useRecordIndexContextOrThrow();
   const recordTableWidgetContext = useContext(RecordTableWidgetContext);
+  const totalNumberOfRecordsToVirtualize = useAtomComponentStateValue(
+    totalNumberOfRecordsToVirtualizeComponentState,
+    recordIndexId,
+  );
+  const recordIds = useAtomComponentSelectorValue(
+    recordIndexAllRecordIdsComponentSelector,
+    recordIndexId,
+  );
+  const loadedCount = recordIds.filter(Boolean).length;
 
   return (
     <>
@@ -46,6 +71,15 @@ export const RecordTableWidget = ({
           viewBarId={viewBarInstanceId}
         />
       </StyledTableContainer>
+      {recordTableWidgetContext?.scopeView &&
+        totalNumberOfRecordsToVirtualize !== null && (
+          <StyledLoadingStatus role="status">
+            {t`${loadedCount} of ${totalNumberOfRecordsToVirtualize} records loaded`}
+            {loadedCount < totalNumberOfRecordsToVirtualize && (
+              <> · {t`Scroll to load more`}</>
+            )}
+          </StyledLoadingStatus>
+        )}
     </>
   );
 };

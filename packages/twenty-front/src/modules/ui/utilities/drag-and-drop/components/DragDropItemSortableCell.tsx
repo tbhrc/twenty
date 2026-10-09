@@ -77,7 +77,9 @@ type DragDropItemSortableCellProps = {
   type?: string;
 };
 
-export const DragDropItemSortableCell = ({
+type EnabledDragDropItemSortableCellProps = DragDropItemSortableCellProps;
+
+const EnabledDragDropItemSortableCell = ({
   accept,
   allowNativeDragWhenDisabled = false,
   children,
@@ -94,7 +96,7 @@ export const DragDropItemSortableCell = ({
   restrictMovementTo = 'none',
   orientation,
   type,
-}: DragDropItemSortableCellProps) => {
+}: EnabledDragDropItemSortableCellProps) => {
   const { handleRef, ref, isDragging, isDragSource } = useSortable({
     id,
     index,
@@ -146,3 +148,43 @@ export const DragDropItemSortableCell = ({
     </DragDropItemSortableHandleRefContext.Provider>
   );
 };
+
+// Disabling layout dragging must not disable interactive descendants. Register
+// only active sortables: dnd-kit's accessibility plugin stamps aria-disabled on
+// both a registered root and its handle, even when their role is presentation.
+export const DragDropItemSortableCell = (
+  props: DragDropItemSortableCellProps,
+) =>
+  props.disabled ? (
+    <DragDropItemSortableHandleRefContext.Provider value={undefined}>
+      <StyledSortableRoot
+        $disabled
+        $fill={props.fill}
+        onDragStart={
+          props.allowNativeDragWhenDisabled ? undefined : preventNativeDragStart
+        }
+      >
+        {props.children}
+      </StyledSortableRoot>
+    </DragDropItemSortableHandleRefContext.Provider>
+  ) : (
+    <EnabledDragDropItemSortableCell
+      accept={props.accept}
+      allowNativeDragWhenDisabled={props.allowNativeDragWhenDisabled}
+      collisionDetector={props.collisionDetector}
+      data={props.data}
+      disabled={false}
+      fadeSourceWhileDragging={props.fadeSourceWhileDragging}
+      fill={props.fill}
+      group={props.group}
+      hasTransition={props.hasTransition}
+      highlightWhileDragging={props.highlightWhileDragging}
+      id={props.id}
+      index={props.index}
+      restrictMovementTo={props.restrictMovementTo}
+      orientation={props.orientation}
+      type={props.type}
+    >
+      {props.children}
+    </EnabledDragDropItemSortableCell>
+  );

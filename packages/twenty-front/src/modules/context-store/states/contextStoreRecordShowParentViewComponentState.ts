@@ -1,3 +1,4 @@
+import { type RecordGqlOperationFilter } from 'twenty-shared/types';
 import { ContextStoreComponentInstanceContext } from '@/context-store/states/contexts/ContextStoreComponentInstanceContext';
 import { type RecordFilterGroup } from '@/object-record/record-filter-group/types/RecordFilterGroup';
 import { type RecordFilter } from '@/object-record/record-filter/types/RecordFilter';
@@ -9,6 +10,9 @@ type RecordShowParentViewComponentState = {
   parentViewObjectNameSingular: string;
   parentViewFilterGroups: RecordFilterGroup[];
   parentViewFilters: RecordFilter[];
+  // Resolve contextual scope before leaving its source record surface.
+  parentViewScopeFilter?: RecordGqlOperationFilter;
+  parentViewAnyFieldFilterValue?: string;
   parentViewSorts: RecordSort[];
 };
 

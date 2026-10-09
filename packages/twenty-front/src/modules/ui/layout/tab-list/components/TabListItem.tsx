@@ -1,3 +1,4 @@
+import { getRecordRouteTabLocation } from '@/app/routing/record-routes/recordRouteViews';
 import { styled } from '@linaria/react';
 import { isNonEmptyString } from '@sniptt/guards';
 import { useLocation } from 'react-router-dom';
@@ -61,7 +62,7 @@ export const TabListItem = ({
           </Tabs.Tab>
         ) : (
           <NavigationLink
-            to={{ search: location.search, hash: `#${tab.id}` }}
+            to={{ search: location.search, ...getRecordRouteTabLocation(location.pathname, tab.id) }}
             state={location.state}
             replace={workspaceSurface.type === 'side-panel'}
           >

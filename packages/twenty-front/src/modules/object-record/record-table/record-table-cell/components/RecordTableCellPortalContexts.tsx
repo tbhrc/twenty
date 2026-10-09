@@ -1,5 +1,5 @@
 import { useContextStoreObjectMetadataItemOrThrow } from '@/context-store/hooks/useContextStoreObjectMetadataItemOrThrow';
-import { getBasePathToShowPage } from '@/object-metadata/utils/getBasePathToShowPage';
+import { getRecordRoutePath } from '@/app/routing/record-routes/getAppPath';
 import { useIsRecordReadOnly } from '@/object-record/read-only/hooks/useIsRecordReadOnly';
 import { visibleRecordFieldsComponentSelector } from '@/object-record/record-field/states/visibleRecordFieldsComponentSelector';
 import { recordIndexAllRecordIdsComponentSelector } from '@/object-record/record-index/states/selectors/recordIndexAllRecordIdsComponentSelector';
@@ -50,10 +50,10 @@ export const RecordTableCellPortalContexts = ({
         recordId,
         rowIndex: position.row,
         isSelected: false,
-        pathToShowPage:
-          getBasePathToShowPage({
-            objectNameSingular: objectMetadataItem.nameSingular,
-          }) + recordId,
+        pathToShowPage: getRecordRoutePath({
+          objectNameSingular: objectMetadataItem.nameSingular,
+          recordId,
+        }),
         objectNameSingular: objectMetadataItem.nameSingular,
         isRecordReadOnly,
       }}

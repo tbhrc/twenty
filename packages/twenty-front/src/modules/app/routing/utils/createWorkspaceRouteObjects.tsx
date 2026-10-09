@@ -1,3 +1,4 @@
+import { getPageRouteDefinitions } from '@/app/routing/record-routes/pageRouteDefinitions';
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AppPath, SettingsPath } from 'twenty-shared/types';
@@ -10,6 +11,14 @@ import {
 } from '@/app/components/SettingsRoutes';
 import { type WorkspaceRouteObject } from '@/app/routing/types/WorkspaceRouteObject';
 import { RecordIndexSkeletonLoader } from '@/object-record/record-index/components/RecordIndexSkeletonLoader';
+import {
+  getRecordRouteDefinitions,
+  getIndexRouteDefinitions,
+  getRecordRoutePaths,
+} from '@/app/routing/record-routes/recordRouteDefinitions';
+import { RecordRouteGate } from '@/app/routing/record-routes/RecordRouteGate';
+import { RecordContextRouteGate } from '@/app/routing/record-routes/RecordContextRouteGate';
+import { getRecordContextRouteDefinitions } from '@/app/routing/record-routes/recordContextRoutes';
 
 const WorkflowCoreIndexPage = lazy(() =>
   import('~/pages/object-core/WorkflowCoreIndexPage').then((module) => ({
@@ -88,6 +97,73 @@ export const createWorkspaceRouteObjects = ({
         isLocationExpandableFromSidePanel: true,
       },
     },
+    ...getIndexRouteDefinitions().map((definition) => ({
+      path: definition.path,
+      element: (
+        <LazyRoute fallback={<RecordIndexSkeletonLoader />}>
+          <RecordIndexPage />
+        </LazyRoute>
+      ),
+      handle: {
+        workspaceSurfaces: MAIN_AND_SIDE_PANEL,
+        isLocationExpandableFromSidePanel: true,
+      },
+    })),
+    ...getPageRouteDefinitions().map((definition) => ({
+      path: definition.path,
+      element: (
+        <LazyRoute>
+          <StandalonePageLayoutPage />
+        </LazyRoute>
+      ),
+    })),
+    ...getRecordContextRouteDefinitions().flatMap((definition) =>
+      [undefined, ...Object.keys(definition.views ?? {})].map((view) => ({
+        path: `${definition.path}${view ? `/${view}` : ''}`,
+        element: (
+          <RecordContextRouteGate definition={definition}>
+            <LazyRoute>
+              <RecordShowPage />
+            </LazyRoute>
+          </RecordContextRouteGate>
+        ),
+        handle: { workspaceSurfaces: MAIN_AND_SIDE_PANEL },
+      })),
+    ),
+    ...getRecordRouteDefinitions().flatMap(
+      (definition): WorkspaceRouteObject[] =>
+        getRecordRoutePaths(definition).flatMap((path) => [
+          ...(definition.indexRoute === false
+            ? []
+            : [
+                {
+                  path,
+                  element: (
+                    <LazyRoute fallback={<RecordIndexSkeletonLoader />}>
+                      <RecordIndexPage />
+                    </LazyRoute>
+                  ),
+                  handle: {
+                    workspaceSurfaces: MAIN_AND_SIDE_PANEL,
+                    isLocationExpandableFromSidePanel: true,
+                  },
+                },
+              ]),
+          ...[undefined, ...Object.keys(definition.views ?? {})].map(
+            (view) => ({
+              path: `${path}/:recordIdentifier${view ? `/${view}` : ''}`,
+              element: (
+                <RecordRouteGate definition={definition}>
+                  <LazyRoute>
+                    <RecordShowPage />
+                  </LazyRoute>
+                </RecordRouteGate>
+              ),
+              handle: { workspaceSurfaces: MAIN_AND_SIDE_PANEL },
+            }),
+          ),
+        ]),
+    ),
     ...(isWorkflowCoreIndexPageEnabled
       ? [
           {
@@ -123,9 +199,13 @@ export const createWorkspaceRouteObjects = ({
     {
       path: AppPath.RecordShowPage,
       element: (
-        <LazyRoute>
-          <RecordShowPage />
-        </LazyRoute>
+        <RecordContextRouteGate>
+          <RecordRouteGate>
+            <LazyRoute>
+              <RecordShowPage />
+            </LazyRoute>
+          </RecordRouteGate>
+        </RecordContextRouteGate>
       ),
       handle: { workspaceSurfaces: MAIN_AND_SIDE_PANEL },
     },

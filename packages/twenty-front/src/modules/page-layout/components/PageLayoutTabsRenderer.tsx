@@ -7,6 +7,8 @@ import { PageLayoutRecordIdentifierBar } from '@/page-layout/components/PageLayo
 import { PageLayoutScrollResetEffect } from '@/page-layout/components/PageLayoutScrollResetEffect';
 import { PageLayoutTabList } from '@/page-layout/components/PageLayoutTabList';
 import { PageLayoutTabListEffect } from '@/page-layout/components/PageLayoutTabListEffect';
+import { usePageLayoutPersonalPreference } from '@/page-layout/hooks/usePageLayoutPersonalPreference';
+import { PAGE_LAYOUT_LEFT_PANEL_COLLAPSED_WIDTH } from '@/page-layout/constants/PageLayoutLeftPanelCollapsedWidth';
 import { PAGE_LAYOUT_LEFT_PANEL_CONTAINER_WIDTH } from '@/page-layout/constants/PageLayoutLeftPanelContainerWidth';
 import { useCurrentPageLayoutOrThrow } from '@/page-layout/hooks/useCurrentPageLayoutOrThrow';
 import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
@@ -44,11 +46,16 @@ const StyledRoot = styled.div`
   }
 `;
 
-const StyledContainer = styled.div<{ hasPinnedTab: boolean }>`
+const StyledContainer = styled.div<{
+  hasPinnedTab: boolean;
+  isPinnedPanelCollapsed: boolean;
+}>`
   display: grid;
   flex: 1;
-  grid-template-columns: ${({ hasPinnedTab }) =>
-    hasPinnedTab ? `${PAGE_LAYOUT_LEFT_PANEL_CONTAINER_WIDTH}px 1fr` : '1fr'};
+  grid-template-columns: ${({ hasPinnedTab, isPinnedPanelCollapsed }) =>
+    hasPinnedTab
+      ? `${isPinnedPanelCollapsed ? PAGE_LAYOUT_LEFT_PANEL_COLLAPSED_WIDTH : PAGE_LAYOUT_LEFT_PANEL_CONTAINER_WIDTH}px minmax(0, 1fr)`
+      : 'minmax(0, 1fr)'};
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   width: 100%;
@@ -146,6 +153,10 @@ export const PageLayoutTabsRenderer = () => {
   const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
 
   const isMobile = useIsMobile();
+  const { value: pinnedPanelPreference, setValue: setPinnedPanelPreference } =
+    usePageLayoutPersonalPreference('pinned-panel-collapsed');
+  const isPinnedPanelCollapsed =
+    !isPageLayoutInEditMode && pinnedPanelPreference === true;
 
   const activeTabId = useAtomComponentStateValue(activeTabIdComponentState);
 
@@ -245,15 +256,18 @@ export const PageLayoutTabsRenderer = () => {
               targetRecordIdentifier={targetRecordIdentifier}
               pinnedTab={pinnedLeftTab}
               isPinnedTabEditable={isPageLayoutInEditMode}
+              isPinnedPanelCollapsed={isPinnedPanelCollapsed}
+              onTogglePinnedPanel={() => setPinnedPanelPreference(!isPinnedPanelCollapsed)}
               tabList={tabList}
             />
           )}
 
-          <StyledContainer hasPinnedTab={isDefined(pinnedLeftTab)}>
+          <StyledContainer hasPinnedTab={isDefined(pinnedLeftTab)} isPinnedPanelCollapsed={isPinnedPanelCollapsed}>
             {isDefined(pinnedLeftTab) && (
               <PageLayoutLeftPanel
                 pageLayoutId={currentPageLayout.id}
                 pinnedLeftTabId={pinnedLeftTab.id}
+                isCollapsed={isPinnedPanelCollapsed}
               />
             )}
 

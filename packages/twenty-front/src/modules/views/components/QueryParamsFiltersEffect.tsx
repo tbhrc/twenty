@@ -1,5 +1,5 @@
+import { useParams } from '@/app/routing/record-routes/router';
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectNameSingularFromPlural } from '@/object-metadata/hooks/useObjectNameSingularFromPlural';

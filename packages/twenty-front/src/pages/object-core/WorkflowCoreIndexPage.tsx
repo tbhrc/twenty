@@ -1,9 +1,10 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { useEffect } from 'react';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { useInView } from 'react-intersection-observer';
 import { AppPath, CoreObjectNameSingular } from 'twenty-shared/types';
-import { getAppPath, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 import { IconPlus } from 'twenty-ui/icon';
 
 import { CommandMenuContextProvider } from '@/command-menu-item/contexts/CommandMenuContextProvider';

@@ -1,3 +1,9 @@
+import { getPageRouteForPath } from '@/app/routing/record-routes/pageRouteDefinitions';
+import {
+  matchPath,
+  useLocation,
+  useNavigate,
+} from '@/app/routing/record-routes/router';
 import { useExecuteTasksOnAnyLocationChange } from '@/app/hooks/useExecuteTasksOnAnyLocationChange';
 import { useWorkspaceRouteObjects } from '@/app/routing/components/WorkspaceRouteObjectsProvider';
 import { isAppEffectRedirectEnabledState } from '@/app/states/isAppEffectRedirectEnabledState';
@@ -32,7 +38,7 @@ import { isSafeInternalPath } from '@/ui/navigation/utils/isSafeInternalPath';
 import { currentPageLayoutIdState } from '@/page-layout/states/currentPageLayoutIdState';
 import { useStore } from 'jotai';
 import { useEffect, useState } from 'react';
-import { matchPath, useLocation, useNavigate } from 'react-router-dom';
+
 import { AppBasePath, AppPath, SidePanelPages } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { usePageChangeEffectNavigateLocation } from '~/hooks/usePageChangeEffectNavigateLocation';
@@ -247,7 +253,8 @@ export const PageChangeEffect = () => {
         }
         break;
       }
-      case isMatchingLocation(location, AppPath.PageLayoutPage): {
+      case isMatchingLocation(location, AppPath.PageLayoutPage) ||
+        isDefined(getPageRouteForPath(location.pathname)): {
         resetFocusStackToFocusItem({
           focusStackItem: {
             focusId: PageFocusId.PageLayoutPage,

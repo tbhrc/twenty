@@ -1,6 +1,7 @@
+import { DragDropItemSortableHandle } from '@/ui/utilities/drag-and-drop/components/DragDropItemSortableHandle';
 import { DragDropItemSortableCell } from '@/ui/utilities/drag-and-drop/components/DragDropItemSortableCell';
 import { DragDropProvider } from '@dnd-kit/react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 // Playwright resolves a click on a non-interactive element to its closest
 // button-like ancestor before deciding whether the click target is enabled,
@@ -31,7 +32,7 @@ describe('DragDropItemSortableCell', () => {
     renderSortableCell({ disabled: true });
 
     await waitFor(() => {
-      expect(getSortableRoot()).toHaveAttribute('aria-disabled', 'true');
+      expect(getSortableRoot()).not.toHaveAttribute('aria-disabled');
     });
 
     expect(
@@ -40,6 +41,31 @@ describe('DragDropItemSortableCell', () => {
         .closest(CLICK_TARGET_ANCESTOR_SELECTOR),
     ).toBeNull();
     expect(getSortableRoot()).not.toHaveAttribute('tabindex', '0');
+  });
+
+  it('keeps a nested button and handle accessible when dragging is disabled', () => {
+    const onClick = jest.fn();
+    render(
+      <DragDropProvider>
+        <DragDropItemSortableCell
+          id="header"
+          index={0}
+          group="headers"
+          disabled
+        >
+          <DragDropItemSortableHandle disabled>
+            <button onClick={onClick}>Sort by current position</button>
+          </DragDropItemSortableHandle>
+        </DragDropItemSortableCell>
+      </DragDropProvider>,
+    );
+    const button = screen.getByRole('button', {
+      name: 'Sort by current position',
+    });
+    expect(button.closest('[aria-disabled="true"]')).toBeNull();
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('exposes the sortable root as a button when dragging is enabled', async () => {
@@ -54,7 +80,7 @@ describe('DragDropItemSortableCell', () => {
     const { rerender } = renderSortableCell({ disabled: true });
 
     await waitFor(() => {
-      expect(getSortableRoot()).toHaveAttribute('aria-disabled', 'true');
+      expect(getSortableRoot()).not.toHaveAttribute('aria-disabled');
     });
 
     rerender(
@@ -75,5 +101,19 @@ describe('DragDropItemSortableCell', () => {
     });
     expect(getSortableRoot()).toHaveAttribute('tabindex', '0');
     expect(getSortableRoot()).toHaveAttribute('aria-disabled', 'false');
+    rerender(
+      <DragDropProvider>
+        <DragDropItemSortableCell
+          id="widget-id"
+          index={0}
+          group="tab-id"
+          disabled
+        >
+          <div data-testid="widget-content">Emails</div>
+        </DragDropItemSortableCell>
+      </DragDropProvider>,
+    );
+    expect(getSortableRoot()).not.toHaveAttribute('aria-disabled');
+    expect(getSortableRoot()).not.toHaveAttribute('role', 'button');
   });
 });

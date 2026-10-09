@@ -39,7 +39,8 @@ export class ConnectedAccountResolver {
   @AllowSuspendedWorkspace()
   async myConnectedAccounts(
     @AuthWorkspace() workspace: WorkspaceEntity,
-    @AuthUserWorkspaceId() userWorkspaceId: string,
+    @AuthUserWorkspaceId({ allowUndefined: true })
+    userWorkspaceId: string | undefined,
   ): Promise<ConnectedAccountPublicDTO[]> {
     const accounts =
       await this.connectedAccountMetadataService.findUsableByCaller({

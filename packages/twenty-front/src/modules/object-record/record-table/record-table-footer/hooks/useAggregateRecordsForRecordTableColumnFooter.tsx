@@ -1,3 +1,4 @@
+import { useRecordTableWidgetScopeFilter } from '@/object-record/record-table-widget/hooks/useRecordTableWidgetScopeFilter';
 import { useNumberFormat } from '@/localization/hooks/useNumberFormat';
 import { flattenedFieldMetadataItemsSelector } from '@/object-metadata/states/flattenedFieldMetadataItemsSelector';
 import { useAggregateRecords } from '@/object-record/hooks/useAggregateRecords';
@@ -23,6 +24,7 @@ import { UserContext } from '@/users/contexts/UserContext';
 import { useContext } from 'react';
 import { FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION } from 'twenty-shared/constants';
 import {
+  combineFilters,
   computeRecordGqlOperationFilter,
   findById,
   isDefined,
@@ -35,6 +37,7 @@ export const useAggregateRecordsForRecordTableColumnFooter = (
   aggregateFieldMetadataId: string,
 ) => {
   const { objectMetadataItem } = useRecordTableContextOrThrow();
+  const scopeFilter = useRecordTableWidgetScopeFilter();
   const { recordGroupFilter } = useRecordGroupFilter(objectMetadataItem.fields);
 
   const { numberFormat, formatNumber } = useNumberFormat();
@@ -117,11 +120,12 @@ export const useAggregateRecordsForRecordTableColumnFooter = (
   const { data, loading } = useAggregateRecords({
     objectNameSingular: objectMetadataItem.nameSingular,
     recordGqlFieldsAggregate,
-    filter: {
-      ...requestFilters,
-      ...recordGroupFilter,
-      ...anyFieldFilter,
-    },
+    filter: combineFilters([
+      scopeFilter,
+      requestFilters,
+      recordGroupFilter,
+      anyFieldFilter,
+    ]),
     skip: !isDefined(aggregateOperationForViewField),
   });
 

@@ -4,6 +4,20 @@ const USER_WORKSPACE_ID = '20202020-2222-4222-8222-222222222222';
 const OTHER_USER_WORKSPACE_ID = '20202020-3333-4333-8333-333333333333';
 
 describe('isConnectedAccountUsableByCaller', () => {
+  it('allows an application caller only a workspace-shared account', () => {
+    for (const visibility of ['user', 'workspace'] as const) {
+      expect(
+        isConnectedAccountUsableByCaller({
+          connectedAccount: {
+            userWorkspaceId: USER_WORKSPACE_ID,
+            visibility,
+          },
+          userWorkspaceId: undefined,
+        }),
+      ).toBe(visibility === 'workspace');
+    }
+  });
+
   it('accepts an account the caller owns', () => {
     expect(
       isConnectedAccountUsableByCaller({

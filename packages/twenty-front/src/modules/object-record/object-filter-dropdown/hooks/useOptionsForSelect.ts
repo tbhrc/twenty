@@ -1,28 +1,14 @@
-import { useParams } from 'react-router-dom';
-
-import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
-import { useObjectNameSingularFromPlural } from '@/object-metadata/hooks/useObjectNameSingularFromPlural';
+import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
 
 export const DEFAULT_SEARCH_REQUEST_LIMIT = 60;
 
 export const useOptionsForSelect = (fieldMetadataId: string) => {
-  const objectNamePlural = useParams().objectNamePlural ?? '';
-
-  const { objectNameSingular } = useObjectNameSingularFromPlural({
-    objectNamePlural,
-  });
-
-  const { objectMetadataItem } = useObjectMetadataItem({
-    objectNameSingular,
-  });
-
+  // A relation widget's index object can differ from the outer record route.
+  // Keep the same readable-field boundary as native index filtering.
+  const { objectMetadataItem } = useRecordIndexContextOrThrow();
   const fieldMetadataItem = objectMetadataItem.readableFields.find(
     (field) => field.id === fieldMetadataId,
   );
 
-  const selectOptions = fieldMetadataItem?.options;
-
-  return {
-    selectOptions,
-  };
+  return { selectOptions: fieldMetadataItem?.options };
 };

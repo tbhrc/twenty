@@ -90,11 +90,43 @@ const makeTabViewportWidget = (
   },
 });
 
+const getWidgetFill = (widgetId: string) => {
+  const sortable = screen.queryByTestId(`${widgetId}-sortable-cell`);
+  return sortable
+    ? sortable.getAttribute('data-fill') === 'true'
+    : screen
+        .getByTestId(widgetId)
+        .parentElement?.classList.contains('page-layout-static-widget-fill');
+};
+
 describe('PageLayoutVerticalList', () => {
   beforeEach(() => {
     mockLayoutMode = PageLayoutTabLayoutMode.VERTICAL_LIST;
     mockIsSideColumnContext = false;
     mockIsInPinnedTab = false;
+  });
+
+  it('keeps live widgets outside disabled draggable containers', () => {
+    render(
+      <PageLayoutVerticalList
+        isInEditMode={false}
+        widgets={[makeWidget('fields', WidgetType.FIELDS)]}
+      />,
+    );
+    expect(screen.queryByTestId('fields-sortable-cell')).toBeNull();
+    expect(
+      screen.getByTestId('fields').closest('[aria-disabled="true"]'),
+    ).toBeNull();
+  });
+
+  it('retains sortable containers while editing layouts', () => {
+    render(
+      <PageLayoutVerticalList
+        isInEditMode
+        widgets={[makeWidget('fields', WidgetType.FIELDS)]}
+      />,
+    );
+    expect(screen.getByTestId('fields-sortable-cell')).toBeInTheDocument();
   });
 
   it('renders caller-provided edit controls without record-page dependencies', () => {
@@ -133,19 +165,13 @@ describe('PageLayoutVerticalList', () => {
         .getByTestId('timeline')
         .closest('.page-layout-viewport-filling-widget-slot'),
     ).not.toBeNull();
-    expect(screen.getByTestId('timeline-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'true',
-    );
+    expect(getWidgetFill('timeline')).toBe(true);
     expect(
       screen
         .getByTestId('fields')
         .closest('.page-layout-viewport-filling-widget-slot'),
     ).toBeNull();
-    expect(screen.getByTestId('fields-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'false',
-    );
+    expect(getWidgetFill('fields')).toBe(false);
   });
 
   it('gives FILL_VIEWPORT sizing to other viewport-filling widgets', () => {
@@ -177,10 +203,7 @@ describe('PageLayoutVerticalList', () => {
           .getByTestId(widget.id)
           .closest('.page-layout-viewport-filling-widget-slot'),
       ).not.toBeNull();
-      expect(screen.getByTestId(`${widget.id}-sortable-cell`)).toHaveAttribute(
-        'data-fill',
-        'true',
-      );
+      expect(getWidgetFill(widget.id)).toBe(true);
     }
 
     expect(
@@ -205,9 +228,7 @@ describe('PageLayoutVerticalList', () => {
         .getByTestId('message-campaign-body')
         .closest('.page-layout-viewport-filling-widget-slot'),
     ).toBeNull();
-    expect(
-      screen.getByTestId('message-campaign-body-sortable-cell'),
-    ).toHaveAttribute('data-fill', 'false');
+    expect(getWidgetFill('message-campaign-body')).toBe(false);
   });
 
   it('keeps a legacy Canvas tab full-height when only one widget is visible', () => {
@@ -225,10 +246,7 @@ describe('PageLayoutVerticalList', () => {
         .getByTestId('front-component')
         .closest('.page-layout-viewport-filling-widget-slot'),
     ).not.toBeNull();
-    expect(screen.getByTestId('front-component-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'true',
-    );
+    expect(getWidgetFill('front-component')).toBe(true);
   });
 
   it.each([
@@ -247,9 +265,7 @@ describe('PageLayoutVerticalList', () => {
         />,
       );
 
-      expect(
-        screen.getByTestId('front-component-sortable-cell'),
-      ).toHaveAttribute('data-fill', 'false');
+      expect(getWidgetFill('front-component')).toBe(false);
     },
   );
 
@@ -263,10 +279,7 @@ describe('PageLayoutVerticalList', () => {
       />,
     );
 
-    expect(screen.getByTestId('timeline-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'true',
-    );
+    expect(getWidgetFill('timeline')).toBe(true);
   });
 
   it('keeps viewport-classified widgets fit-content in legacy Canvas tabs', () => {
@@ -287,14 +300,8 @@ describe('PageLayoutVerticalList', () => {
         .getByTestId('timeline')
         .closest('.page-layout-viewport-filling-widget-slot'),
     ).toBeNull();
-    expect(screen.getByTestId('timeline-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'false',
-    );
-    expect(screen.getByTestId('fields-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'false',
-    );
+    expect(getWidgetFill('timeline')).toBe(false);
+    expect(getWidgetFill('fields')).toBe(false);
   });
 
   it('gives an explicit TAB_VIEWPORT front component viewport-filling sizing in edit mode', () => {
@@ -307,10 +314,7 @@ describe('PageLayoutVerticalList', () => {
       />,
     );
 
-    expect(screen.getByTestId('front-component-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'true',
-    );
+    expect(getWidgetFill('front-component')).toBe(true);
   });
 
   it('keeps an explicit TAB_VIEWPORT front component viewport-filling in a side panel', () => {
@@ -325,10 +329,7 @@ describe('PageLayoutVerticalList', () => {
       />,
     );
 
-    expect(screen.getByTestId('front-component-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'true',
-    );
+    expect(getWidgetFill('front-component')).toBe(true);
   });
 
   it('keeps an explicit TAB_VIEWPORT widget viewport-filling in a pinned tab', () => {
@@ -343,10 +344,7 @@ describe('PageLayoutVerticalList', () => {
       />,
     );
 
-    expect(screen.getByTestId('front-component-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'true',
-    );
+    expect(getWidgetFill('front-component')).toBe(true);
   });
 
   it('keeps an explicit FIT_CONTENT viewport-classified widget fit-content', () => {
@@ -368,10 +366,7 @@ describe('PageLayoutVerticalList', () => {
       />,
     );
 
-    expect(screen.getByTestId('timeline-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'false',
-    );
+    expect(getWidgetFill('timeline')).toBe(false);
   });
 
   it('keeps front components fit-content in vertical lists', () => {
@@ -382,10 +377,7 @@ describe('PageLayoutVerticalList', () => {
       />,
     );
 
-    expect(screen.getByTestId('front-component-sortable-cell')).toHaveAttribute(
-      'data-fill',
-      'false',
-    );
+    expect(getWidgetFill('front-component')).toBe(false);
   });
 
   it('keeps the wheel on a workflow canvas that is alone in its tab', () => {

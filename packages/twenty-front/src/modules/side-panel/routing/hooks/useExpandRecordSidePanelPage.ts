@@ -10,6 +10,7 @@ import { type SidePanelExpandTarget } from '@/side-panel/types/SidePanelExpandTa
 // because it also carries the open tab across and clears a stale parent view.
 export const useExpandRecordSidePanelPage =
   (): SidePanelExpandTarget | null => {
+    useRecordRouteVersion();
     const { t } = useLingui();
 
     const currentRoutedPath = useCurrentSidePanelRoutedPath();
@@ -34,3 +35,4 @@ export const useExpandRecordSidePanelPage =
         }),
     };
   };
+import { useRecordRouteVersion } from '@/app/routing/record-routes/router';

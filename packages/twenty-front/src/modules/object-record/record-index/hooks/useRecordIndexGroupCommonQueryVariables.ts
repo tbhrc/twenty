@@ -1,3 +1,4 @@
+import { useRecordTableWidgetScopeFilter } from '@/object-record/record-table-widget/hooks/useRecordTableWidgetScopeFilter';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
 import { flattenedFieldMetadataItemsSelector } from '@/object-metadata/states/flattenedFieldMetadataItemsSelector';
 import { turnSortsIntoOrderBy } from '@/object-record/object-sort-dropdown/utils/turnSortsIntoOrderBy';
@@ -23,6 +24,7 @@ import {
 export const useRecordIndexGroupCommonQueryVariables = () => {
   const { objectMetadataItem } = useRecordIndexContextOrThrow();
   const { objectMetadataItems } = useObjectMetadataItems();
+  const scopeFilter = useRecordTableWidgetScopeFilter();
 
   const currentRecordFilterGroups = useAtomComponentStateValue(
     currentRecordFilterGroupsComponentState,
@@ -92,6 +94,7 @@ export const useRecordIndexGroupCommonQueryVariables = () => {
   });
 
   const combinedFilters = combineFilters([
+    scopeFilter,
     anyFieldFilter,
     requestFilters,
     recordGroupOptionsFilter,

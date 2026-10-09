@@ -1,7 +1,7 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { HeadlessEngineCommandWrapperEffect } from '@/command-menu-item/engine-command/components/HeadlessEngineCommandWrapperEffect';
 import { type PathParam, useNavigate } from 'react-router-dom';
 import { type AppPath } from 'twenty-shared/types';
-import { getAppPath } from 'twenty-shared/utils';
 
 export const HeadlessNavigateEngineCommand = <T extends AppPath>({
   to,

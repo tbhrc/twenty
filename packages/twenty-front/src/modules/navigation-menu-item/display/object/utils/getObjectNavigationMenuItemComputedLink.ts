@@ -1,8 +1,9 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { type View } from '@/views/types/View';
 import { computeObjectViewTargetIds } from '@/views/utils/computeObjectViewTargetIds';
 import { AppPath } from 'twenty-shared/types';
-import { getAppPath, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 import { type NavigationMenuItem } from '~/generated-metadata/graphql';
 
 export const getObjectNavigationMenuItemComputedLink = ({

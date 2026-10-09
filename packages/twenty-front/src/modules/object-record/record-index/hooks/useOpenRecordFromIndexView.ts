@@ -1,3 +1,5 @@
+import { useRecordTableWidgetScopeFilter } from '@/object-record/record-table-widget/hooks/useRecordTableWidgetScopeFilter';
+import { anyFieldFilterValueComponentState } from '@/object-record/record-filter/states/anyFieldFilterValueComponentState';
 import { useSidePanelMenu } from '@/side-panel/hooks/useSidePanelMenu';
 import { useOpenRecordInSidePanel } from '@/side-panel/hooks/useOpenRecordInSidePanel';
 import { sidePanelPageInfoSelector } from '@/side-panel/states/sidePanelPageInfoSelector';
@@ -19,6 +21,11 @@ export const useOpenRecordFromIndexView = () => {
   const { recordIndexId, objectNameSingular } = useRecordIndexContextOrThrow();
 
   const navigate = useNavigateApp();
+  const scopeFilter = useRecordTableWidgetScopeFilter();
+  const anyFieldFilterValue = useAtomComponentStateCallbackState(
+    anyFieldFilterValueComponentState,
+    recordIndexId,
+  );
   const { openRecordInSidePanel } = useOpenRecordInSidePanel();
   const workspaceSurface = useWorkspaceSurface();
 
@@ -56,6 +63,8 @@ export const useOpenRecordFromIndexView = () => {
         parentViewObjectNameSingular: objectNameSingular,
         parentViewFilterGroups,
         parentViewFilters,
+        parentViewScopeFilter: scopeFilter,
+        parentViewAnyFieldFilterValue: store.get(anyFieldFilterValue),
         parentViewSorts,
       };
 
@@ -113,6 +122,8 @@ export const useOpenRecordFromIndexView = () => {
     },
     [
       currentRecordFilters,
+      scopeFilter,
+      anyFieldFilterValue,
       currentRecordSorts,
       currentRecordFilterGroups,
       recordIndexId,

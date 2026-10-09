@@ -1,3 +1,6 @@
+import { useContext } from 'react';
+import { RecordTableWidgetContext } from '@/object-record/record-table-widget/contexts/RecordTableWidgetContext';
+import { RecordTableWidgetColumnHead } from '@/object-record/record-table-widget/components/RecordTableWidgetColumnHead';
 import { type RecordField } from '@/object-record/record-field/types/RecordField';
 import { TABLE_Z_INDEX } from '@/object-record/record-table/constants/TableZIndex';
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
@@ -32,6 +35,7 @@ export const RecordTableHeaderFirstScrollableCell = ({
   firstScrollableRecordField,
 }: RecordTableHeaderFirstScrollableCellProps) => {
   const { objectMetadataItem } = useRecordTableContextOrThrow();
+  const widgetContext = useContext(RecordTableWidgetContext);
 
   const {
     onPointerCancel: handlePointerCancel,
@@ -101,7 +105,13 @@ export const RecordTableHeaderFirstScrollableCell = ({
       )}
       <DragDropItemSortableHandle disabled={isRecordTableColumnHeadersReadOnly}>
         {isRecordTableColumnHeadersReadOnly ? (
-          <RecordTableColumnHead recordField={firstScrollableRecordField} />
+          widgetContext?.scopeView ? (
+            <RecordTableWidgetColumnHead
+              recordField={firstScrollableRecordField}
+            />
+          ) : (
+            <RecordTableColumnHead recordField={firstScrollableRecordField} />
+          )
         ) : (
           <RecordTableColumnHeadWithDropdown
             recordField={firstScrollableRecordField}

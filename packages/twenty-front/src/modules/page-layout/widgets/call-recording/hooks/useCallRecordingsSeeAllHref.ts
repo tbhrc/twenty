@@ -1,3 +1,4 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { objectMetadataItemFamilySelector } from '@/object-metadata/states/objectMetadataItemFamilySelector';
 import { useCalendarEventTargetRecordId } from '@/page-layout/widgets/call-recording/hooks/useCalendarEventTargetRecordId';
 import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
@@ -7,7 +8,7 @@ import {
   CoreObjectNameSingular,
   ViewFilterOperand,
 } from 'twenty-shared/types';
-import { getAppPath, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 
 export const useCallRecordingsSeeAllHref = (): string | undefined => {
   const calendarEventId = useCalendarEventTargetRecordId();

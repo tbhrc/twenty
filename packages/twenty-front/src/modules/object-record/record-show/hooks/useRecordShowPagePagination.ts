@@ -1,12 +1,12 @@
-import { useStore } from 'jotai';
-import { useState } from 'react';
 import {
-  parsePath,
   useLocation,
   useNavigate,
   useParams,
-  useSearchParams,
-} from 'react-router-dom';
+} from '@/app/routing/record-routes/router';
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
+import { useStore } from 'jotai';
+import { useState } from 'react';
+import { parsePath, useSearchParams } from 'react-router-dom';
 
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useFindManyRecords } from '@/object-record/hooks/useFindManyRecords';
@@ -21,7 +21,7 @@ import { useWorkspaceSurface } from '@/ui/layout/hooks/useWorkspaceSurface';
 import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { useQueryVariablesFromParentView } from '@/views/hooks/useQueryVariablesFromParentView';
 import { AppPath, SidePanelPages } from 'twenty-shared/types';
-import { combineFilters, getAppPath, isDefined } from 'twenty-shared/utils';
+import { combineFilters, isDefined } from 'twenty-shared/utils';
 
 export const useRecordShowPagePagination = (
   propsObjectNameSingular: string,

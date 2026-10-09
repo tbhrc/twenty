@@ -1,4 +1,5 @@
 import { type FindOptionsWhere } from 'typeorm';
+import { isDefined } from 'twenty-shared/utils';
 
 import { type ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
 
@@ -8,8 +9,9 @@ export const buildConnectedAccountUsableByCallerWhere = ({
   userWorkspaceId,
 }: {
   baseWhere: FindOptionsWhere<ConnectedAccountEntity>;
-  userWorkspaceId: string;
+  userWorkspaceId?: string;
 }): FindOptionsWhere<ConnectedAccountEntity>[] => [
   { ...baseWhere, visibility: 'workspace' },
-  { ...baseWhere, userWorkspaceId },
+  // An undefined owner predicate can be omitted by TypeORM, exposing private accounts.
+  ...(isDefined(userWorkspaceId) ? [{ ...baseWhere, userWorkspaceId }] : []),
 ];

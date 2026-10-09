@@ -1,3 +1,4 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { GoToHotkeyItemEffect } from '@/app/effect-components/GoToHotkeyItemEffect';
 import { isLayoutCustomizationModeEnabledState } from '@/layout-customization/states/isLayoutCustomizationModeEnabledState';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
@@ -8,7 +9,7 @@ import { useGoToHotkeys } from '@/ui/utilities/hotkey/hooks/useGoToHotkeys';
 import { useStore } from 'jotai';
 import { useCallback } from 'react';
 import { AppPath, SettingsPath } from 'twenty-shared/types';
-import { getAppPath, getSettingsPath } from 'twenty-shared/utils';
+import { getSettingsPath } from 'twenty-shared/utils';
 
 export const GotoHotkeysEffectsProvider = () => {
   const { activeNonSystemObjectMetadataItems } =

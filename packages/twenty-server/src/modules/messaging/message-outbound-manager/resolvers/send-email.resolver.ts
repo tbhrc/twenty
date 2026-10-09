@@ -48,7 +48,8 @@ export class SendEmailResolver {
   async sendEmail(
     @Args('input') input: SendEmailInput,
     @AuthWorkspace() workspace: WorkspaceEntity,
-    @AuthUserWorkspaceId() userWorkspaceId: string,
+    @AuthUserWorkspaceId({ allowUndefined: true })
+    userWorkspaceId: string | undefined,
   ): Promise<SendEmailOutputDTO> {
     try {
       await this.connectedAccountMetadataService.verifyUsableByCaller({
@@ -96,9 +97,32 @@ export class SendEmailResolver {
 
       try {
         if (data.shouldPersistMessage) {
-          await this.sendEmailService.persistSentMessage(
-            sendResult,
-            data,
+          const persistedMessage =
+            await this.sendEmailService.persistSentMessage(
+              sendResult,
+              data,
+              workspace.id,
+            );
+
+          messageThreadId = persistedMessage?.messageThreadId;
+        }
+      } catch (persistenceError) {
+        this.logger.warn(
+          `Email sent but persistence failed (sync will recover): ${persistenceError}`,
+        );
+      }
+
+      try {
+        const sentMessageExternalId =
+          sendResult.messageExternalId ?? sendResult.headerMessageId;
+
+        if (
+          !isDefined(messageThreadId) &&
+          isDefined(input.draftMessageId) &&
+          isNonEmptyString(sentMessageExternalId)
+        ) {
+          messageThreadId = await this.sendEmailService.getSentMessageThreadId(
+            sentMessageExternalId,
             workspace.id,
           );
         }
@@ -110,18 +134,6 @@ export class SendEmailResolver {
             workspace.id,
           );
         }
-
-        const sentMessageExternalId =
-          sendResult.messageExternalId ?? sendResult.headerMessageId;
-
-        messageThreadId =
-          isDefined(input.draftMessageId) &&
-          isNonEmptyString(sentMessageExternalId)
-            ? await this.sendEmailService.getSentMessageThreadId(
-                sentMessageExternalId,
-                workspace.id,
-              )
-            : undefined;
 
         const attachmentFileIds = (input.files ?? []).map((file) => file.id);
 
@@ -137,7 +149,12 @@ export class SendEmailResolver {
         );
       }
 
-      return { success: true, messageThreadId };
+      return {
+        success: true,
+        messageThreadId,
+        providerMessageId: sendResult.messageExternalId,
+        internetMessageId: sendResult.headerMessageId,
+      };
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;

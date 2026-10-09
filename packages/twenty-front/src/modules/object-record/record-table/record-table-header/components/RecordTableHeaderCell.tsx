@@ -1,3 +1,6 @@
+import { RecordTableWidgetContext } from '@/object-record/record-table-widget/contexts/RecordTableWidgetContext';
+import { RecordTableWidgetColumnHead } from '@/object-record/record-table-widget/components/RecordTableWidgetColumnHead';
+import { useContext } from 'react';
 import { type RecordField } from '@/object-record/record-field/types/RecordField';
 import { hasRecordGroupsComponentSelector } from '@/object-record/record-group/states/selectors/hasRecordGroupsComponentSelector';
 
@@ -31,6 +34,7 @@ export const RecordTableHeaderCell = ({
   recordField,
   recordFieldIndex,
 }: RecordTableHeaderCellProps) => {
+  const widgetContext = useContext(RecordTableWidgetContext);
   const { objectMetadataItem } = useRecordTableContextOrThrow();
 
   const {
@@ -106,7 +110,11 @@ export const RecordTableHeaderCell = ({
       )}
       <DragDropItemSortableHandle disabled={isRecordTableColumnHeadersReadOnly}>
         {isRecordTableColumnHeadersReadOnly ? (
-          <RecordTableColumnHead recordField={recordField} />
+          widgetContext?.scopeView ? (
+            <RecordTableWidgetColumnHead recordField={recordField} />
+          ) : (
+            <RecordTableColumnHead recordField={recordField} />
+          )
         ) : (
           <RecordTableColumnHeadWithDropdown
             recordField={recordField}

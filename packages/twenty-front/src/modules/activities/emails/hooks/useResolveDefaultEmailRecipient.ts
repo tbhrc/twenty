@@ -1,6 +1,7 @@
 import { useFindManyRecords } from '@/object-record/hooks/useFindManyRecords';
 import { useFindOneRecord } from '@/object-record/hooks/useFindOneRecord';
 import { CoreObjectNameSingular } from 'twenty-shared/types';
+import { useDirectPersonRecipient } from '@/activities/emails/hooks/useDirectPersonRecipient';
 
 type UseResolveDefaultEmailRecipientParams = {
   objectNameSingular: string | null | undefined;
@@ -15,6 +16,10 @@ export const useResolveDefaultEmailRecipient = ({
   const isCompany = objectNameSingular === CoreObjectNameSingular.Company;
   const isOpportunity =
     objectNameSingular === CoreObjectNameSingular.Opportunity;
+  const directPerson = useDirectPersonRecipient({
+    objectNameSingular,
+    recordId,
+  });
 
   const skipPerson = !isPerson || !recordId;
   const skipCompanyPeople = !isCompany || !recordId;
@@ -53,7 +58,7 @@ export const useResolveDefaultEmailRecipient = ({
       ? (companyPeople[0]?.emails?.primaryEmail ?? '')
       : isOpportunity
         ? (opportunityRecord?.pointOfContact?.emails?.primaryEmail ?? '')
-        : '';
+        : (directPerson.person?.emails?.primaryEmail ?? '');
 
   const defaultRecipientPersonId = isPerson
     ? personRecord?.id
@@ -61,12 +66,13 @@ export const useResolveDefaultEmailRecipient = ({
       ? companyPeople[0]?.id
       : isOpportunity
         ? opportunityRecord?.pointOfContact?.id
-        : undefined;
+        : directPerson.person?.id;
 
   const loading =
     (isPerson && personLoading) ||
     (isCompany && companyPeopleLoading) ||
-    (isOpportunity && opportunityLoading);
+    (isOpportunity && opportunityLoading) ||
+    directPerson.loading;
 
   return { defaultRecipientPersonId, defaultTo, loading };
 };

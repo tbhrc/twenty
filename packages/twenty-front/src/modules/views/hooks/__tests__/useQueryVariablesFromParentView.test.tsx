@@ -4,7 +4,10 @@ import { contextStoreRecordShowParentViewComponentState } from '@/context-store/
 import { type RecordFilter } from '@/object-record/record-filter/types/RecordFilter';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { useQueryVariablesFromParentView } from '@/views/hooks/useQueryVariablesFromParentView';
-import { ViewFilterOperand } from 'twenty-shared/types';
+import {
+  ViewFilterOperand,
+  type RecordGqlOperationFilter,
+} from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { getJestMetadataAndApolloMocksWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksWrapper';
 import { getMockObjectMetadataItemOrThrow } from '~/testing/utils/getMockObjectMetadataItemOrThrow';
@@ -44,6 +47,7 @@ const workflowRecordFilter: RecordFilter = {
 
 const renderUseQueryVariablesFromParentView = (
   objectMetadataItem: EnrichedObjectMetadataItem,
+  parentViewScopeFilter?: RecordGqlOperationFilter,
 ) =>
   renderHook(() => useQueryVariablesFromParentView({ objectMetadataItem }), {
     wrapper: getJestMetadataAndApolloMocksWrapper({
@@ -59,6 +63,7 @@ const renderUseQueryVariablesFromParentView = (
               workflowVersionObjectMetadataItem.nameSingular,
             parentViewFilterGroups: [],
             parentViewFilters: [workflowRecordFilter],
+            parentViewScopeFilter,
             parentViewSorts: [],
           },
         );
@@ -84,4 +89,20 @@ describe('useQueryVariablesFromParentView', () => {
 
     expect(result.current.filter).toEqual({});
   });
+});
+
+it('keeps resolved source-record scope ANDed with optional parent filters for next/previous navigation', () => {
+  const sourceScope = { ownerId: { in: [WORKFLOW_RECORD_ID] } };
+  const { result } = renderUseQueryVariablesFromParentView(
+    workflowVersionObjectMetadataItem,
+    sourceScope,
+  );
+  expect(result.current.filter).toEqual({
+    and: [sourceScope, { workflowId: { in: [WORKFLOW_RECORD_ID] } }],
+  });
+  const otherObject = renderUseQueryVariablesFromParentView(
+    workflowObjectMetadataItem,
+    sourceScope,
+  );
+  expect(otherObject.result.current.filter).toEqual({});
 });

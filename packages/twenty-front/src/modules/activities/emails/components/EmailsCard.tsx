@@ -9,9 +9,15 @@ import { useSubscribeTimelineToParticipantChanges } from '@/activities/hooks/use
 import { WidgetHeaderCountEffect } from '@/page-layout/widgets/components/WidgetHeaderCountEffect';
 import { useTargetRecord } from '@/ui/layout/contexts/useTargetRecord';
 import { type TimelineThreadsWithTotal } from '~/generated/graphql';
+import { type ActivityTargetableObject } from '@/activities/types/ActivityTargetableEntity';
 
-export const EmailsCard = () => {
-  const targetRecord = useTargetRecord();
+export const EmailsCard = ({
+  targetRecord: suppliedTarget,
+}: {
+  targetRecord?: ActivityTargetableObject;
+}) => {
+  const layoutTarget = useTargetRecord();
+  const targetRecord = suppliedTarget ?? layoutTarget;
 
   const {
     data,

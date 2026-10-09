@@ -1,8 +1,15 @@
+import { usePageLayoutPersonalPreference } from '@/page-layout/hooks/usePageLayoutPersonalPreference';
+import { styled } from '@linaria/react';
+import { t } from '@lingui/core/macro';
+import { IconLayoutKanban, IconList } from 'twenty-ui/icon';
+import { SegmentedControl } from 'twenty-ui/primitives/input';
+import { themeCssVariables } from 'twenty-ui/theme';
 import { getContextStoreViewType } from '@/context-store/utils/getContextStoreViewType';
 import { useObjectMetadataItemById } from '@/object-metadata/hooks/useObjectMetadataItemById';
 import { RecordBoardWidget } from '@/object-record/record-board-widget/components/RecordBoardWidget';
 import { RecordCalendarWidget } from '@/object-record/record-calendar-widget/components/RecordCalendarWidget';
 import { RecordListWidget } from '@/object-record/record-list-widget/components/RecordListWidget';
+import { RecordTableWidgetToolbar } from '@/object-record/record-table-widget/components/RecordTableWidgetToolbar';
 import { RecordTableWidget } from '@/object-record/record-table-widget/components/RecordTableWidget';
 import { RecordTableWidgetProvider } from '@/object-record/record-table-widget/components/RecordTableWidgetProvider';
 import {
@@ -20,13 +27,29 @@ import { useAtomComponentFamilySelectorValue } from '@/ui/utilities/state/jotai/
 import { useViewById } from '@/views/hooks/useViewById';
 import { type ReactNode } from 'react';
 import { isDefined } from 'twenty-shared/utils';
-import { ViewCalendarLayout, ViewType } from '~/generated-metadata/graphql';
+import {
+  FieldMetadataType,
+  ViewCalendarLayout,
+  ViewType,
+} from '~/generated-metadata/graphql';
+
+const StyledLayoutControl = styled.div`
+  border-bottom: 1px solid ${themeCssVariables.border.color.light};
+  display: flex;
+  flex-shrink: 0;
+  padding: ${themeCssVariables.spacing[2]};
+
+  @media print {
+    display: none;
+  }
+`;
 
 type RecordTableWidgetRendererContentProps = {
   objectMetadataId: string;
   viewId: string;
   widgetId: string;
   isUIEditable?: boolean;
+  isLayoutSwitchEnabled?: boolean;
   isEmptyStateHidden?: boolean;
   recordLimit?: number;
   instanceIdSuffix?: string;
@@ -39,12 +62,15 @@ export const RecordTableWidgetRendererContent = ({
   viewId,
   widgetId,
   isUIEditable = false,
+  isLayoutSwitchEnabled = false,
   isEmptyStateHidden = false,
   recordLimit,
   instanceIdSuffix,
   nestedRelationCreateThrough,
   junctionCreateThrough,
 }: RecordTableWidgetRendererContentProps) => {
+  const { value: preferredLayout, setValue: setPreferredLayout } =
+    usePageLayoutPersonalPreference(`widget-layout:${widgetId}`);
   const { objectMetadataItem } = useObjectMetadataItemById({
     objectId: objectMetadataId,
   });
@@ -63,7 +89,28 @@ export const RecordTableWidgetRendererContent = ({
       ? constructViewFromRecordTableWidgetViewSnapshot(draftSnapshot)
       : persistedView;
 
-  const widgetViewLayout = getRecordTableWidgetLayout(widgetView?.type);
+  const persistedLayout = getRecordTableWidgetLayout(widgetView?.type);
+  const canSwitchLayout =
+    isLayoutSwitchEnabled &&
+    !isPageLayoutInEditMode &&
+    (persistedLayout === ViewType.TABLE ||
+      persistedLayout === ViewType.KANBAN) &&
+    objectMetadataItem.fields.some(
+      (field) =>
+        field.id === widgetView?.mainGroupByFieldMetadataId &&
+        field.type === FieldMetadataType.SELECT &&
+        field.isActive,
+    );
+  const widgetViewLayout =
+    canSwitchLayout &&
+    (preferredLayout === ViewType.TABLE || preferredLayout === ViewType.KANBAN)
+      ? preferredLayout
+      : persistedLayout;
+  const presentationViewType = canSwitchLayout
+    ? widgetViewLayout === ViewType.KANBAN
+      ? ViewType.KANBAN_WIDGET
+      : ViewType.TABLE_WIDGET
+    : undefined;
 
   const isCalendarLayout = widgetViewLayout === ViewType.CALENDAR;
 
@@ -104,8 +151,34 @@ export const RecordTableWidgetRendererContent = ({
       instanceIdSuffix={instanceIdSuffix}
       nestedRelationCreateThrough={nestedRelationCreateThrough}
       junctionCreateThrough={junctionCreateThrough}
+      presentationViewType={presentationViewType}
+      scopeView={
+        isLayoutSwitchEnabled && !isPageLayoutInEditMode
+          ? widgetView
+          : undefined
+      }
+      isScopeRequired={isLayoutSwitchEnabled && !isPageLayoutInEditMode}
       contextStoreViewType={getContextStoreViewType(widgetViewLayout)}
     >
+      {canSwitchLayout && (
+        <StyledLayoutControl>
+          <SegmentedControl
+            aria-label={t`Record layout`}
+            itemWidth="content"
+            value={widgetViewLayout}
+            onValueChange={setPreferredLayout}
+            options={[
+              {
+                value: ViewType.KANBAN,
+                label: t`Board`,
+                startIcon: <IconLayoutKanban />,
+              },
+              { value: ViewType.TABLE, label: t`List`, startIcon: <IconList /> },
+            ]}
+          />
+        </StyledLayoutControl>
+      )}
+      {canSwitchLayout && <RecordTableWidgetToolbar />}
       {renderWidgetForLayout[widgetViewLayout]()}
     </RecordTableWidgetProvider>
   );

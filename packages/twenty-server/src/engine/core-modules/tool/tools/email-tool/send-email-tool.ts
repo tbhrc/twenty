@@ -43,13 +43,25 @@ export class SendEmailTool implements Tool {
 
       const sendResult = await this.sendEmailService.sendComposedEmail(data);
 
-      const persistedMessage = data.shouldPersistMessage
-        ? await this.sendEmailService.persistSentMessage(
-            sendResult,
-            data,
-            context.workspaceId,
-          )
-        : undefined;
+      // The provider has accepted the email. A persistence failure must not turn
+      // that into a reported failure, or a workflow retry sends the email again.
+      let persistedMessage:
+        | Awaited<ReturnType<SendEmailService['persistSentMessage']>>
+        | undefined;
+
+      try {
+        persistedMessage = data.shouldPersistMessage
+          ? await this.sendEmailService.persistSentMessage(
+              sendResult,
+              data,
+              context.workspaceId,
+            )
+          : undefined;
+      } catch (persistenceError) {
+        this.logger.warn(
+          `Email sent but persistence failed (sync will recover): ${persistenceError}`,
+        );
+      }
 
       this.logger.log(
         `Email sent successfully to ${data.toRecipientsDisplay}${data.attachments.length > 0 ? ` with ${data.attachments.length} attachments` : ''}`,

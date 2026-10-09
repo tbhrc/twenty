@@ -1,3 +1,7 @@
+import {
+  combineFilters,
+  turnAnyFieldFilterIntoRecordGqlFilter,
+} from 'twenty-shared/utils';
 import { contextStoreRecordShowParentViewComponentState } from '@/context-store/states/contextStoreRecordShowParentViewComponentState';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
 import { flattenedFieldMetadataItemsSelector } from '@/object-metadata/states/flattenedFieldMetadataItemsSelector';
@@ -41,13 +45,23 @@ export const useQueryVariablesFromParentView = ({
     filterValueDependencies,
   });
 
+  const { recordGqlOperationFilter: anyFieldFilter } =
+    turnAnyFieldFilterIntoRecordGqlFilter({
+      fields: objectMetadataItem.fields,
+      filterValue: parentView?.parentViewAnyFieldFilterValue ?? '',
+    });
+
   const isSoftDeleteFilterActive =
     parentView?.parentViewFilters.some((recordFilter) =>
       isRecordFilterAboutSoftDelete({ recordFilter, objectMetadataItems }),
     ) ?? false;
 
   return {
-    filter,
+    filter: combineFilters([
+      parentView?.parentViewScopeFilter ?? {},
+      filter,
+      anyFieldFilter,
+    ]),
     orderBy,
     isSoftDeleteFilterActive,
   };

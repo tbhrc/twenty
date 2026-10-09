@@ -1,3 +1,5 @@
+import { isDefined } from 'twenty-shared/utils';
+
 import { type ConnectedAccountEntity } from 'src/engine/metadata-modules/connected-account/entities/connected-account.entity';
 
 export const isConnectedAccountUsableByCaller = ({
@@ -8,7 +10,8 @@ export const isConnectedAccountUsableByCaller = ({
     ConnectedAccountEntity,
     'visibility' | 'userWorkspaceId'
   >;
-  userWorkspaceId: string;
+  userWorkspaceId?: string;
 }): boolean =>
   connectedAccount.visibility === 'workspace' ||
-  connectedAccount.userWorkspaceId === userWorkspaceId;
+  (isDefined(userWorkspaceId) &&
+    connectedAccount.userWorkspaceId === userWorkspaceId);

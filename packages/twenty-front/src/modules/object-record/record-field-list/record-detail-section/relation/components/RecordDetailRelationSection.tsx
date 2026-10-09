@@ -1,3 +1,4 @@
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { useContext } from 'react';
 
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
@@ -33,7 +34,6 @@ import {
 import {
   computeMorphRelationGqlFieldName,
   CustomError,
-  getAppPath,
   isDefined,
 } from 'twenty-shared/utils';
 import { RelationType } from '~/generated-metadata/graphql';

@@ -10,4 +10,10 @@ export class SendEmailOutputDTO {
 
   @Field(() => String, { nullable: true })
   messageThreadId?: string;
+
+  @Field(() => String, { nullable: true })
+  providerMessageId?: string;
+
+  @Field(() => String, { nullable: true })
+  internetMessageId?: string;
 }

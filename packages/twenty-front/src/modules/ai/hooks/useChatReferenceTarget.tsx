@@ -1,10 +1,10 @@
 import { AvatarOrIcon } from '@/ui/field/display/components/internal/AvatarOrIcon/AvatarOrIcon';
+import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { isNonEmptyString } from '@sniptt/guards';
 import { type ReactNode } from 'react';
 import { AppPath, SettingsPath } from 'twenty-shared/types';
 import {
   assertUnreachable,
-  getAppPath,
   getSettingsPath,
   isDefined,
 } from 'twenty-shared/utils';
