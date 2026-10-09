@@ -3,6 +3,8 @@ import { styled } from '@linaria/react';
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { FieldDisplay } from '@/object-record/record-field/ui/components/FieldDisplay';
+import { JsonFieldDisplay } from '@/object-record/record-field/ui/meta-types/display/components/JsonFieldDisplay';
+import { isFieldRawJson } from '@/object-record/record-field/ui/types/guards/isFieldRawJson';
 import { FieldContext } from '@/object-record/record-field/ui/contexts/FieldContext';
 import { RecordFieldComponentInstanceContext } from '@/object-record/record-field/ui/states/contexts/RecordFieldComponentInstanceContext';
 import { themeCssVariables } from 'twenty-ui/theme';
@@ -50,10 +52,14 @@ export const EventFieldDiffValue = ({
               },
               defaultValue: fieldMetadataItem.defaultValue,
             },
-            isRecordFieldReadOnly: false,
+            isRecordFieldReadOnly: isFieldRawJson(fieldMetadataItem),
           }}
         >
-          <FieldDisplay />
+          {isFieldRawJson(fieldMetadataItem) ? (
+            <JsonFieldDisplay compact />
+          ) : (
+            <FieldDisplay />
+          )}
         </FieldContext.Provider>
       </RecordFieldComponentInstanceContext.Provider>
     </StyledEventFieldDiffValue>

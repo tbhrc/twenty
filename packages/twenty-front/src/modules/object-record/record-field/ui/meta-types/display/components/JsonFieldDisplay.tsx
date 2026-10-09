@@ -7,7 +7,7 @@ import { isDefined } from 'twenty-shared/utils';
 import { JsonTree } from 'twenty-ui/components';
 import { useCopyToClipboard } from '~/hooks/useCopyToClipboard';
 
-export const JsonFieldDisplay = () => {
+export const JsonFieldDisplay = ({ compact = false }: { compact?: boolean }) => {
   const { copyToClipboard } = useCopyToClipboard();
 
   const { fieldValue, maxWidth, isRecordFieldReadOnly } = useJsonFieldDisplay();
@@ -29,7 +29,7 @@ export const JsonFieldDisplay = () => {
     return <></>;
   }
 
-  const value = JSON.stringify(fieldValue);
+  const value = compact ? t`View details` : JSON.stringify(fieldValue);
 
   return (
     <>
