@@ -95,11 +95,19 @@ export const RecordRouteGate = ({
 
   const result =
     resolved?.readIdentity === readIdentity ? resolved.result : null;
+  const wrongType = Boolean(
+    aliasDefinition?.recordType &&
+    result?.status === 'ready' &&
+    result.recordPath !==
+      getRecordRouteMatch(location.pathname)?.definition.path,
+  );
   useEffect(() => {
     const canonicalLocation =
-      definition && result?.status === 'ready'
+      definition && result?.status === 'ready' && !wrongType
         ? getRecordRouteViewLocation({
-            definition,
+            definition: result.recordPath
+              ? { ...definition, path: result.recordPath }
+              : definition,
             recordIdentifier: result.recordIdentifier,
             view: getRecordRouteMatch(location.pathname)?.view,
             hash: location.hash,
@@ -123,6 +131,7 @@ export const RecordRouteGate = ({
     }
   }, [
     aliasDefinition,
+    wrongType,
     retainNativePermissions,
     definition,
     result,
@@ -141,6 +150,7 @@ export const RecordRouteGate = ({
     result.status === 'unidentified'
   )
     return children;
-  if (result.status !== 'ready') return <WorkspaceRouteUnavailable />;
+  if (wrongType || result.status !== 'ready')
+    return <WorkspaceRouteUnavailable />;
   return children;
 };

@@ -17,7 +17,10 @@ export const getRecordRouteMatch = (pathname: string) => {
         );
         if (match)
           return {
-            definition,
+            definition:
+              !definition.recordType || path === definition.path
+                ? definition
+                : { ...definition, path },
             recordIdentifier: match.params.recordIdentifier,
             view,
           };

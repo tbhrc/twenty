@@ -16,7 +16,12 @@ export type RecordContextLookup = (
 ) => Promise<RecordContextResult>;
 
 export type RecordRouteLookupResult =
-  | { status: 'ready'; recordId: string; recordIdentifier: number }
+  | {
+      status: 'ready';
+      recordId: string;
+      recordIdentifier: number;
+      recordPath?: string;
+    }
   | { status: 'unidentified'; recordId: string }
   | { status: 'missing' | 'duplicate' | 'denied' | 'error' };
 export type RecordRouteLookup = (
@@ -30,11 +35,13 @@ let version = 0;
 let lookup: RecordRouteLookup | null = null;
 let readableObjects = new Set<string>();
 let readableContextObjects = new Set<string>();
+let readableContextPaths: Set<string> | null = null;
 let contextLookup: RecordContextLookup | null = null;
 const contextIds = new Map<string, string>();
 const contextPaths = new Map<string, string>();
 const pendingContexts = new Map<string, Promise<RecordContextResult>>();
 const ids = new Map<string, number>();
+const typedPaths = new Map<string, string>();
 const numbers = new Map<string, string>();
 const duplicates = new Set<string>();
 const pending = new Map<string, Promise<RecordRouteLookupResult>>();
@@ -68,12 +75,14 @@ export const beginRecordRouteScope = (nextScope: string | null) => {
     scope = nextScope;
     generation += 1;
     ids.clear();
+    typedPaths.clear();
     numbers.clear();
     duplicates.clear();
     pending.clear();
     requestedHrefs.clear();
     readableObjects.clear();
     readableContextObjects.clear();
+    readableContextPaths = null;
     contextIds.clear();
     contextPaths.clear();
     pendingContexts.clear();
@@ -89,12 +98,16 @@ export const configureRecordRouteScope = (
   nextLookup: RecordRouteLookup | null,
   allowedContextObjects: string[] = [],
   nextContextLookup: RecordContextLookup | null = null,
+  allowedContextPaths: string[] | null = null,
 ) => {
   beginRecordRouteScope(nextScope);
   readableObjects = new Set(allowedObjects);
   lookup = nextLookup;
   readableContextObjects = new Set(allowedContextObjects);
   contextLookup = nextContextLookup;
+  readableContextPaths = allowedContextPaths
+    ? new Set(allowedContextPaths)
+    : null;
 };
 
 export const getCachedContextRecordId = (
@@ -105,8 +118,15 @@ export const getCachedContextRecordId = (
     ? contextIds.get(`${objectNameSingular}:${path.replace(/\/$/, '')}`)
     : undefined;
 
-export const isRecordContextRouteReadable = (objectNameSingular: string) =>
-  Boolean(scope && readableContextObjects.has(objectNameSingular));
+export const isRecordContextRouteReadable = (
+  objectNameSingular: string,
+  path?: string,
+) =>
+  Boolean(
+    scope &&
+    readableContextObjects.has(objectNameSingular) &&
+    (!path || readableContextPaths === null || readableContextPaths.has(path)),
+  );
 
 export const getCachedContextRecordPath = (
   objectNameSingular: string,
@@ -123,10 +143,13 @@ export const resolveRecordContextRoute = (
   if (
     !scope ||
     !contextLookup ||
-    !readableContextObjects.has(definition.objectNameSingular)
+    !isRecordContextRouteReadable(
+      definition.objectNameSingular,
+      definition.path,
+    )
   )
     return Promise.resolve({ status: 'denied' });
-  const key = `${definition.objectNameSingular}:${JSON.stringify(target)}`;
+  const key = `${definition.objectNameSingular}:${definition.path}:${JSON.stringify(target)}`;
   const existing = pendingContexts.get(key);
   if (existing) return existing;
   const expectedGeneration = generation;
@@ -141,29 +164,33 @@ export const resolveRecordContextRoute = (
         )
           return { status: 'error' };
         const idKey = `${definition.objectNameSingular}:${result.recordId}`;
-        const previousRecordId = contextIds.get(
-          `${definition.objectNameSingular}:${result.path}`,
-        );
-        if (previousRecordId && previousRecordId !== result.recordId)
-          contextPaths.delete(
-            `${definition.objectNameSingular}:${previousRecordId}`,
+        if (definition.canonical !== false) {
+          const previousRecordId = contextIds.get(
+            `${definition.objectNameSingular}:${result.path}`,
           );
-        const previous = contextPaths.get(idKey);
-        if (previous)
-          contextIds.delete(`${definition.objectNameSingular}:${previous}`);
+          if (previousRecordId && previousRecordId !== result.recordId)
+            contextPaths.delete(
+              `${definition.objectNameSingular}:${previousRecordId}`,
+            );
+          const previous = contextPaths.get(idKey);
+          if (previous)
+            contextIds.delete(`${definition.objectNameSingular}:${previous}`);
+          contextPaths.set(idKey, result.path);
+        }
         contextIds.set(
           `${definition.objectNameSingular}:${result.path}`,
           result.recordId,
         );
-        contextPaths.set(idKey, result.path);
         notify();
       } else {
         // A failed current read must revoke an earlier successful location.
         const path =
           'recordId' in target
-            ? contextPaths.get(
-                `${definition.objectNameSingular}:${target.recordId}`,
-              )
+            ? definition.canonical === false
+              ? undefined
+              : contextPaths.get(
+                  `${definition.objectNameSingular}:${target.recordId}`,
+                )
             : definition.path.replace(
                 /:([A-Za-z][A-Za-z0-9_]*)/g,
                 (_match, parameter: string) =>
@@ -173,7 +200,11 @@ export const resolveRecordContextRoute = (
           ? contextIds.get(`${definition.objectNameSingular}:${path}`)
           : undefined;
         if (path) contextIds.delete(`${definition.objectNameSingular}:${path}`);
-        if (recordId)
+        if (
+          recordId &&
+          contextPaths.get(`${definition.objectNameSingular}:${recordId}`) ===
+            path
+        )
           contextPaths.delete(`${definition.objectNameSingular}:${recordId}`);
         notify();
       }
@@ -193,11 +224,14 @@ export const requestRecordContextHref = (
   if (
     !scope ||
     !isValidUuid(recordId) ||
-    !readableContextObjects.has(definition.objectNameSingular) ||
+    !isRecordContextRouteReadable(
+      definition.objectNameSingular,
+      definition.path,
+    ) ||
     getCachedContextRecordPath(definition.objectNameSingular, recordId)
   )
     return;
-  const key = `context:${definition.objectNameSingular}:${recordId}`;
+  const key = `context:${definition.objectNameSingular}:${definition.path}:${recordId}`;
   if (requestedHrefs.has(key)) return;
   requestedHrefs.add(key);
   const expectedGeneration = generation;
@@ -213,6 +247,13 @@ export const getCachedRecordIdentifier = (
 ) =>
   scope && readableObjects.has(objectNameSingular)
     ? ids.get(`${objectNameSingular}:${recordId}`)
+    : undefined;
+export const getCachedTypedRecordPath = (
+  objectNameSingular: string,
+  recordId: string,
+) =>
+  scope && readableObjects.has(objectNameSingular)
+    ? typedPaths.get(`${objectNameSingular}:${recordId}`)
     : undefined;
 export const getCachedRecordId = (
   objectNameSingular: string,
@@ -238,6 +279,8 @@ export const rememberRecordRoute = (
   );
   if (!definition || typeof record.id !== 'string' || !isValidUuid(record.id))
     return;
+  // Typed identity is accepted only from the authenticated route lookup below.
+  if (definition.recordType) return;
   const number = parseRecordRouteIdentifier(
     record[definition.recordIdentifierField],
   );
@@ -288,6 +331,46 @@ export const resolveRecordRoute = (
           result.recordId !== target.recordId)
       )
         result = { status: 'error' };
+      if (result.status === 'ready' && definition.recordType) {
+        const key = `${definition.objectNameSingular}:${result.recordId}`;
+        if (
+          !isValidUuid(result.recordId) ||
+          parseRecordRouteIdentifier(result.recordIdentifier) === null ||
+          !Object.values(definition.recordType.paths).includes(
+            result.recordPath ?? '',
+          ) ||
+          ('recordId' in target && target.recordId !== result.recordId) ||
+          ('recordIdentifier' in target &&
+            target.recordIdentifier !== result.recordIdentifier)
+        ) {
+          result = { status: 'error' };
+        } else {
+          const numberKey = `${definition.objectNameSingular}:${result.recordIdentifier}`;
+          const previousId = numbers.get(numberKey);
+          if (previousId && previousId !== result.recordId) {
+            ids.delete(`${definition.objectNameSingular}:${previousId}`);
+            typedPaths.delete(`${definition.objectNameSingular}:${previousId}`);
+            ids.delete(key);
+            typedPaths.delete(key);
+            numbers.delete(numberKey);
+            duplicates.add(numberKey);
+            notify();
+            return { status: 'duplicate' };
+          }
+          if ('recordIdentifier' in target) duplicates.delete(numberKey);
+          if (duplicates.has(numberKey)) return { status: 'duplicate' };
+          const previousNumber = ids.get(key);
+          if (previousNumber !== undefined)
+            numbers.delete(
+              `${definition.objectNameSingular}:${previousNumber}`,
+            );
+          ids.set(key, result.recordIdentifier);
+          numbers.set(numberKey, result.recordId);
+          typedPaths.set(key, result.recordPath!);
+          notify();
+          return result;
+        }
+      }
       if (result.status === 'ready') {
         // Only a matching integer read proves a previous collision was reconciled.
         if (
@@ -328,6 +411,8 @@ export const resolveRecordRoute = (
           numbers.delete(`${definition.objectNameSingular}:${number}`);
         if (recordId)
           ids.delete(`${definition.objectNameSingular}:${recordId}`);
+        if (recordId)
+          typedPaths.delete(`${definition.objectNameSingular}:${recordId}`);
         notify();
       }
       return result;

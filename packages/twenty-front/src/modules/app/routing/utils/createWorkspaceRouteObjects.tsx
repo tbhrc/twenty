@@ -1,3 +1,4 @@
+import { getPageRouteDefinitions } from '@/app/routing/record-routes/pageRouteDefinitions';
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AppPath, SettingsPath } from 'twenty-shared/types';
@@ -12,6 +13,7 @@ import { type WorkspaceRouteObject } from '@/app/routing/types/WorkspaceRouteObj
 import { RecordIndexSkeletonLoader } from '@/object-record/record-index/components/RecordIndexSkeletonLoader';
 import {
   getRecordRouteDefinitions,
+  getIndexRouteDefinitions,
   getRecordRoutePaths,
 } from '@/app/routing/record-routes/recordRouteDefinitions';
 import { RecordRouteGate } from '@/app/routing/record-routes/RecordRouteGate';
@@ -77,6 +79,26 @@ export const createWorkspaceRouteObjects = ({
   });
 
   return [
+    ...getIndexRouteDefinitions().map((definition) => ({
+      path: definition.path,
+      element: (
+        <LazyRoute fallback={<RecordIndexSkeletonLoader />}>
+          <RecordIndexPage />
+        </LazyRoute>
+      ),
+      handle: {
+        workspaceSurfaces: MAIN_AND_SIDE_PANEL,
+        isLocationExpandableFromSidePanel: true,
+      },
+    })),
+    ...getPageRouteDefinitions().map((definition) => ({
+      path: definition.path,
+      element: (
+        <LazyRoute>
+          <StandalonePageLayoutPage />
+        </LazyRoute>
+      ),
+    })),
     ...getRecordContextRouteDefinitions().flatMap((definition) =>
       [undefined, ...Object.keys(definition.views ?? {})].map((view) => ({
         path: `${definition.path}${view ? `/${view}` : ''}`,

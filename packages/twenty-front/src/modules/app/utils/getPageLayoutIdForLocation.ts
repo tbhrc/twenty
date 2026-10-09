@@ -1,3 +1,4 @@
+import { getPageRouteForPath } from '@/app/routing/record-routes/pageRouteDefinitions';
 import { matchPath } from '@/app/routing/record-routes/router';
 import { type getDefaultStore } from 'jotai';
 import { type Location } from 'react-router-dom';
@@ -51,5 +52,5 @@ export const getPageLayoutIdForLocation = ({
     return pageLayoutMatch.params.pageLayoutId;
   }
 
-  return null;
+  return getPageRouteForPath(location.pathname)?.pageLayoutId ?? null;
 };

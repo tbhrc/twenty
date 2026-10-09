@@ -4,6 +4,7 @@ import { getAppPath as getNativeAppPath } from 'twenty-shared/utils';
 
 import {
   getCachedRecordIdentifier,
+  getCachedTypedRecordPath,
   getCachedContextRecordPath,
   requestRecordContextHref,
   isRecordRouteReadable,
@@ -11,6 +12,7 @@ import {
 } from './recordRouteCache';
 import {
   getRecordRouteDefinitions,
+  getIndexRouteDefinitions,
   parseRecordRouteIdentifier,
 } from './recordRouteDefinitions';
 import { getRecordContextRouteDefinitions } from './recordContextRoutes';
@@ -33,7 +35,9 @@ export const getRecordRoutePath = ({
     (item) => item.objectNameSingular === objectNameSingular,
   );
   const contextDefinition = getRecordContextRouteDefinitions().find(
-    (item) => item.objectNameSingular === objectNameSingular,
+    (item) =>
+      item.objectNameSingular === objectNameSingular &&
+      item.canonical !== false,
   );
   if (contextDefinition) {
     const path = getCachedContextRecordPath(objectNameSingular, recordId);
@@ -42,6 +46,13 @@ export const getRecordRoutePath = ({
     return nativePath;
   }
   if (!definition || !recordId) return nativePath;
+  if (definition.recordType) {
+    const identifier = getCachedRecordIdentifier(objectNameSingular, recordId);
+    const path = getCachedTypedRecordPath(objectNameSingular, recordId);
+    if (identifier !== undefined && path) return `${path}/${identifier}`;
+    requestRecordRouteHref(definition, recordId);
+    return nativePath;
+  }
   if (
     definition.allowUnidentifiedRecords &&
     record?.id === recordId &&
@@ -65,6 +76,11 @@ export const getFriendlyRecordPath = (path: string) => {
   const parsed = parsePath(path);
   const pathname = parsed.pathname ?? '';
   const indexMatch = matchPath(AppPath.RecordIndexPage, pathname);
+  const indexOnlyDefinition = getIndexRouteDefinitions().find(
+    (item) => item.objectNamePlural === indexMatch?.params.objectNamePlural,
+  );
+  if (indexOnlyDefinition)
+    return createPath({ ...parsed, pathname: indexOnlyDefinition.path });
   const indexDefinition = getRecordRouteDefinitions().find(
     (item) =>
       item.indexRoute !== false &&
@@ -81,7 +97,9 @@ export const getFriendlyRecordPath = (path: string) => {
     return createPath({
       ...parsed,
       pathname,
-      ...(parsed.hash ? getRecordRouteTabLocation(pathname, parsed.hash.slice(1)) : {}),
+      ...(parsed.hash
+        ? getRecordRouteTabLocation(pathname, parsed.hash.slice(1))
+        : {}),
     });
   }
   return path;

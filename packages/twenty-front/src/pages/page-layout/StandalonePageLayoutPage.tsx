@@ -1,5 +1,9 @@
 import { styled } from '@linaria/react';
-import { useParams } from 'react-router-dom';
+import { Navigate, useLocation, useParams } from 'react-router-dom';
+import {
+  getPageRouteForLayout,
+  getPageRouteForPath,
+} from '@/app/routing/record-routes/pageRouteDefinitions';
 
 import { CommandMenuComponentInstanceContext } from '@/command-menu/states/contexts/CommandMenuComponentInstanceContext';
 import { PageLayoutRenderer } from '@/page-layout/components/PageLayoutRenderer';
@@ -24,7 +28,29 @@ const StyledPageLayoutContainer = styled.div`
 `;
 
 export const StandalonePageLayoutPage = () => {
-  const { pageLayoutId } = useParams<{ pageLayoutId: string }>();
+  const location = useLocation();
+  const { pageLayoutId: nativePageLayoutId } = useParams<{
+    pageLayoutId: string;
+  }>();
+  const pageLayoutId =
+    nativePageLayoutId ?? getPageRouteForPath(location.pathname)?.pageLayoutId;
+  const canonicalRoute = nativePageLayoutId
+    ? getPageRouteForLayout(nativePageLayoutId)
+    : undefined;
+
+  if (canonicalRoute) {
+    return (
+      <Navigate
+        to={{
+          pathname: canonicalRoute.path,
+          search: location.search,
+          hash: location.hash,
+        }}
+        replace
+        state={location.state}
+      />
+    );
+  }
 
   if (!isDefined(pageLayoutId)) {
     return null;

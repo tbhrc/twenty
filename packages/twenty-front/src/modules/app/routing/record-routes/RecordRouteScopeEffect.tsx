@@ -1,6 +1,7 @@
 import { useLayoutEffect, useEffect, useMemo } from 'react';
-import { FieldMetadataType, RelationType } from 'twenty-shared/types';
+import { FieldMetadataType } from 'twenty-shared/types';
 import { getRecordContextRouteDefinitions } from './recordContextRoutes';
+import { getRecordContextRouteReadPlan } from './recordContextRouteReadPlan';
 import { resolveNativeRecordContext } from './resolveNativeRecordContext';
 import { resolveRetiredPersonRoute } from './resolveRetiredPersonRoute';
 import { isValidUuid } from 'twenty-shared/utils';
@@ -26,6 +27,8 @@ import {
 import {
   getRecordRouteDefinitions,
   parseRecordRouteIdentifier,
+  getRecordTypePath,
+  type RecordRouteDefinition,
 } from './recordRouteDefinitions';
 
 export const getRecordRouteLookupResult = (
@@ -43,6 +46,19 @@ export const getRecordRouteLookupResult = (
   const number = parseRecordRouteIdentifier(record[identifierField]);
   if (number === null) return { status: 'error' };
   return { status: 'ready', recordId: record.id, recordIdentifier: number };
+};
+
+export const getTypedRecordRouteLookupResult = (
+  records: Record<string, unknown>[],
+  definition: RecordRouteDefinition,
+): RecordRouteLookupResult => {
+  const result = getRecordRouteLookupResult(
+    records,
+    definition.recordIdentifierField,
+  );
+  if (result.status !== 'ready' || !definition.recordType) return result;
+  const recordPath = getRecordTypePath(definition, records[0]);
+  return recordPath ? { ...result, recordPath } : { status: 'missing' };
 };
 
 export const RecordRouteScopeEffect = () => {
@@ -74,49 +90,59 @@ export const RecordRouteScopeEffect = () => {
               field.isActive &&
               field.name === definition.recordIdentifierField &&
               field.type === FieldMetadataType.NUMBER,
-          )
+          ) &&
+          (!definition.recordType ||
+            object.readableFields.some(
+              (field) =>
+                field.isActive &&
+                field.name === definition.recordType!.field &&
+                field.type === FieldMetadataType.SELECT &&
+                objectPermissionsByObjectMetadataId[object.id]
+                  ?.restrictedFields[field.id]?.canRead !== false,
+            ))
         );
       }),
     [definitions, objectMetadataItems, objectPermissionsByObjectMetadataId],
   );
-  const readableContextDefinitions = useMemo(
+  const contextReadPlans = useMemo(
     () =>
-      contextDefinitions.filter((definition) => {
-        const object = objectMetadataItems.find(
-          (item) =>
-            item.nameSingular === definition.objectNameSingular &&
-            item.namePlural === definition.objectNamePlural,
-        );
-        return (
-          object &&
-          getObjectPermissionsForObject(
-            objectPermissionsByObjectMetadataId,
-            object.id,
-          ).canReadObjectRecords &&
-          definition.relations.every(
-            (relation) =>
-              readableDefinitions.some(
-                (endpoint) =>
-                  endpoint.objectNameSingular === relation.objectNameSingular,
-              ) &&
-              object.readableFields.some(
+      new Map(
+        contextDefinitions.map((definition) => [
+          definition.path,
+          getRecordContextRouteReadPlan(
+            definition,
+            objectMetadataItems.map((object) => ({
+              nameSingular: object.nameSingular,
+              namePlural: object.namePlural,
+              canRead:
+                object.isActive &&
+                getObjectPermissionsForObject(
+                  objectPermissionsByObjectMetadataId,
+                  object.id,
+                ).canReadObjectRecords,
+              fields: object.readableFields.filter(
                 (field) =>
-                  field.isActive &&
-                  field.name === relation.field &&
-                  field.type === FieldMetadataType.RELATION &&
-                  field.relation?.type === RelationType.MANY_TO_ONE &&
-                  field.relation.targetObjectMetadata.nameSingular ===
-                    relation.objectNameSingular,
+                  objectPermissionsByObjectMetadataId[object.id]
+                    ?.restrictedFields[field.id]?.canRead !== false,
               ),
-          )
-        );
-      }),
+            })),
+            readableDefinitions,
+          ),
+        ]),
+      ),
     [
       contextDefinitions,
       readableDefinitions,
       objectMetadataItems,
       objectPermissionsByObjectMetadataId,
     ],
+  );
+  const readableContextDefinitions = useMemo(
+    () =>
+      contextDefinitions.filter(
+        (definition) => contextReadPlans.get(definition.path) !== null,
+      ),
+    [contextDefinitions, contextReadPlans],
   );
   const retirementAliasObjects = useMemo(
     () =>
@@ -151,6 +177,7 @@ export const RecordRouteScopeEffect = () => {
           currentUserWorkspace.isImpersonating,
           readableDefinitions,
           readableContextDefinitions,
+          [...contextReadPlans],
           retirementAliasObjects,
           objectPermissionsByObjectMetadataId,
         ])
@@ -185,6 +212,9 @@ export const RecordRouteScopeEffect = () => {
                   recordGqlFields: {
                     id: true,
                     [definition.recordIdentifierField]: true,
+                    ...(definition.recordType
+                      ? { [definition.recordType.field]: true }
+                      : {}),
                   },
                   objectPermissionsByObjectMetadataId,
                 }),
@@ -249,6 +279,8 @@ export const RecordRouteScopeEffect = () => {
                 },
               });
             }
+            if (definition.recordType)
+              return getTypedRecordRouteLookupResult(records, definition);
             return getRecordRouteLookupResult(
               records,
               definition.recordIdentifierField,
@@ -264,12 +296,14 @@ export const RecordRouteScopeEffect = () => {
             if (
               !readableContextDefinitions.some(
                 (item) =>
+                  item.path === definition.path &&
                   item.objectNameSingular === definition.objectNameSingular,
               )
             )
               return { status: 'denied' };
             return resolveNativeRecordContext(definition, target, {
               endpoints: readableDefinitions,
+              relationPaths: contextReadPlans.get(definition.path) ?? undefined,
               read: async (objectNameSingular, fields, filter) => {
                 const object = objectMetadataItems.find(
                   (item) => item.nameSingular === objectNameSingular,
@@ -305,6 +339,7 @@ export const RecordRouteScopeEffect = () => {
             });
           }
         : null,
+      readableContextDefinitions.map((definition) => definition.path),
     );
   }, [
     client,
@@ -313,6 +348,7 @@ export const RecordRouteScopeEffect = () => {
     objectPermissionsByObjectMetadataId,
     readableDefinitions,
     readableContextDefinitions,
+    contextReadPlans,
     retirementAliasObjects,
   ]);
 

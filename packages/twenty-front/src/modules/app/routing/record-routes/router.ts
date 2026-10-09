@@ -21,6 +21,7 @@ import {
 } from './recordRouteCache';
 import {
   getRecordRouteDefinitions,
+  getIndexRouteForPath,
   getRecordRoutePaths,
   parseRecordRouteIdentifier,
 } from './recordRouteDefinitions';
@@ -33,6 +34,13 @@ export const useRecordRouteVersion = () =>
   );
 
 export const getFriendlyRouteParameters = (pathname: string) => {
+  const index = getIndexRouteForPath(pathname);
+  if (index)
+    return {
+      objectNamePlural: index.objectNamePlural,
+      objectNameSingular: undefined,
+      objectRecordId: undefined,
+    };
   const context = getRecordContextRouteMatch(pathname);
   if (context)
     return {

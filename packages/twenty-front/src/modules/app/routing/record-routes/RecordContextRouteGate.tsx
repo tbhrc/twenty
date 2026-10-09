@@ -33,7 +33,9 @@ export const RecordContextRouteGate = ({
     () =>
       configuredDefinition ??
       getRecordContextRouteDefinitions().find(
-        (item) => item.objectNameSingular === params.objectNameSingular,
+        (item) =>
+          item.objectNameSingular === params.objectNameSingular &&
+          item.canonical !== false,
       ),
     [configuredDefinition, params.objectNameSingular],
   );
@@ -43,14 +45,25 @@ export const RecordContextRouteGate = ({
   const retainNativePermissions =
     !configuredDefinition &&
     definition &&
-    !isRecordContextRouteReadable(definition.objectNameSingular);
+    !isRecordContextRouteReadable(
+      definition.objectNameSingular,
+      definition.path,
+    );
   const targetKey = configuredDefinition
-    ? JSON.stringify(
-        definition?.relations.map((relation) => [
+    ? JSON.stringify([
+        ...(definition?.relations.map((relation) => [
           relation.parameter,
           params[relation.parameter],
-        ]),
-      )
+        ]) ?? []),
+        ...(definition?.recordIdentifier
+          ? [
+              [
+                definition.recordIdentifier.parameter,
+                params[definition.recordIdentifier.parameter],
+              ],
+            ]
+          : []),
+      ])
     : params.objectRecordId;
   // Returning to the same target starts a new read even when history keys repeat.
   const readIdentity = useMemo(
@@ -79,6 +92,12 @@ export const RecordContextRouteGate = ({
     const resolve = async () => {
       if (configuredDefinition) {
         const identifiers: Record<string, number> = {};
+        if (definition.recordIdentifier) {
+          const parameter = definition.recordIdentifier.parameter;
+          const number = parseRecordRouteIdentifier(params[parameter]);
+          if (number === null) return { status: 'missing' } as const;
+          identifiers[parameter] = number;
+        }
         for (const relation of definition.relations) {
           const number = parseRecordRouteIdentifier(params[relation.parameter]);
           if (number === null) return { status: 'missing' } as const;

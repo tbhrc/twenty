@@ -1,3 +1,4 @@
+import { getPageRouteForPath } from '@/app/routing/record-routes/pageRouteDefinitions';
 import {
   matchPath,
   useLocation,
@@ -253,7 +254,8 @@ export const PageChangeEffect = () => {
         }
         break;
       }
-      case isMatchingLocation(location, AppPath.PageLayoutPage): {
+      case isMatchingLocation(location, AppPath.PageLayoutPage) ||
+        isDefined(getPageRouteForPath(location.pathname)): {
         resetFocusStackToFocusItem({
           focusStackItem: {
             focusId: PageFocusId.PageLayoutPage,
