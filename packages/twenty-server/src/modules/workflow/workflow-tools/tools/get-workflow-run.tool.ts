@@ -62,6 +62,8 @@ export const createGetWorkflowRunTool = (
               type: step.type,
               status: stepInfo?.status,
               error: stepInfo?.error,
+              output: JSON.stringify(stepInfo?.result ?? null).length <= 16000 ? stepInfo?.result : undefined,
+              outputOmitted: JSON.stringify(stepInfo?.result ?? null).length > 16000,
             };
           });
 
