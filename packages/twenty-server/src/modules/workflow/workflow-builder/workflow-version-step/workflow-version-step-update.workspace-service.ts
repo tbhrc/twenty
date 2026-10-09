@@ -131,6 +131,7 @@ export class WorkflowVersionStepUpdateWorkspaceService {
       await this.workflowVersionStepOperationsWorkspaceService.runStepCreationSideEffectsAndBuildStep(
         {
           type: newStep.type,
+          id: existingStep.id,
           workspaceId,
           position: newStep.position,
           defaultSettings: newStep.settings,
