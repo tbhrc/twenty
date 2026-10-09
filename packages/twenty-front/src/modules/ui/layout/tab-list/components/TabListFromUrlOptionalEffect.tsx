@@ -1,3 +1,4 @@
+import { getRecordRouteTabId } from '@/app/routing/record-routes/recordRouteViews';
 import { activeTabIdComponentState } from '@/ui/layout/tab-list/states/activeTabIdComponentState';
 import { useWorkspaceSurface } from '@/ui/layout/hooks/useWorkspaceSurface';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
@@ -17,7 +18,8 @@ export const TabListFromUrlOptionalEffect = ({
   const activeTabId = useAtomComponentStateValue(activeTabIdComponentState);
   const setActiveTabId = useSetAtomComponentState(activeTabIdComponentState);
 
-  const hash = location.hash.replace('#', '');
+  const hash =
+    getRecordRouteTabId(location.pathname) ?? location.hash.replace('#', '');
 
   useEffect(() => {
     if (!workspaceSurface.ownsRouteLocation) {

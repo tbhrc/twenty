@@ -4,6 +4,8 @@ import { getAppPath as getNativeAppPath } from 'twenty-shared/utils';
 
 import {
   getCachedRecordIdentifier,
+  getCachedContextRecordPath,
+  requestRecordContextHref,
   isRecordRouteReadable,
   requestRecordRouteHref,
 } from './recordRouteCache';
@@ -11,6 +13,8 @@ import {
   getRecordRouteDefinitions,
   parseRecordRouteIdentifier,
 } from './recordRouteDefinitions';
+import { getRecordContextRouteDefinitions } from './recordContextRoutes';
+import { getRecordRouteTabLocation } from './recordRouteViews';
 
 export const getRecordRoutePath = ({
   objectNameSingular,
@@ -28,6 +32,15 @@ export const getRecordRoutePath = ({
   const definition = getRecordRouteDefinitions().find(
     (item) => item.objectNameSingular === objectNameSingular,
   );
+  const contextDefinition = getRecordContextRouteDefinitions().find(
+    (item) => item.objectNameSingular === objectNameSingular,
+  );
+  if (contextDefinition) {
+    const path = getCachedContextRecordPath(objectNameSingular, recordId);
+    if (path) return path;
+    requestRecordContextHref(contextDefinition, recordId);
+    return nativePath;
+  }
   if (!definition || !recordId) return nativePath;
   if (
     definition.allowUnidentifiedRecords &&
@@ -61,12 +74,14 @@ export const getFriendlyRecordPath = (path: string) => {
     return createPath({ ...parsed, pathname: indexDefinition.path });
   const showMatch = matchPath(AppPath.RecordShowPage, pathname);
   if (showMatch?.params.objectNameSingular && showMatch.params.objectRecordId) {
+    const pathname = getRecordRoutePath({
+      objectNameSingular: showMatch.params.objectNameSingular,
+      recordId: showMatch.params.objectRecordId,
+    });
     return createPath({
       ...parsed,
-      pathname: getRecordRoutePath({
-        objectNameSingular: showMatch.params.objectNameSingular,
-        recordId: showMatch.params.objectRecordId,
-      }),
+      pathname,
+      ...(parsed.hash ? getRecordRouteTabLocation(pathname, parsed.hash.slice(1)) : {}),
     });
   }
   return path;

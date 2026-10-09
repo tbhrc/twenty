@@ -23,7 +23,6 @@ const flatView = () => ({
   type: ViewType.TABLE_WIDGET,
   mainGroupByFieldMetadataId: undefined,
   viewGroups: [],
-  viewFields: mockView.viewFields.map((field) => ({ ...field, size: 180 })),
 });
 
 let mockSavedWorkingView: string | null = null;
@@ -39,7 +38,13 @@ let mockView = {
   id: 'view',
   type: ViewType.KANBAN_WIDGET,
   viewFields: [
-    { id: 'name', position: 0, fieldMetadataId: 'name', isVisible: true },
+    {
+      id: 'name',
+      position: 0,
+      fieldMetadataId: 'name',
+      isVisible: true,
+      size: 88,
+    },
   ],
   viewFilters: [
     {
@@ -265,4 +270,35 @@ it('reloads saved personal rules separately from immutable saved scope', () => {
   mockSavedWorkingView = null;
   mockLastLoaded = null;
   mockLoad.mockReset();
+});
+
+it('preserves saved narrow widths after refresh and navigation to another job', () => {
+  mockSavedWorkingView = null;
+  mockLastLoaded = null;
+  mockLoad.mockImplementation(() => undefined);
+  const metadata = {
+    id: 'application',
+    updatedAt: 'now',
+  } as EnrichedObjectMetadataItem;
+  const element = (
+    <RecordTableWidgetViewLoadEffect
+      viewId="view"
+      widgetId="candidates"
+      objectMetadataItem={metadata}
+      presentationViewType={ViewType.TABLE_WIDGET}
+    />
+  );
+  const first = render(element);
+  expect(mockLoad.mock.lastCall[0].viewFields[0].size).toBe(88);
+  first.unmount();
+  mockRecordIndexId = 'applications-view-next-job';
+  mockView = {
+    ...mockView,
+    viewFields: [{ ...mockView.viewFields[0], size: 104 }],
+  };
+  render(element);
+  expect(mockLoad.mock.lastCall[0].viewFields[0].size).toBe(104);
+  expect(mockLoad.mock.lastCall[2].recordIndexId).toBe(
+    'applications-view-next-job',
+  );
 });

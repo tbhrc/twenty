@@ -1,4 +1,5 @@
 import { styled } from '@linaria/react';
+import { getRecordRouteTabLocation } from '@/app/routing/record-routes/recordRouteViews';
 import { useLocation } from 'react-router-dom';
 import { TabButton } from 'twenty-ui/primitives/input';
 
@@ -128,7 +129,10 @@ export const PageLayoutTabListVisibleTabs = ({
           pill={tab.pill}
           to={
             behaveAsLinks
-              ? { search: location.search, hash: `#${tab.id}` }
+              ? {
+                  search: location.search,
+                  ...getRecordRouteTabLocation(location.pathname, tab.id),
+                }
               : undefined
           }
           state={behaveAsLinks ? location.state : undefined}

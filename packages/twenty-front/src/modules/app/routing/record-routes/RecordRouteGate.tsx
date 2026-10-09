@@ -16,6 +16,10 @@ import {
   type RecordRouteDefinition,
 } from './recordRouteDefinitions';
 import { useRecordRouteVersion } from './router';
+import {
+  getRecordRouteMatch,
+  getRecordRouteViewLocation,
+} from './recordRouteViews';
 
 export const RecordRouteGate = ({
   definition: aliasDefinition,
@@ -47,9 +51,19 @@ export const RecordRouteGate = ({
     !aliasDefinition &&
     definition?.allowUnidentifiedRecords &&
     !isRecordRouteReadable(definition.objectNameSingular);
+  // Returning to the same target starts a new read even when history keys repeat.
+  const readIdentity = useMemo(
+    () => ({
+      aliasDefinition,
+      definition,
+      generation,
+      target,
+      retainNativePermissions,
+    }),
+    [aliasDefinition, definition, generation, target, retainNativePermissions],
+  );
   const [resolved, setResolved] = useState<{
-    generation: number;
-    target: string | undefined;
+    readIdentity: typeof readIdentity;
     result: RecordRouteLookupResult;
   } | null>(null);
 
@@ -58,14 +72,14 @@ export const RecordRouteGate = ({
     let cancelled = false;
     const number = aliasDefinition ? parseRecordRouteIdentifier(target) : null;
     if (!target || (aliasDefinition && number === null)) {
-      setResolved({ generation, target, result: { status: 'missing' } });
+      setResolved({ readIdentity, result: { status: 'missing' } });
       return;
     }
     void resolveRecordRoute(
       definition,
       aliasDefinition ? { recordIdentifier: number! } : { recordId: target },
     ).then((result) => {
-      if (!cancelled) setResolved({ generation, target, result });
+      if (!cancelled) setResolved({ readIdentity, result });
     });
     return () => {
       cancelled = true;
@@ -76,24 +90,33 @@ export const RecordRouteGate = ({
     generation,
     target,
     retainNativePermissions,
+    readIdentity,
   ]);
 
   const result =
-    resolved?.generation === generation && resolved.target === target
-      ? resolved.result
-      : null;
+    resolved?.readIdentity === readIdentity ? resolved.result : null;
   useEffect(() => {
+    const canonicalLocation =
+      definition && result?.status === 'ready'
+        ? getRecordRouteViewLocation({
+            definition,
+            recordIdentifier: result.recordIdentifier,
+            view: getRecordRouteMatch(location.pathname)?.view,
+            hash: location.hash,
+          })
+        : null;
     if (
-      !aliasDefinition &&
       !retainNativePermissions &&
       definition &&
-      result?.status === 'ready'
+      result?.status === 'ready' &&
+      canonicalLocation &&
+      (location.pathname.replace(/\/$/, '') !== canonicalLocation.pathname ||
+        location.hash !== canonicalLocation.hash)
     ) {
       navigate(
         {
-          pathname: `${definition.path}/${result.recordIdentifier}`,
+          ...canonicalLocation,
           search: location.search,
-          hash: location.hash,
         },
         { replace: true, state: location.state },
       );
@@ -105,6 +128,7 @@ export const RecordRouteGate = ({
     result,
     navigate,
     location.search,
+    location.pathname,
     location.hash,
     location.state,
   ]);

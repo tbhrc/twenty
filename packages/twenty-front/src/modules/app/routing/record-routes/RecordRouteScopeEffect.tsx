@@ -1,5 +1,8 @@
 import { useLayoutEffect, useEffect, useMemo } from 'react';
-import { FieldMetadataType } from 'twenty-shared/types';
+import { FieldMetadataType, RelationType } from 'twenty-shared/types';
+import { getRecordContextRouteDefinitions } from './recordContextRoutes';
+import { resolveNativeRecordContext } from './resolveNativeRecordContext';
+import { resolveRetiredPersonRoute } from './resolveRetiredPersonRoute';
 import { isValidUuid } from 'twenty-shared/utils';
 
 import { useIsLogged } from '@/auth/hooks/useIsLogged';
@@ -51,6 +54,7 @@ export const RecordRouteScopeEffect = () => {
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
   const client = useApolloCoreClient();
   const definitions = useMemo(getRecordRouteDefinitions, []);
+  const contextDefinitions = useMemo(getRecordContextRouteDefinitions, []);
   const readableDefinitions = useMemo(
     () =>
       definitions.filter((definition) => {
@@ -75,6 +79,70 @@ export const RecordRouteScopeEffect = () => {
       }),
     [definitions, objectMetadataItems, objectPermissionsByObjectMetadataId],
   );
+  const readableContextDefinitions = useMemo(
+    () =>
+      contextDefinitions.filter((definition) => {
+        const object = objectMetadataItems.find(
+          (item) =>
+            item.nameSingular === definition.objectNameSingular &&
+            item.namePlural === definition.objectNamePlural,
+        );
+        return (
+          object &&
+          getObjectPermissionsForObject(
+            objectPermissionsByObjectMetadataId,
+            object.id,
+          ).canReadObjectRecords &&
+          definition.relations.every(
+            (relation) =>
+              readableDefinitions.some(
+                (endpoint) =>
+                  endpoint.objectNameSingular === relation.objectNameSingular,
+              ) &&
+              object.readableFields.some(
+                (field) =>
+                  field.isActive &&
+                  field.name === relation.field &&
+                  field.type === FieldMetadataType.RELATION &&
+                  field.relation?.type === RelationType.MANY_TO_ONE &&
+                  field.relation.targetObjectMetadata.nameSingular ===
+                    relation.objectNameSingular,
+              ),
+          )
+        );
+      }),
+    [
+      contextDefinitions,
+      readableDefinitions,
+      objectMetadataItems,
+      objectPermissionsByObjectMetadataId,
+    ],
+  );
+  const retirementAliasObjects = useMemo(
+    () =>
+      objectMetadataItems
+        .filter((object) =>
+          ['person', 'identityAlias'].includes(object.nameSingular),
+        )
+        .map((object) => {
+          const permissions = objectPermissionsByObjectMetadataId[object.id];
+          return {
+            id: object.id,
+            nameSingular: object.nameSingular,
+            namePlural: object.namePlural,
+            isActive: object.isActive,
+            // Alias fallback requires affirmative caller rights, including metadata.
+            canReadObjectRecords:
+              permissions?.objectMetadataId === object.id &&
+              permissions.canReadObjectRecords === true,
+            readableFields: object.readableFields.filter(
+              (field) =>
+                permissions?.restrictedFields[field.id]?.canRead !== false,
+            ),
+          };
+        }),
+    [objectMetadataItems, objectPermissionsByObjectMetadataId],
+  );
   const scopeKey =
     isLogged && currentWorkspace?.id && currentUser?.id && currentUserWorkspace
       ? JSON.stringify([
@@ -82,6 +150,8 @@ export const RecordRouteScopeEffect = () => {
           currentUser.id,
           currentUserWorkspace.isImpersonating,
           readableDefinitions,
+          readableContextDefinitions,
+          retirementAliasObjects,
           objectPermissionsByObjectMetadataId,
         ])
       : null;
@@ -138,11 +208,101 @@ export const RecordRouteScopeEffect = () => {
             const records = getRecordsFromRecordConnection({
               recordConnection: connection,
             });
+            if (
+              records.length === 0 &&
+              definition.objectNameSingular === 'person'
+            ) {
+              if (connection.pageInfo?.hasNextPage !== false)
+                return { status: 'error' };
+              return resolveRetiredPersonRoute(definition, target, {
+                objects: retirementAliasObjects,
+                read: async (objectNameSingular, fields, filter) => {
+                  const aliasObject = objectMetadataItems.find(
+                    (item) => item.nameSingular === objectNameSingular,
+                  );
+                  if (!aliasObject) throw new Error('denied');
+                  const aliasResult =
+                    await client.query<RecordGqlOperationFindManyResult>({
+                      query: generateFindManyRecordsQuery({
+                        objectMetadataItem: aliasObject,
+                        objectMetadataItems,
+                        recordGqlFields: Object.fromEntries(
+                          fields.map((field) => [field, true]),
+                        ),
+                        objectPermissionsByObjectMetadataId,
+                      }),
+                      variables: { filter, limit: 2 },
+                      fetchPolicy: 'network-only',
+                      errorPolicy: 'none',
+                    });
+                  const aliasConnection =
+                    aliasResult.data?.[aliasObject.namePlural];
+                  if (!aliasConnection) throw new Error('error');
+                  return {
+                    records: getRecordsFromRecordConnection({
+                      recordConnection: aliasConnection,
+                    }),
+                    complete:
+                      aliasConnection.pageInfo?.hasNextPage === false &&
+                      aliasConnection.pageInfo?.hasPreviousPage === false,
+                  };
+                },
+              });
+            }
             return getRecordRouteLookupResult(
               records,
               definition.recordIdentifierField,
               'recordId' in target && definition.allowUnidentifiedRecords,
             );
+          }
+        : null,
+      readableContextDefinitions.map(
+        (definition) => definition.objectNameSingular,
+      ),
+      scopeKey
+        ? async (definition, target) => {
+            if (
+              !readableContextDefinitions.some(
+                (item) =>
+                  item.objectNameSingular === definition.objectNameSingular,
+              )
+            )
+              return { status: 'denied' };
+            return resolveNativeRecordContext(definition, target, {
+              endpoints: readableDefinitions,
+              read: async (objectNameSingular, fields, filter) => {
+                const object = objectMetadataItems.find(
+                  (item) => item.nameSingular === objectNameSingular,
+                );
+                if (
+                  !object ||
+                  !getObjectPermissionsForObject(
+                    objectPermissionsByObjectMetadataId,
+                    object.id,
+                  ).canReadObjectRecords
+                )
+                  throw new Error('denied');
+                const result =
+                  await client.query<RecordGqlOperationFindManyResult>({
+                    query: generateFindManyRecordsQuery({
+                      objectMetadataItem: object,
+                      objectMetadataItems,
+                      recordGqlFields: Object.fromEntries(
+                        fields.map((field) => [field, true]),
+                      ),
+                      objectPermissionsByObjectMetadataId,
+                    }),
+                    variables: { filter, limit: 2 },
+                    fetchPolicy: 'network-only',
+                    errorPolicy: 'none',
+                  });
+                const connection = result.data?.[object.namePlural];
+                if (!connection) throw new Error('error');
+                return getRecordsFromRecordConnection({
+                  recordConnection: connection,
+                });
+              },
+            });
           }
         : null,
     );
@@ -152,6 +312,8 @@ export const RecordRouteScopeEffect = () => {
     objectMetadataItems,
     objectPermissionsByObjectMetadataId,
     readableDefinitions,
+    readableContextDefinitions,
+    retirementAliasObjects,
   ]);
 
   useEffect(() => () => configureRecordRouteScope(null, [], null), []);

@@ -11,13 +11,17 @@ import {
 } from 'react-router-dom';
 
 import { getFriendlyRecordTo } from './getAppPath';
+import { getRecordRouteMatch } from './recordRouteViews';
+import { getRecordContextRouteMatch } from './recordContextRoutes';
 import {
   getCachedRecordId,
+  getCachedContextRecordId,
   getRecordRouteVersion,
   subscribeRecordRoutes,
 } from './recordRouteCache';
 import {
   getRecordRouteDefinitions,
+  getRecordRoutePaths,
   parseRecordRouteIdentifier,
 } from './recordRouteDefinitions';
 
@@ -29,31 +33,41 @@ export const useRecordRouteVersion = () =>
   );
 
 export const getFriendlyRouteParameters = (pathname: string) => {
-  for (const definition of getRecordRouteDefinitions()) {
-    if (
-      definition.indexRoute !== false &&
-      (pathname === definition.path || pathname === `${definition.path}/`)
-    ) {
-      return {
-        objectNamePlural: definition.objectNamePlural,
-        objectNameSingular: undefined,
-        objectRecordId: undefined,
-      };
-    }
-    const match = matchNativePath(
-      `${definition.path}/:recordIdentifier`,
-      pathname,
-    );
-    if (!match) continue;
-    const number = parseRecordRouteIdentifier(match.params.recordIdentifier);
+  const context = getRecordContextRouteMatch(pathname);
+  if (context)
     return {
-      objectNameSingular: definition.objectNameSingular,
-      objectNamePlural: definition.objectNamePlural,
+      objectNameSingular: context.definition.objectNameSingular,
+      objectNamePlural: context.definition.objectNamePlural,
+      objectRecordId: getCachedContextRecordId(
+        context.definition.objectNameSingular,
+        context.path,
+      ),
+    };
+  const match = getRecordRouteMatch(pathname);
+  if (match) {
+    const number = parseRecordRouteIdentifier(match.recordIdentifier);
+    return {
+      objectNameSingular: match.definition.objectNameSingular,
+      objectNamePlural: match.definition.objectNamePlural,
       objectRecordId:
         number === null
           ? undefined
-          : getCachedRecordId(definition.objectNameSingular, number),
+          : getCachedRecordId(match.definition.objectNameSingular, number),
     };
+  }
+  for (const definition of getRecordRouteDefinitions()) {
+    for (const path of getRecordRoutePaths(definition)) {
+      if (
+        definition.indexRoute !== false &&
+        (pathname === path || pathname === `${path}/`)
+      ) {
+        return {
+          objectNamePlural: definition.objectNamePlural,
+          objectNameSingular: undefined,
+          objectRecordId: undefined,
+        };
+      }
+    }
   }
   return null;
 };

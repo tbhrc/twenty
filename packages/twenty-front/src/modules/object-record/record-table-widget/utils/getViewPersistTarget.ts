@@ -1,8 +1,8 @@
 import { type RecordTableWidgetContextValue } from '@/object-record/record-table-widget/contexts/RecordTableWidgetContext';
 import { isDefined } from 'twenty-shared/utils';
 
-// View metadata belongs to the layout: a live widget must never persist view
-// changes inline, only the page-layout editor writes them, through the draft.
+// Structural view changes belong to the layout draft. Column widths are shared
+// display preferences and may also be saved from a live widget.
 export type ViewPersistTarget =
   | { target: 'api' }
   | { target: 'none' }
@@ -10,6 +10,7 @@ export type ViewPersistTarget =
 
 export const getViewPersistTarget = (
   widgetContext: RecordTableWidgetContextValue | null,
+  { persistLiveColumnWidth = false }: { persistLiveColumnWidth?: boolean } = {},
 ): ViewPersistTarget => {
   if (!isDefined(widgetContext)) {
     return { target: 'api' };
@@ -20,6 +21,10 @@ export const getViewPersistTarget = (
     isDefined(widgetContext.pageLayoutId)
   ) {
     return { target: 'pageLayoutDraft', widgetContext };
+  }
+
+  if (persistLiveColumnWidth && !widgetContext.isPageLayoutInEditMode) {
+    return { target: 'api' };
   }
 
   return { target: 'none' };
