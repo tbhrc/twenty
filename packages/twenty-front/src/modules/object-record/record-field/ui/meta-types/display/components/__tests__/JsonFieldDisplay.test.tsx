@@ -19,9 +19,9 @@ jest.mock('twenty-ui/components', () => ({ JsonTree: ({ value }: { value: unknow
 describe('JsonFieldDisplay', () => {
   it('keeps timeline JSON compact until the user opens the original details', async () => {
     render(<I18nProvider i18n={i18n}><JsonFieldDisplay compact /></I18nProvider>);
-    expect(screen.getByText('View details')).toBeInTheDocument();
+    expect(screen.getByText('Details')).toBeInTheDocument();
     expect(screen.queryByText(/private-hash/)).not.toBeInTheDocument();
-    await userEvent.click(screen.getByText('View details'));
+    await userEvent.click(screen.getByText('Details'));
     expect(screen.getByText(/private-hash/)).toBeInTheDocument();
     expect(screen.getByText(/Original.pdf/)).toBeInTheDocument();
   });
@@ -29,6 +29,6 @@ describe('JsonFieldDisplay', () => {
   it('preserves the existing JSON presentation outside the timeline', () => {
     render(<I18nProvider i18n={i18n}><JsonFieldDisplay /></I18nProvider>);
     expect(screen.getByText(/private-hash/)).toBeInTheDocument();
-    expect(screen.queryByText('View details')).not.toBeInTheDocument();
+    expect(screen.queryByText('Details')).not.toBeInTheDocument();
   });
 });

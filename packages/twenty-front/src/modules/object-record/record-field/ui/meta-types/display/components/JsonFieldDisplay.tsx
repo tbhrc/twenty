@@ -29,7 +29,7 @@ export const JsonFieldDisplay = ({ compact = false }: { compact?: boolean }) => 
     return <></>;
   }
 
-  const value = compact ? t`View details` : JSON.stringify(fieldValue);
+  const value = compact ? t`Details` : JSON.stringify(fieldValue);
 
   return (
     <>
