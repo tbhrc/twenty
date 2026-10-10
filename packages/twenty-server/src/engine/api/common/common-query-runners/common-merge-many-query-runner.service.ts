@@ -508,7 +508,8 @@ export class CommonMergeManyQueryRunnerService extends CommonBaseQueryRunnerServ
             .createQueryBuilder(alias)
             .where({ id: In(idsToDelete) }),
           rowLevelPermissionsApplied: false,
-          kind: 'delete',
+          // Retain the losing identity for recovery after its relations move.
+          kind: 'soft-delete',
           columnsToReturn,
         });
 
