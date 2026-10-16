@@ -35,4 +35,15 @@ describe('serializeFileList', () => {
 
     expect(result).toEqual([validFile]);
   });
+
+  it('should preserve selected native file contents for the worker upload path', () => {
+    const file = new File(['%PDF-1.7 selected original'], 'CV.pdf', {
+      type: 'application/pdf',
+      lastModified: 1700000000000,
+    });
+    const result = serializeFileList({ length: 1, 0: file });
+
+    expect(result?.[0]).toBe(file);
+    expect(result?.[0]).toBeInstanceOf(File);
+  });
 });

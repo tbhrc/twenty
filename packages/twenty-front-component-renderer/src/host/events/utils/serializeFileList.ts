@@ -28,6 +28,12 @@ export const serializeFileList = (
     ) {
       continue;
     }
+    // A user-selected native File is structured-cloneable across the worker
+    // bridge. Metadata-only copies cannot be read or uploaded by the component.
+    if (typeof File !== 'undefined' && file instanceof File) {
+      serialized.push(file);
+      continue;
+    }
     serialized.push({
       name: fileRecord.name,
       size: fileRecord.size,
