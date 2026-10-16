@@ -38,7 +38,9 @@ export class WorkflowExecutionContextService {
     });
 
     const isActingOnBehalfOfUser =
-      workflowRun.createdBy.source === FieldActorSource.MANUAL &&
+      [FieldActorSource.MANUAL, FieldActorSource.AGENT].includes(
+        workflowRun.createdBy.source,
+      ) &&
       isDefined(workflowRun.createdBy.workspaceMemberId);
 
     if (isActingOnBehalfOfUser) {
