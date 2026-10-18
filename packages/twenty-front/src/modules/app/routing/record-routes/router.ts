@@ -11,6 +11,7 @@ import {
 } from 'react-router-dom';
 
 import { getFriendlyRecordTo } from './getAppPath';
+import { getCleanCollectionNavigation } from './collectionViewLocation';
 import { getRecordRouteMatch } from './recordRouteViews';
 import { getRecordContextRouteMatch } from './recordContextRoutes';
 import {
@@ -118,7 +119,9 @@ export const useParams: typeof useNativeParams = (() => {
 }) as typeof useNativeParams;
 
 export const matchPath: typeof matchNativePath = (pattern, pathname) =>
-  pathname == null ? null : matchNativePath(pattern, getLogicalRecordPathname(pathname));
+  pathname == null
+    ? null
+    : matchNativePath(pattern, getLogicalRecordPathname(pathname));
 
 export const matchRoutes: typeof matchNativeRoutes = (
   routes,
@@ -138,7 +141,11 @@ export const useNavigate: typeof useNativeNavigate = () => {
   return useCallback(
     ((to, options) => {
       if (typeof to === 'number') return navigate(to);
-      return navigate(getFriendlyRecordTo(to), options);
+      const clean = getCleanCollectionNavigation(
+        getFriendlyRecordTo(to),
+        options?.state,
+      );
+      return navigate(clean.to, { ...options, state: clean.state });
     }) as NavigateFunction,
     [navigate],
   );

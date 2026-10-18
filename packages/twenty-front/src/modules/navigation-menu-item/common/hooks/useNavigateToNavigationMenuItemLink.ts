@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/app/routing/record-routes/router';
 import { isAbsoluteUrl } from 'twenty-shared/utils';
 
 export const useNavigateToNavigationMenuItemLink = () => {

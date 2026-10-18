@@ -1,4 +1,5 @@
 import { matchRoutes, useLocation } from '@/app/routing/record-routes/router';
+import { getHiddenCollectionViewId } from '@/app/routing/record-routes/collectionViewLocation';
 import { useWorkspaceRouteObjects } from '@/app/routing/components/WorkspaceRouteObjectsProvider';
 import { RouteContextStoreProviderEffect } from '@/context-store/components/RouteContextStoreProviderEffect';
 import { metadataStoreState } from '@/metadata-store/states/metadataStoreState';
@@ -82,7 +83,9 @@ export const RouteContextStoreProvider = () => {
     : routeParams?.objectNameSingular;
 
   const [searchParams] = useSearchParams();
-  const viewIdQueryParamRaw = searchParams.get('viewId');
+  const viewIdQueryParamRaw =
+    searchParams.get('viewId') ??
+    getHiddenCollectionViewId(location.pathname, location.state);
 
   const objectMetadataItems = useAtomStateValue(objectMetadataItemsSelector);
   const metadataStore = useAtomFamilyStateValue(metadataStoreState, 'views');

@@ -54,7 +54,6 @@ const Probe = () => {
 const Open = ({ entry }: { entry: string }) => (
   <MemoryRouter
     initialEntries={[entry]}
-    future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
   >
     <Routes>
       {[

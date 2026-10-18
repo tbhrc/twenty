@@ -8,6 +8,7 @@ export type RecordRouteDefinition = {
   objectNamePlural: string;
   recordIdentifierField: string;
   indexRoute?: boolean;
+  hideViewId?: boolean;
   allowUnidentifiedRecords?: boolean;
   recordType?: { field: string; paths: Record<string, string> };
 };
@@ -77,6 +78,7 @@ export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
       objectNamePlural,
       recordIdentifierField,
       indexRoute,
+      hideViewId,
       allowUnidentifiedRecords,
       recordType,
     } = candidate;
@@ -103,6 +105,7 @@ export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
       typeof recordIdentifierField !== 'string' ||
       !/^[A-Za-z][A-Za-z0-9_]*$/.test(recordIdentifierField) ||
       (indexRoute !== undefined && typeof indexRoute !== 'boolean') ||
+      (hideViewId !== undefined && typeof hideViewId !== 'boolean') ||
       (allowUnidentifiedRecords !== undefined &&
         typeof allowUnidentifiedRecords !== 'boolean') ||
       (recordType !== undefined &&
@@ -156,6 +159,7 @@ export const getRecordRouteDefinitions = (): RecordRouteDefinition[] => {
             },
           }),
       ...(indexRoute === undefined ? {} : { indexRoute }),
+      ...(hideViewId === undefined ? {} : { hideViewId }),
       ...(allowUnidentifiedRecords === undefined
         ? {}
         : { allowUnidentifiedRecords }),
@@ -188,6 +192,7 @@ export type IndexRouteDefinition = {
   indexOnly: true;
   objectNameSingular: string;
   objectNamePlural: string;
+  hideViewId?: boolean;
 };
 
 // Collection aliases do not pretend that their source has a public record
@@ -207,7 +212,13 @@ export const getIndexRouteDefinitions = (): IndexRouteDefinition[] => {
   const definitions: IndexRouteDefinition[] = [];
   for (const candidate of configured) {
     if (!candidate || typeof candidate !== 'object') continue;
-    const { path, indexOnly, objectNameSingular, objectNamePlural } = candidate;
+    const {
+      path,
+      indexOnly,
+      objectNameSingular,
+      objectNamePlural,
+      hideViewId,
+    } = candidate;
     if (
       indexOnly !== true ||
       typeof path !== 'string' ||
@@ -220,6 +231,7 @@ export const getIndexRouteDefinitions = (): IndexRouteDefinition[] => {
       !/^[A-Za-z][A-Za-z0-9_]*$/.test(objectNamePlural) ||
       names.has(objectNameSingular) ||
       names.has(objectNamePlural) ||
+      (hideViewId !== undefined && typeof hideViewId !== 'boolean') ||
       candidate.recordIdentifierField !== undefined ||
       candidate.views !== undefined ||
       candidate.aliases !== undefined
@@ -233,6 +245,7 @@ export const getIndexRouteDefinitions = (): IndexRouteDefinition[] => {
       indexOnly: true,
       objectNameSingular,
       objectNamePlural,
+      ...(hideViewId === undefined ? {} : { hideViewId }),
     });
   }
   return definitions;

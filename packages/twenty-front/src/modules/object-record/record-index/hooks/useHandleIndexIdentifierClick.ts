@@ -1,4 +1,5 @@
 import { getAppPath } from '@/app/routing/record-routes/getAppPath';
+import { getCleanCollectionHref } from '@/app/routing/record-routes/collectionViewLocation';
 import { useRecordRouteVersion } from '@/app/routing/record-routes/router';
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
@@ -16,15 +17,17 @@ export const useHandleIndexIdentifierClick = ({
   );
 
   const indexIdentifierUrl = (recordId: string) => {
-    return getAppPath(
-      AppPath.RecordShowPage,
-      {
-        objectNameSingular: objectMetadataItem.nameSingular,
-        objectRecordId: recordId,
-      },
-      {
-        viewId: contextStoreCurrentViewId,
-      },
+    return getCleanCollectionHref(
+      getAppPath(
+        AppPath.RecordShowPage,
+        {
+          objectNameSingular: objectMetadataItem.nameSingular,
+          objectRecordId: recordId,
+        },
+        {
+          viewId: contextStoreCurrentViewId,
+        },
+      ),
     );
   };
 

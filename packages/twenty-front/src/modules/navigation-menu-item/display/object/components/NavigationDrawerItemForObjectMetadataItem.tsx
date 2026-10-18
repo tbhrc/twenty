@@ -23,7 +23,7 @@ import { NavigationDrawerItem } from '@/ui/navigation/navigation-drawer/componen
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
 import { viewsSelector } from '@/views/states/selectors/viewsSelector';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/app/routing/record-routes/router';
 import {
   CoreObjectNameSingular,
   FeatureFlagKey,

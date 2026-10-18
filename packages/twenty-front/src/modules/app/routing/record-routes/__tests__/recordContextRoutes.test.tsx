@@ -105,7 +105,6 @@ const Probe = () => {
 const Fixture = ({ entry }: { entry: string }) => (
   <MemoryRouter
     initialEntries={[entry]}
-    future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
   >
     <Routes>
       {[definition.path, `${definition.path}/screening`].map((path) => (

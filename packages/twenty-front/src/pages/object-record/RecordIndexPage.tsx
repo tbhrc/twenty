@@ -16,6 +16,7 @@ import { isUndefined } from '@sniptt/guards';
 import { lazy, Suspense, useEffect } from 'react';
 import { createPath, useLocation, useNavigate } from 'react-router-dom';
 import { getFriendlyRecordPath } from '@/app/routing/record-routes/getAppPath';
+import { getCleanCollectionNavigation } from '@/app/routing/record-routes/collectionViewLocation';
 
 import { FeatureFlagKey } from 'twenty-shared/types';
 
@@ -29,11 +30,15 @@ export const RecordIndexPage = () => {
   const actualLocation = useLocation();
   const navigate = useNavigate();
   const currentPath = createPath(actualLocation);
-  const canonicalPath = getFriendlyRecordPath(currentPath);
+  const canonical = getCleanCollectionNavigation(
+    getFriendlyRecordPath(currentPath),
+    actualLocation.state,
+  );
+  const canonicalPath = canonical.to;
   useEffect(() => {
     if (canonicalPath !== currentPath)
-      navigate(canonicalPath, { replace: true, state: actualLocation.state });
-  }, [canonicalPath, currentPath, navigate, actualLocation.state]);
+      navigate(canonicalPath, { replace: true, state: canonical.state });
+  }, [canonicalPath, currentPath, navigate, canonical.state]);
   const workspaceSurface = useWorkspaceSurface();
   const { objectNamePlural } = useParams<{ objectNamePlural: string }>();
 

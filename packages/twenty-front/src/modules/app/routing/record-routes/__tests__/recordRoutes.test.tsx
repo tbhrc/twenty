@@ -117,7 +117,6 @@ const RouteFixture = ({
 }) => (
   <MemoryRouter
     initialEntries={[entry]}
-    future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
   >
     <Routes>
       {(routeDefinition.aliases ?? []).map((path) => (

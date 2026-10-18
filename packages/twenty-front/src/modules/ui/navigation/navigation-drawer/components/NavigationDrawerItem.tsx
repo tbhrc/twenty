@@ -1,4 +1,5 @@
 import { useIsNavigationDrawerContentExpanded } from '@/navigation/hooks/useIsNavigationDrawerContentExpanded';
+import { getCleanCollectionHref } from '@/app/routing/record-routes/collectionViewLocation';
 import { TooltipDelay } from '@/ui/layout/tooltip/constants/TooltipDelay';
 import { NavigationDrawerAnimatedCollapseWrapper } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerAnimatedCollapseWrapper';
 import { NavigationDrawerItemBreadcrumb } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItemBreadcrumb';
@@ -364,7 +365,7 @@ export const NavigationDrawerItem = ({
               ? 'button'
               : undefined
           }
-          to={isInternalLink ? to : undefined}
+          to={isInternalLink ? getCleanCollectionHref(to!) : undefined}
           href={isExternalLink ? to : undefined}
           target={isExternalLink ? '_blank' : undefined}
           rel={isExternalLink ? 'noopener noreferrer' : undefined}
