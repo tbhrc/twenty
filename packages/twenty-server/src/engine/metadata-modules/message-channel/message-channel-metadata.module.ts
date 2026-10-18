@@ -10,6 +10,7 @@ import { MessageChannelGraphqlApiExceptionInterceptor } from 'src/engine/metadat
 import { MessageChannelMetadataService } from 'src/engine/metadata-modules/message-channel/message-channel-metadata.service';
 import { ApplicationMessageChannelsResolver } from 'src/engine/metadata-modules/message-channel/resolvers/application-message-channels.resolver';
 import { ApplicationMessageIngestionResolver } from 'src/engine/metadata-modules/message-channel/resolvers/application-message-ingestion.resolver';
+import { ApplicationMessageSourceResolver } from 'src/engine/metadata-modules/message-channel/resolvers/application-message-source.resolver';
 import { MessageChannelResolver } from 'src/engine/metadata-modules/message-channel/resolvers/message-channel.resolver';
 import { ApplicationMessageChannelsService } from 'src/engine/metadata-modules/message-channel/services/application-message-channels.service';
 import { ApplicationMessageIngestionService } from 'src/engine/metadata-modules/message-channel/services/application-message-ingestion.service';
@@ -40,6 +41,7 @@ import { provideWorkspaceScopedRepository } from 'src/engine/twenty-orm/workspac
     ApplicationMessageChannelsService,
     ApplicationMessageSourceAccountsService,
     ApplicationMessageChannelsResolver,
+    ApplicationMessageSourceResolver,
     ApplicationMessageIngestionService,
     ApplicationMessageIngestionResolver,
     MessageChannelGraphqlApiExceptionInterceptor,
