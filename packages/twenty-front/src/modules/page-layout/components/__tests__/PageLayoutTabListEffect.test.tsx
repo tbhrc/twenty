@@ -25,7 +25,73 @@ const CurrentLocation = () => {
 };
 
 describe('PageLayoutTabListEffect', () => {
+  const linkedInTab = '11111111-1111-4111-8111-111111111111';
+  beforeEach(() => {
+    (
+      window as Window & { __TWENTY_RECORD_ROUTES__?: unknown }
+    ).__TWENTY_RECORD_ROUTES__ = [
+      {
+        path: '/person',
+        objectNameSingular: 'person',
+        objectNamePlural: 'people',
+        recordIdentifierField: 'candidateNumber',
+        views: { linkedin: linkedInTab },
+      },
+    ];
+  });
+  afterEach(() => {
+    (
+      window as Window & { __TWENTY_RECORD_ROUTES__?: unknown }
+    ).__TWENTY_RECORD_ROUTES__ = undefined;
+  });
   it.each([
+    {
+      name: 'selects the configured native tab on a clean Person URL',
+      pathname: '/person/12580/linkedin',
+      extraTabId: linkedInTab,
+      activeTabId: null,
+      hash: '',
+      isInSidePanel: false,
+      ownsRouteLocation: true,
+      expectedHash: '',
+      expectedActiveTabId: linkedInTab,
+      expectedNavigationType: 'POP',
+    },
+    {
+      name: 'replaces the previous Home selection when the clean route changes',
+      pathname: '/person/12580/linkedin',
+      extraTabId: linkedInTab,
+      activeTabId: 'timeline',
+      hash: '',
+      isInSidePanel: false,
+      ownsRouteLocation: true,
+      expectedHash: '',
+      expectedActiveTabId: linkedInTab,
+      expectedNavigationType: 'POP',
+    },
+    {
+      name: 'does not select a configured tab absent from the permitted layout',
+      pathname: '/person/12580/linkedin',
+      activeTabId: null,
+      hash: '',
+      isInSidePanel: false,
+      ownsRouteLocation: true,
+      expectedHash: '',
+      expectedActiveTabId: 'timeline',
+      expectedNavigationType: 'POP',
+    },
+    {
+      name: 'does not apply the main clean route to an embedded side panel',
+      pathname: '/person/12580/linkedin',
+      extraTabId: linkedInTab,
+      activeTabId: null,
+      hash: '',
+      isInSidePanel: true,
+      ownsRouteLocation: false,
+      expectedHash: '',
+      expectedActiveTabId: 'timeline',
+      expectedNavigationType: 'POP',
+    },
     {
       name: 'replaces the hash when the active tab becomes pinned',
       activeTabId: 'home',
@@ -142,6 +208,8 @@ describe('PageLayoutTabListEffect', () => {
     '$name',
     ({
       activeTabId,
+      pathname = '/object/company/record-id',
+      extraTabId,
       hash,
       isInSidePanel,
       isInEditMode = false,
@@ -162,9 +230,7 @@ describe('PageLayoutTabListEffect', () => {
         <StrictMode>
           <Provider store={store}>
             <MemoryRouter
-              initialEntries={[
-                `/object/company/record-id?viewId=company-view${hash}`,
-              ]}
+              initialEntries={[`${pathname}?viewId=company-view${hash}`]}
             >
               <WorkspaceSurfaceContext.Provider
                 value={{
@@ -190,7 +256,11 @@ describe('PageLayoutTabListEffect', () => {
                     <PageLayoutTabListEffect
                       isInEditMode={isInEditMode}
                       onChangeTab={onChangeTab}
-                      tabs={[makeTab('timeline', []), makeTab('notes', [], 1)]}
+                      tabs={[
+                        makeTab('timeline', []),
+                        makeTab('notes', [], 1),
+                        ...(extraTabId ? [makeTab(extraTabId, [], 2)] : []),
+                      ]}
                       componentInstanceId={TAB_LIST_INSTANCE_ID}
                     />
                     <CurrentLocation />
@@ -204,9 +274,7 @@ describe('PageLayoutTabListEffect', () => {
 
       expect(
         screen.getByRole('status', { name: 'Current URL' }),
-      ).toHaveTextContent(
-        `/object/company/record-id?viewId=company-view${expectedHash}`,
-      );
+      ).toHaveTextContent(`${pathname}?viewId=company-view${expectedHash}`);
       expect(store.get(activeTabAtom)).toBe(expectedActiveTabId);
       expect(onChangeTab).toHaveBeenCalledTimes(
         activeTabId === expectedActiveTabId ? 0 : 1,

@@ -1,3 +1,4 @@
+import { getRecordRouteTabId } from '@/app/routing/record-routes/recordRouteViews';
 import { type PageLayoutTab } from '@/page-layout/types/PageLayoutTab';
 import { getPageLayoutTabListInitialActiveTabId } from '@/page-layout/utils/getPageLayoutTabListInitialActiveTabId';
 import { useWorkspaceSurface } from '@/ui/layout/hooks/useWorkspaceSurface';
@@ -35,7 +36,7 @@ export const PageLayoutTabListEffect = ({
   const isMobile = useIsMobile();
   const workspaceSurface = useWorkspaceSurface();
   const isInSidePanel = workspaceSurface.type === 'side-panel';
-  const { hash, search, state } = useLocation();
+  const { pathname, hash, search, state } = useLocation();
   const navigate = useNavigate();
 
   const initialActiveTabId = getPageLayoutTabListInitialActiveTabId({
@@ -47,7 +48,7 @@ export const PageLayoutTabListEffect = ({
   });
 
   const shouldSyncWithUrl = !isInEditMode && workspaceSurface.ownsRouteLocation;
-  const routeTabId = hash.replace('#', '');
+  const routeTabId = getRecordRouteTabId(pathname) ?? hash.replace('#', '');
   const nextActiveTabId =
     shouldSyncWithUrl && tabs.some((tab) => tab.id === routeTabId)
       ? routeTabId
