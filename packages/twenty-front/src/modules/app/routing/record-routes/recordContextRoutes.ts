@@ -6,7 +6,7 @@ export type RecordContextRouteDefinition = {
   canonical?: false;
   objectNameSingular: string;
   objectNamePlural: string;
-  recordIdentifier?: { parameter: string; field: string };
+  recordIdentifier?: { parameter: string; field: string; scopedBy?: string[] };
   relations: {
     parameter: string;
     objectNameSingular: string;
@@ -80,7 +80,22 @@ export const getRecordContextRouteDefinitions =
         (recordIdentifier !== undefined &&
           (!recordIdentifier ||
             !name(recordIdentifier.parameter) ||
-            !name(recordIdentifier.field))) ||
+            !name(recordIdentifier.field) ||
+            (recordIdentifier.scopedBy !== undefined &&
+              (!Array.isArray(recordIdentifier.scopedBy) ||
+                recordIdentifier.scopedBy.length < 1 ||
+                recordIdentifier.scopedBy.length > relations.length ||
+                new Set(recordIdentifier.scopedBy).size !==
+                  recordIdentifier.scopedBy.length ||
+                recordIdentifier.scopedBy.some(
+                  (parameter: unknown) =>
+                    !name(parameter) ||
+                    !relations.some(
+                      (relation) =>
+                        relation.parameter === parameter &&
+                        name(relation.field),
+                    ),
+                ))))) ||
         (views !== undefined &&
           (!views ||
             typeof views !== 'object' ||
@@ -165,7 +180,14 @@ export const getRecordContextRouteDefinitions =
             : {}),
         })),
         ...(recordIdentifier
-          ? { recordIdentifier: { ...recordIdentifier } }
+          ? {
+              recordIdentifier: {
+                ...recordIdentifier,
+                ...(recordIdentifier.scopedBy
+                  ? { scopedBy: [...recordIdentifier.scopedBy] }
+                  : {}),
+              },
+            }
           : {}),
         ...(views === undefined ? {} : { views: { ...views } }),
       });

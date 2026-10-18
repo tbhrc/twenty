@@ -35,7 +35,16 @@ function service(tools: ToolSet = {}) {
       validateModelAvailability: jest.fn(),
       resolveModelForAgent: jest
         .fn()
-        .mockResolvedValue({ modelId: 'model', model: {} }),
+        .mockResolvedValue({
+          modelId: 'model',
+          model: {
+            specificationVersion: 'v4',
+            provider: 'mock',
+            modelId: 'mock',
+            supportedUrls: {},
+            doGenerate: jest.fn(),
+          },
+        }),
       getModelConfig: jest.fn(),
     } as never,
     { getReasoningProviderOptions: jest.fn() } as never,
@@ -43,11 +52,14 @@ function service(tools: ToolSet = {}) {
     { bind: jest.fn().mockReturnValue({}) } as never,
     {
       assertAiExecutionAllowed: jest.fn(),
+      decrementAndCheckAvailableCredits: jest
+        .fn()
+        .mockResolvedValue({ hasNoMoreAvailableCredits: false }),
       calculateCost: jest.fn().mockReturnValue(0),
       emitAiTokenUsageEvent: jest.fn(),
       billNativeWebSearchUsage: jest.fn(),
     } as never,
-    {} as never,
+    { recordHistogram: jest.fn(), incrementCounterBy: jest.fn() } as never,
     {
       buildModelMessagesOrThrow: jest
         .fn()
@@ -148,6 +160,9 @@ describe('native agent abort propagation', () => {
     expect(
       generated.mock.calls.every((call) => call[0].abortSignal === undefined),
     ).toBe(true);
+    expect(
+      generated.mock.calls.every((call) => call[0].prepareStep === undefined),
+    ).toBe(true);
     generated.mockClear();
     const controller = new AbortController();
     controller.abort(new Error('deadline'));
@@ -196,16 +211,18 @@ describe('native agent abort propagation', () => {
     content: [],
   };
 
-  it('requires tool calls until an actual backend stop and permits one bounded continuation', async () => {
+  it('requires tool calls until an actual backend stop and permits bounded continuation', async () => {
     generated
       .mockResolvedValueOnce(response as never)
       .mockResolvedValueOnce({ ...response, steps: [completedStep] } as never);
-    await expect(
+    const assertion = expect(
       service(completionTools).executeAgent({
         ...completionParameters,
         abortSignal: new AbortController().signal,
       }),
     ).resolves.toMatchObject({ result: { response: 'completed' } });
+    await jest.runAllTimersAsync();
+    await assertion;
     expect(generated).toHaveBeenCalledTimes(2);
     expect(
       generated.mock.calls.every((call) => call[0].toolChoice === 'required'),
@@ -246,13 +263,179 @@ describe('native agent abort propagation', () => {
         text: 'The work is complete; continueWork: false',
         steps: [{ ...completedStep, toolResults: [result] }],
       } as never);
-      await expect(
+      const assertion = expect(
         service(completionTools).executeAgent({
           ...completionParameters,
           abortSignal: new AbortController().signal,
         }),
       ).rejects.toThrow('without verified backend completion');
-      expect(generated).toHaveBeenCalledTimes(2);
+      await jest.runAllTimersAsync();
+      await assertion;
+      expect(generated.mock.calls.length).toBeLessThanOrEqual(13);
     },
   );
+  it('preserves completed tool messages and usage across a mid-loop required-tool rejection without replaying the write', async () => {
+    const write = jest
+      .fn()
+      .mockResolvedValue({ success: true, result: { continueWork: true } });
+    const savedMessages = [
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'tool-call',
+            toolCallId: 'saved-write',
+            toolName: 'completion',
+            input: {},
+          },
+        ],
+      },
+      {
+        role: 'tool',
+        content: [
+          {
+            type: 'tool-result',
+            toolCallId: 'saved-write',
+            toolName: 'completion',
+            output: { type: 'json', value: { saved: true } },
+          },
+        ],
+      },
+    ];
+    const step = {
+      ...completedStep,
+      response: { messages: savedMessages },
+      usage: { inputTokens: 10, outputTokens: 2, totalTokens: 12 },
+      content: [
+        {
+          type: 'tool-call',
+          toolCallId: 'saved-write',
+          toolName: 'completion',
+          input: {},
+        },
+        {
+          type: 'tool-result',
+          toolCallId: 'saved-write',
+          toolName: 'completion',
+          output: { success: true, result: { continueWork: true } },
+        },
+      ],
+      toolResults: [
+        {
+          toolName: 'completion',
+          output: { success: true, result: { continueWork: true } },
+        },
+      ],
+    };
+    generated
+      .mockImplementationOnce(async (options) => {
+        await options.onLanguageModelCallEnd?.({
+          usage: step.usage,
+          providerMetadata: {},
+        } as never);
+        await options.onToolExecutionStart?.({} as never);
+        await options.tools?.completion.execute?.({} as never, {} as never);
+        await options.onStepEnd?.(step as never);
+        // SDK7 rejects the next narrative before onStepEnd but after model-call accounting.
+        await options.onLanguageModelCallEnd?.({
+          usage: { inputTokens: 3, outputTokens: 1, totalTokens: 4 },
+          providerMetadata: {},
+        } as never);
+        throw Object.assign(new Error('required tool missing'), {
+          name: 'AI_ToolChoiceViolationError',
+          finishReason: 'stop',
+        });
+      })
+      .mockResolvedValueOnce({
+        ...response,
+        usage: { inputTokens: 5, outputTokens: 1, totalTokens: 6 },
+        steps: [completedStep],
+      } as never);
+    const onExecutionCheckpoint = jest.fn().mockResolvedValue(undefined);
+    const pending = service({
+      completion: { inputSchema: {}, execute: write },
+    } as never).executeAgent({
+      ...completionParameters,
+      abortSignal: new AbortController().signal,
+      onExecutionCheckpoint,
+    });
+    const assertion = expect(pending).resolves.toMatchObject({
+      usage: { inputTokens: 18, outputTokens: 4, totalTokens: 22 },
+    });
+    await jest.runAllTimersAsync();
+    await assertion;
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(generated.mock.calls[1][0].messages).toEqual([
+      { role: 'user', content: 'work' },
+      ...savedMessages,
+      expect.objectContaining({ role: 'user' }),
+    ]);
+    expect(onExecutionCheckpoint.mock.lastCall?.[0]).toMatchObject({
+      steps: [step, completedStep],
+      usage: { totalTokens: 22 },
+      result: { executionStatus: 'COMPLETED' },
+    });
+  });
+
+  it('retains actual usage and completed tools in the final failed checkpoint', async () => {
+    const onExecutionCheckpoint = jest.fn().mockResolvedValue(undefined);
+    generated.mockImplementationOnce(async (options) => {
+      await options.onLanguageModelCallEnd?.({
+        usage: { inputTokens: 7, outputTokens: 2, totalTokens: 9 },
+      } as never);
+      await options.onStepEnd?.({
+        ...completedStep,
+        response: { messages: [] },
+      } as never);
+      throw Object.assign(new Error('unauthorized'), {
+        statusCode: 401,
+        isRetryable: false,
+      });
+    });
+    await expect(
+      service(completionTools).executeAgent({
+        ...completionParameters,
+        abortSignal: new AbortController().signal,
+        onExecutionCheckpoint,
+      }),
+    ).rejects.toThrow('unauthorized');
+    expect(onExecutionCheckpoint.mock.lastCall?.[0]).toMatchObject({
+      usage: { totalTokens: 9 },
+      steps: [expect.anything()],
+      result: { executionStatus: 'FAILED' },
+    });
+    expect(generated).toHaveBeenCalledTimes(1);
+  });
+  it('stops on a swallowed SDK accounting callback failure without another provider request', async () => {
+    const executor = service(completionTools);
+    jest
+      .mocked(executor['aiBillingService'].decrementAndCheckAvailableCredits)
+      .mockRejectedValue({ statusCode: 503 });
+    generated.mockImplementationOnce(async (options) => {
+      await options.onLanguageModelCallEnd?.({
+        usage: { inputTokens: 4, outputTokens: 1, totalTokens: 5 },
+      } as never);
+      throw Object.assign(new Error('required tool missing'), {
+        name: 'AI_ToolChoiceViolationError',
+      });
+    });
+    await expect(
+      executor.executeAgent({
+        ...completionParameters,
+        abortSignal: new AbortController().signal,
+      }),
+    ).rejects.toThrow('accounting failed');
+    expect(generated).toHaveBeenCalledTimes(1);
+    expect(
+      executor['aiBillingService'].emitAiTokenUsageEvent,
+    ).toHaveBeenCalledWith(
+      'workspace',
+      0,
+      5,
+      'model',
+      expect.anything(),
+      'agent',
+      undefined,
+    );
+  });
 });

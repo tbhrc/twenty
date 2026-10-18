@@ -99,6 +99,38 @@ export const resolveNativeRecordContext = async (
         identifier.field,
         ...new Set(Object.values(paths).map((steps) => `${steps[0].field}Id`)),
       ];
+      // A subordinate ordinal can repeat under different native parents. Prove
+      // every configured parent identity before selecting that scoped number.
+      const scopeFilter: Record<string, unknown> = {};
+      if ('identifiers' in target) {
+        for (const parameter of identifier.scopedBy ?? []) {
+          const relation = definition.relations.find(
+            (entry) => entry.parameter === parameter,
+          );
+          const endpoint = endpoints.find(
+            (entry) =>
+              entry.objectNameSingular === relation?.objectNameSingular,
+          );
+          if (!relation?.field || !endpoint) return { status: 'denied' };
+          const parent = exactlyOne(
+            await read(
+              endpoint.objectNameSingular,
+              ['id', endpoint.recordIdentifierField],
+              {
+                [endpoint.recordIdentifierField]: {
+                  eq: target.identifiers[parameter],
+                },
+              },
+            ),
+          );
+          if (
+            parent[endpoint.recordIdentifierField] !==
+            target.identifiers[parameter]
+          )
+            return { status: 'denied' };
+          scopeFilter[`${relation.field}Id`] = { eq: parent.id };
+        }
+      }
       const native = exactlyOne(
         await read(
           definition.objectNameSingular,
@@ -106,6 +138,7 @@ export const resolveNativeRecordContext = async (
           'recordId' in target
             ? { id: { eq: target.recordId } }
             : {
+                ...scopeFilter,
                 [identifier.field]: {
                   eq: target.identifiers[identifier.parameter],
                 },
@@ -120,6 +153,21 @@ export const resolveNativeRecordContext = async (
           : number !== target.identifiers[identifier.parameter])
       )
         return { status: 'denied' };
+      for (const parameter of identifier.scopedBy ?? []) {
+        const relation = definition.relations.find(
+          (entry) => entry.parameter === parameter,
+        );
+        if (!relation?.field) return { status: 'denied' };
+        const field = `${relation.field}Id`;
+        if (
+          typeof native[field] !== 'string' ||
+          !isValidUuid(native[field]) ||
+          (scopeFilter[field] &&
+            native[field] !== (scopeFilter[field] as { eq: unknown }).eq)
+        )
+          return { status: 'denied' };
+        scopeFilter[field] = { eq: native[field] };
+      }
       const identifiers: Record<string, number> = {
         [identifier.parameter]: number,
       };
@@ -197,6 +245,7 @@ export const resolveNativeRecordContext = async (
       // bind a cached path to the previously observed Person.
       const current = exactlyOne(
         await read(definition.objectNameSingular, fields, {
+          ...scopeFilter,
           [identifier.field]: { eq: number },
         }),
       );

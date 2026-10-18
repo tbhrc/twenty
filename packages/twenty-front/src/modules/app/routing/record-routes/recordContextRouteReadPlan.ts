@@ -40,6 +40,15 @@ export const getRecordContextRouteReadPlan = (
   );
   if (!target) return null;
   if (
+    definition.recordIdentifier?.scopedBy?.some(
+      (parameter) =>
+        !definition.relations.some(
+          (relation) => relation.parameter === parameter && relation.field,
+        ),
+    )
+  )
+    return null;
+  if (
     definition.recordIdentifier &&
     !target.fields.some(
       (field) =>

@@ -62,8 +62,9 @@ export const runWithAgentAbortSignal = async <TResult>(
 export const guardAgentToolsWithAbortSignal = (
   tools: ToolSet,
   abortSignal?: AbortSignal,
+  beforeExecute?: () => void,
 ): ToolSet => {
-  if (!abortSignal) {
+  if (!abortSignal && !beforeExecute) {
     return tools;
   }
 
@@ -80,7 +81,8 @@ export const guardAgentToolsWithAbortSignal = (
         {
           ...tool,
           execute: (...parameters: Parameters<typeof execute>) => {
-            abortSignal.throwIfAborted();
+            abortSignal?.throwIfAborted();
+            beforeExecute?.();
             return execute(...parameters);
           },
         },

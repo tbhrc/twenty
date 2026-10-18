@@ -9,14 +9,12 @@ function fixture(duration?: number, startedAt: string | null = START) {
   const action = new AiAgentWorkflowAction(
     { executeAgent } as never,
     {
-      getExecutionContext: jest
-        .fn()
-        .mockResolvedValue({
-          authContext: authority,
-          initiator,
-          isActingOnBehalfOfUser: false,
-          workflowRunStartedAt: startedAt,
-        }),
+      getExecutionContext: jest.fn().mockResolvedValue({
+        authContext: authority,
+        initiator,
+        isActingOnBehalfOfUser: false,
+        workflowRunStartedAt: startedAt,
+      }),
     } as never,
     {} as never,
     {} as never,
@@ -107,5 +105,34 @@ describe('workflow AI runtime budget', () => {
       'requires an absolute workflow run budget',
     );
     expect(f.executeAgent).not.toHaveBeenCalled();
+  });
+  it('throttles running diagnostics to 30 seconds and always persists a terminal failed checkpoint', async () => {
+    const f = fixture(3_600_000);
+    f.executeAgent.mockImplementation(async (options) => {
+      await options.onExecutionCheckpoint({
+        result: { executionStatus: 'RUNNING' },
+      });
+      jest.setSystemTime(new Date(Date.parse(START) + 30_000));
+      await options.onExecutionCheckpoint({
+        result: { executionStatus: 'RUNNING' },
+      });
+      jest.setSystemTime(new Date(Date.parse(START) + 31_000));
+      await options.onExecutionCheckpoint({
+        result: { executionStatus: 'RUNNING' },
+      });
+      await options.onExecutionCheckpoint({
+        result: { executionStatus: 'FAILED' },
+      });
+      throw new Error('terminal provider failure');
+    });
+    await expect(f.action.execute(f.input as never)).rejects.toThrow(
+      'terminal provider failure',
+    );
+    const persisted = jest.mocked(f.action['persistStepLog']);
+    expect(persisted).toHaveBeenCalledTimes(2);
+    expect(persisted.mock.calls.map((call) => call[0].durationMs)).toEqual([
+      30_000, 31_000,
+    ]);
+    expect(jest.getTimerCount()).toBe(0);
   });
 });

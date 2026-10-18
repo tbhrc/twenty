@@ -109,6 +109,8 @@ export class AiAgentWorkflowAction implements WorkflowAction {
       );
     }
     let executionResult: AgentExecutionResult;
+    let lastCheckpointAt = startedAtMs;
+    let finalCheckpointPersisted = false;
 
     try {
       budget.abortSignal?.throwIfAborted();
@@ -132,6 +134,30 @@ export class AiAgentWorkflowAction implements WorkflowAction {
             operationType: UsageOperationType.AI_WORKFLOW_TOKEN,
             abortSignal: budget.abortSignal,
             completionToolName,
+            onExecutionCheckpoint: async (checkpoint) => {
+              const now = Date.now();
+              if (
+                ('executionStatus' in checkpoint.result
+                  ? checkpoint.result.executionStatus
+                  : undefined) === 'RUNNING' &&
+                now - lastCheckpointAt < 30_000
+              )
+                return;
+              lastCheckpointAt = now;
+              await this.persistStepLog({
+                workflowRunId: runInfo.workflowRunId,
+                workspaceId,
+                stepId: currentStepId,
+                executionResult: checkpoint,
+                durationMs: now - startedAtMs,
+              });
+              if (
+                ('executionStatus' in checkpoint.result
+                  ? checkpoint.result.executionStatus
+                  : undefined) !== 'RUNNING'
+              )
+                finalCheckpointPersisted = true;
+            },
           }),
         budget.abortSignal,
       );
@@ -146,13 +172,14 @@ export class AiAgentWorkflowAction implements WorkflowAction {
 
     const durationMs = Date.now() - startedAtMs;
 
-    await this.persistStepLog({
-      workflowRunId: runInfo.workflowRunId,
-      workspaceId,
-      stepId: currentStepId,
-      executionResult,
-      durationMs,
-    });
+    if (!finalCheckpointPersisted)
+      await this.persistStepLog({
+        workflowRunId: runInfo.workflowRunId,
+        workspaceId,
+        stepId: currentStepId,
+        executionResult,
+        durationMs,
+      });
 
     if (executionResult.hasNoMoreAvailableCredits) {
       return {

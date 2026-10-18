@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import {
   generateText,
+  wrapLanguageModel,
   jsonSchema,
   type LanguageModelUsage,
   Output,
@@ -55,6 +56,11 @@ import {
   hasAgentCompletionToolProof,
   runWithAgentAbortSignal,
 } from 'src/engine/metadata-modules/ai/ai-agent-execution/utils/agent-execution-abort.util';
+import {
+  createAgentModelRequestTimeoutMiddleware,
+  getAgentContextCheckpointMessages,
+  runAgentWithRecovery,
+} from 'src/engine/metadata-modules/ai/ai-agent-execution/utils/agent-execution-recovery.util';
 import { buildAgentRolePermissionConfig } from 'src/engine/metadata-modules/ai/ai-agent-execution/utils/build-agent-role-permission-config.util';
 import { buildStrictAgentResponseSchema } from 'src/engine/metadata-modules/ai/ai-agent-execution/utils/build-strict-agent-response-schema.util';
 import { AGENT_CONFIG } from 'src/engine/metadata-modules/ai/ai-agent/constants/agent-config.const';
@@ -279,6 +285,7 @@ export class AgentAsyncExecutorService {
     toolLoadingStrategy = 'preload',
     abortSignal,
     completionToolName,
+    onExecutionCheckpoint,
   }: {
     agent: AgentEntity | null;
     messages: RunAgentMessage[];
@@ -292,6 +299,7 @@ export class AgentAsyncExecutorService {
     toolLoadingStrategy?: AgentToolLoadingStrategy;
     abortSignal?: AbortSignal;
     completionToolName?: string;
+    onExecutionCheckpoint?: (checkpoint: AgentExecutionResult) => Promise<void>;
   }): Promise<AgentExecutionResult> {
     abortSignal?.throwIfAborted();
     if (
@@ -325,6 +333,30 @@ export class AgentAsyncExecutorService {
     let nativeWebSearchCallCount = 0;
     let executionSteps: StepResult<ToolSet>[] = [];
     let resolvedModelId: string | undefined;
+    let hasNoMoreAvailableCredits = false;
+    let executionStatus = 'FAILED';
+    const snapshot = (): AgentExecutionResult => {
+      const tokenCost = resolvedModelId
+        ? this.aiBillingService.calculateCost(resolvedModelId, {
+            usage: accumulatedUsage,
+            cacheCreationTokens,
+          })
+        : 0;
+      const totalCostInDollars =
+        tokenCost +
+        nativeWebSearchCallCount * NATIVE_WEB_SEARCH_COST_PER_CALL_DOLLARS;
+      return {
+        result: { executionStatus },
+        usage: accumulatedUsage,
+        cacheCreationTokens,
+        nativeWebSearchCallCount,
+        hasNoMoreAvailableCredits,
+        steps: executionSteps,
+        modelId: resolvedModelId,
+        totalCostInDollars,
+        creditsUsedMicro: convertDollarsToCreditsMicro(totalCostInDollars),
+      };
+    };
 
     try {
       const workspace = await this.workspaceRepository.findOneBy({
@@ -342,6 +374,18 @@ export class AgentAsyncExecutorService {
         );
 
       resolvedModelId = registeredModel.modelId;
+      if (completionToolName && typeof registeredModel.model === 'string')
+        throw new AiException(
+          'A bounded agent requires a registered provider model',
+          AiExceptionCode.INVALID_AGENT_INPUT,
+        );
+      const executionModel =
+        completionToolName && typeof registeredModel.model !== 'string'
+          ? wrapLanguageModel({
+              model: registeredModel.model,
+              middleware: createAgentModelRequestTimeoutMiddleware(),
+            })
+          : registeredModel.model;
 
       let tools: ToolSet = {};
       let toolCatalogSection = '';
@@ -412,7 +456,7 @@ export class AgentAsyncExecutorService {
         );
       }
 
-      let hasNoMoreAvailableCredits = false;
+      executionStatus = 'RUNNING';
 
       const modelMessages =
         await this.runAgentAttachmentService.buildModelMessagesOrThrow({
@@ -423,23 +467,85 @@ export class AgentAsyncExecutorService {
           )?.modalities,
         });
 
-      const runMain = (mainMessages: ModelMessage[]) =>
-        runWithAgentAbortSignal(
+      let callbackFailure: unknown;
+      let uncheckpointedTools = false;
+      let successfulToolCount = 0;
+      const completedMessages: ModelMessage[] = [];
+      const completedSteps = new WeakSet<object>();
+      const recordUsage = async (
+        usage: LanguageModelUsage,
+        providerMetadata?: Parameters<typeof extractCacheCreationTokens>[0],
+      ) => {
+        accumulatedUsage = mergeLanguageModelUsage(accumulatedUsage, usage);
+        const cacheTokens = extractCacheCreationTokens(providerMetadata);
+        cacheCreationTokens += cacheTokens;
+        try {
+          const credits =
+            await this.aiBillingService.decrementAndCheckAvailableCredits({
+              modelId: registeredModel.modelId,
+              billingInput: { usage, cacheCreationTokens: cacheTokens },
+              workspaceId,
+              operationType,
+              spenders: { userWorkspaceId, agentId: agent?.id },
+            });
+          hasNoMoreAvailableCredits ||= credits.hasNoMoreAvailableCredits;
+        } catch (error) {
+          callbackFailure = error;
+        }
+      };
+      const recordStep = async (step: StepResult<ToolSet>) => {
+        if (completedSteps.has(step)) return;
+        completedSteps.add(step);
+        executionSteps.push(step);
+        completedMessages.push(...(step.response?.messages ?? []));
+        uncheckpointedTools = false;
+        successfulToolCount += step.toolResults.filter((result) =>
+          isToolOutputSuccessful(result.output),
+        ).length;
+        nativeWebSearchCallCount += countNativeWebSearchCallsFromSteps([step]);
+        try {
+          await onExecutionCheckpoint?.(snapshot());
+        } catch (error) {
+          callbackFailure = error;
+        }
+      };
+      const runMain = async (mainMessages: ModelMessage[]) => {
+        let observedModelCalls = 0;
+        const response = await runWithAgentAbortSignal(
           () =>
             generateText({
               instructions: `${baseSystemPrompt}\n\n${agent ? tipTapDocumentToMarkdown(agent.prompt) : ''}${toolCatalogSection}`,
-              tools: guardAgentToolsWithAbortSignal(tools, abortSignal),
+              tools: guardAgentToolsWithAbortSignal(tools, abortSignal, () => {
+                if (callbackFailure)
+                  throw new AiException(
+                    'Agent execution accounting failed',
+                    AiExceptionCode.AGENT_EXECUTION_FAILED,
+                  );
+                if (hasNoMoreAvailableCredits)
+                  throw new Error('Agent stopped: no more available credits.');
+              }),
               abortSignal,
-              model: registeredModel.model,
+              model: executionModel,
               messages: mainMessages,
               ...(completionToolName
                 ? { toolChoice: 'required' as const }
                 : {}),
+              prepareStep: completionToolName
+                ? () => {
+                    const messages = getAgentContextCheckpointMessages(
+                      modelMessages,
+                      executionSteps,
+                      completionToolName,
+                    );
+                    return messages ? { messages } : {};
+                  }
+                : undefined,
               stopWhen: (step) =>
                 (completionToolName
                   ? hasAgentCompletionToolProof(step.steps, completionToolName)
                   : isStepCount(AGENT_CONFIG.MAX_STEPS)(step)) ||
-                hasNoMoreAvailableCredits,
+                hasNoMoreAvailableCredits ||
+                callbackFailure !== undefined,
               providerOptions,
               ...buildAiTelemetry({
                 functionId: 'agent-execution',
@@ -447,6 +553,13 @@ export class AgentAsyncExecutorService {
                 userWorkspaceId,
                 agentId: agent?.id,
               }),
+              onLanguageModelCallEnd: async (event) => {
+                observedModelCalls += 1;
+                await recordUsage(event.usage, event.providerMetadata);
+              },
+              onToolExecutionStart: () => {
+                uncheckpointedTools = true;
+              },
               onToolExecutionEnd: (event) => {
                 this.metricsService.recordHistogram({
                   key: MetricsKeys.WorkflowAgentToolExecutionDurationMs,
@@ -461,28 +574,7 @@ export class AgentAsyncExecutorService {
                 });
               },
               onStepEnd: async (step) => {
-                const {
-                  hasNoMoreAvailableCredits: stepHasNoMoreAvailableCredits,
-                } =
-                  await this.aiBillingService.decrementAndCheckAvailableCredits(
-                    {
-                      modelId: registeredModel.modelId,
-                      billingInput: {
-                        usage: step.usage,
-                        cacheCreationTokens: extractCacheCreationTokens(
-                          step.providerMetadata,
-                        ),
-                      },
-                      workspaceId,
-                      operationType,
-                      spenders: { userWorkspaceId, agentId: agent?.id },
-                    },
-                  );
-
-                if (stepHasNoMoreAvailableCredits) {
-                  hasNoMoreAvailableCredits = true;
-                }
-
+                await recordStep(step);
                 for (const part of step.content) {
                   if (
                     part.type !== 'tool-result' &&
@@ -530,7 +622,7 @@ export class AgentAsyncExecutorService {
                   tools: toolsForRepair,
                   inputSchema,
                   error,
-                  model: registeredModel.model,
+                  model: executionModel,
                   abortSignal,
                 });
               },
@@ -538,59 +630,76 @@ export class AgentAsyncExecutorService {
           abortSignal,
         );
 
-      let textResponse = await runMain(modelMessages);
-      let mainUsage = textResponse.usage;
-      let mainSteps = textResponse.steps;
-      if (
-        completionToolName &&
-        !hasNoMoreAvailableCredits &&
-        !hasAgentCompletionToolProof(mainSteps, completionToolName)
-      ) {
-        const firstResponse = textResponse;
-        textResponse = await runMain([
-          ...modelMessages,
-          ...firstResponse.response.messages,
-          {
-            role: 'user',
-            content:
-              'Continue the assigned work using tools. Completion requires the designated backend tool to return continueWork: false. A narrative response is not completion.',
-          },
-        ]);
-        mainUsage = mergeLanguageModelUsage(mainUsage, textResponse.usage);
-        mainSteps = [...mainSteps, ...textResponse.steps];
-      }
-      accumulatedUsage = mainUsage;
-      cacheCreationTokens = extractCacheCreationTokensFromSteps(mainSteps);
-      nativeWebSearchCallCount = countNativeWebSearchCallsFromSteps(mainSteps);
-      executionSteps = mainSteps;
-      if (
-        completionToolName &&
-        !hasNoMoreAvailableCredits &&
-        !hasAgentCompletionToolProof(textResponse.steps, completionToolName)
-      ) {
+        // Fallback supports older providers/test doubles without SDK callbacks.
+        if (observedModelCalls === 0) {
+          await recordUsage(response.usage);
+          cacheCreationTokens += extractCacheCreationTokensFromSteps(
+            response.steps,
+          );
+        }
+        for (const step of response.steps) await recordStep(step);
+        if (callbackFailure)
+          throw new AiException(
+            'Agent execution accounting failed',
+            AiExceptionCode.AGENT_EXECUTION_FAILED,
+          );
+        return response;
+      };
+      const textResponse =
+        completionToolName && abortSignal
+          ? await runAgentWithRecovery({
+              initialMessages: modelMessages,
+              runAttempt: runMain,
+              abortSignal,
+              checkpoint: () => ({
+                messages:
+                  getAgentContextCheckpointMessages(
+                    [],
+                    executionSteps,
+                    completionToolName,
+                  ) ?? completedMessages,
+                successfulToolCount,
+                hasUncheckpointedTools: uncheckpointedTools,
+              }),
+              isComplete: (response) =>
+                hasAgentCompletionToolProof(response.steps, completionToolName),
+              shouldStop: () => {
+                if (callbackFailure)
+                  throw new AiException(
+                    'Agent execution accounting failed',
+                    AiExceptionCode.AGENT_EXECUTION_FAILED,
+                  );
+                return hasNoMoreAvailableCredits;
+              },
+            })
+          : await runMain(modelMessages);
+      if (callbackFailure)
         throw new AiException(
-          'The agent returned without verified backend completion',
-          AiExceptionCode.INVALID_AGENT_INPUT,
+          'Agent execution accounting failed',
+          AiExceptionCode.AGENT_EXECUTION_FAILED,
         );
-      }
 
       const agentSchema =
         agent?.responseFormat?.type === 'json'
           ? agent.responseFormat.schema
           : undefined;
 
-      let result: object = { response: textResponse.text };
+      let result: object = {
+        response:
+          textResponse?.text ?? 'Agent stopped: no more available credits.',
+      };
 
-      if (agentSchema) {
+      if (agentSchema && !hasNoMoreAvailableCredits) {
+        let summaryModelCalls = 0;
         const structuredResult = await runWithAgentAbortSignal(
           () =>
             generateText({
               abortSignal,
               instructions: STRUCTURED_OUTPUT_SYSTEM_PROMPT,
-              model: registeredModel.model,
+              model: executionModel,
               prompt: `Based on the following execution results, generate the structured output according to the schema:
 
-                 Execution Results: ${textResponse.text}
+                 Execution Results: ${textResponse?.text ?? ''}
 
                  Please generate the structured output based on the execution results and context above.`,
               output: Output.object({
@@ -607,38 +716,24 @@ export class AgentAsyncExecutorService {
                 userWorkspaceId,
                 agentId: agent?.id,
               }),
-              onStepEnd: async (step) => {
-                const {
-                  hasNoMoreAvailableCredits: stepHasNoMoreAvailableCredits,
-                } =
-                  await this.aiBillingService.decrementAndCheckAvailableCredits(
-                    {
-                      modelId: registeredModel.modelId,
-                      billingInput: {
-                        usage: step.usage,
-                        cacheCreationTokens: extractCacheCreationTokens(
-                          step.providerMetadata,
-                        ),
-                      },
-                      workspaceId,
-                      operationType,
-                      spenders: { userWorkspaceId, agentId: agent?.id },
-                    },
-                  );
-
-                if (stepHasNoMoreAvailableCredits) {
-                  hasNoMoreAvailableCredits = true;
-                }
+              onLanguageModelCallEnd: (event) => {
+                summaryModelCalls += 1;
+                return recordUsage(event.usage, event.providerMetadata);
               },
+              onStepEnd: recordStep,
             }),
           abortSignal,
         );
 
-        accumulatedUsage = mergeLanguageModelUsage(
-          mainUsage,
-          structuredResult.usage,
-        );
-        executionSteps = [...mainSteps, ...structuredResult.steps];
+        if (summaryModelCalls === 0) {
+          await recordUsage(structuredResult.usage);
+          for (const step of structuredResult.steps) await recordStep(step);
+        }
+        if (callbackFailure)
+          throw new AiException(
+            'Agent execution accounting failed',
+            AiExceptionCode.AGENT_EXECUTION_FAILED,
+          );
 
         if (structuredResult.output == null) {
           throw new AiException(
@@ -659,6 +754,9 @@ export class AgentAsyncExecutorService {
         nativeWebSearchCallCount * NATIVE_WEB_SEARCH_COST_PER_CALL_DOLLARS;
       const creditsUsedMicro = convertDollarsToCreditsMicro(totalCostInDollars);
 
+      executionStatus = hasNoMoreAvailableCredits
+        ? 'STOPPED_CREDITS'
+        : 'COMPLETED';
       return {
         result,
         usage: accumulatedUsage,
@@ -671,6 +769,7 @@ export class AgentAsyncExecutorService {
         creditsUsedMicro,
       };
     } catch (error) {
+      executionStatus = 'FAILED';
       if (error instanceof AiException) {
         throw error;
       }
@@ -679,6 +778,11 @@ export class AgentAsyncExecutorService {
         AiExceptionCode.AGENT_EXECUTION_FAILED,
       );
     } finally {
+      try {
+        await onExecutionCheckpoint?.(snapshot());
+      } catch {
+        this.logger.warn('Failed to persist agent execution checkpoint');
+      }
       const modelId =
         resolvedModelId ??
         agent?.modelId ??
