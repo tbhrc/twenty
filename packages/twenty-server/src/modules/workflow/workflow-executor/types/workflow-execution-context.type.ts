@@ -8,4 +8,5 @@ export type WorkflowExecutionContext = {
   initiator: ActorMetadata;
   rolePermissionConfig: RolePermissionConfig;
   authContext: WorkspaceAuthContext;
+  workflowRunStartedAt?: string | Date | null;
 };

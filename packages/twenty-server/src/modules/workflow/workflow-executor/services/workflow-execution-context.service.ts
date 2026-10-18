@@ -40,8 +40,7 @@ export class WorkflowExecutionContextService {
     const isActingOnBehalfOfUser =
       [FieldActorSource.MANUAL, FieldActorSource.AGENT].includes(
         workflowRun.createdBy.source,
-      ) &&
-      isDefined(workflowRun.createdBy.workspaceMemberId);
+      ) && isDefined(workflowRun.createdBy.workspaceMemberId);
 
     if (isActingOnBehalfOfUser) {
       return this.buildUserExecutionContext(workflowRun, runInfo.workspaceId);
@@ -88,6 +87,7 @@ export class WorkflowExecutionContextService {
       initiator: workflowRun.createdBy,
       rolePermissionConfig: { unionOf: [roleId] },
       authContext,
+      workflowRunStartedAt: workflowRun.startedAt,
     };
   }
 
@@ -131,6 +131,7 @@ export class WorkflowExecutionContextService {
       initiator: workflowRun.createdBy,
       rolePermissionConfig,
       authContext,
+      workflowRunStartedAt: workflowRun.startedAt,
     };
   }
 }

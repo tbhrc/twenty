@@ -7,6 +7,7 @@ import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/inte
 import { UsageOperationType } from 'src/engine/core-modules/usage/enums/usage-operation-type.enum';
 import { AgentAsyncExecutorService } from 'src/engine/metadata-modules/ai/ai-agent-execution/services/agent-async-executor.service';
 import { type AgentExecutionResult } from 'src/engine/metadata-modules/ai/ai-agent-execution/types/agent-execution-result.type';
+import { runWithAgentAbortSignal } from 'src/engine/metadata-modules/ai/ai-agent-execution/utils/agent-execution-abort.util';
 import { WORKFLOW_BASE_SYSTEM_PROMPT } from 'src/engine/metadata-modules/ai/ai-agent/constants/workflow-base-system-prompt.const';
 import { AgentEntity } from 'src/engine/metadata-modules/ai/ai-agent/entities/agent.entity';
 import { InjectWorkspaceScopedRepository } from 'src/engine/twenty-orm/workspace-scoped-repository/inject-workspace-scoped-repository.decorator';
@@ -20,6 +21,7 @@ import { type WorkflowActionInput } from 'src/modules/workflow/workflow-executor
 import { type WorkflowActionOutput } from 'src/modules/workflow/workflow-executor/types/workflow-action-output.type';
 import { findStepOrThrow } from 'src/modules/workflow/workflow-executor/utils/find-step-or-throw.util';
 import { buildAiAgentStepLog } from 'src/modules/workflow/workflow-executor/workflow-actions/ai-agent/utils/build-ai-agent-step-log.util';
+import { createWorkflowRunBudget } from 'src/modules/workflow/workflow-executor/workflow-actions/ai-agent/utils/create-workflow-run-budget.util';
 import { WorkflowRunStepLogWorkspaceService } from 'src/modules/workflow/workflow-runner/workflow-run/workflow-run-step-log.workspace-service';
 
 import { isWorkflowAiAgentAction } from './guards/is-workflow-ai-agent-action.guard';
@@ -54,7 +56,17 @@ export class AiAgentWorkflowAction implements WorkflowAction {
       );
     }
 
-    const { agentId, prompt } = step.settings.input;
+    const { agentId, prompt, maxRunDurationMilliseconds, completionToolName } =
+      step.settings.input;
+    if (
+      completionToolName !== undefined &&
+      maxRunDurationMilliseconds === undefined
+    ) {
+      throw new WorkflowStepExecutorException(
+        'A completion tool requires an absolute workflow run budget',
+        WorkflowStepExecutorExceptionCode.INVALID_STEP_INPUT,
+      );
+    }
     const workspaceId = runInfo.workspaceId;
 
     let agent: AgentEntity | null = null;
@@ -82,20 +94,55 @@ export class AiAgentWorkflowAction implements WorkflowAction {
 
     const startedAtMs = Date.now();
 
-    const executionResult = await this.aiAgentExecutionService.executeAgent({
-      agent,
-      messages: [
-        { role: 'user', content: resolveInput(prompt, context) as string },
-      ],
-      baseSystemPrompt: WORKFLOW_BASE_SYSTEM_PROMPT,
-      actorContext: executionContext.isActingOnBehalfOfUser
-        ? executionContext.initiator
-        : undefined,
-      authContext: executionContext.authContext,
-      workspaceId,
-      userWorkspaceId,
-      operationType: UsageOperationType.AI_WORKFLOW_TOKEN,
-    });
+    let budget: ReturnType<typeof createWorkflowRunBudget>;
+    try {
+      budget = createWorkflowRunBudget({
+        startedAt: executionContext.workflowRunStartedAt,
+        maxRunDurationMilliseconds,
+      });
+    } catch (error) {
+      throw new WorkflowStepExecutorException(
+        error instanceof Error
+          ? error.message
+          : 'Invalid workflow run duration',
+        WorkflowStepExecutorExceptionCode.INVALID_STEP_INPUT,
+      );
+    }
+    let executionResult: AgentExecutionResult;
+
+    try {
+      budget.abortSignal?.throwIfAborted();
+      executionResult = await runWithAgentAbortSignal(
+        () =>
+          this.aiAgentExecutionService.executeAgent({
+            agent,
+            messages: [
+              {
+                role: 'user',
+                content: resolveInput(prompt, context) as string,
+              },
+            ],
+            baseSystemPrompt: WORKFLOW_BASE_SYSTEM_PROMPT,
+            actorContext: executionContext.isActingOnBehalfOfUser
+              ? executionContext.initiator
+              : undefined,
+            authContext: executionContext.authContext,
+            workspaceId,
+            userWorkspaceId,
+            operationType: UsageOperationType.AI_WORKFLOW_TOKEN,
+            abortSignal: budget.abortSignal,
+            completionToolName,
+          }),
+        budget.abortSignal,
+      );
+    } catch (error) {
+      if (budget.abortSignal?.aborted) {
+        return { error: 'WORKFLOW_RUN_DURATION_EXCEEDED', isUserError: true };
+      }
+      throw error;
+    } finally {
+      budget.dispose();
+    }
 
     const durationMs = Date.now() - startedAtMs;
 

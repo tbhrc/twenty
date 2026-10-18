@@ -13,6 +13,7 @@ import { UsageOperationType } from 'src/engine/core-modules/usage/enums/usage-op
 import { AiBillingService } from 'src/engine/metadata-modules/ai/ai-billing/services/ai-billing.service';
 import { extractCacheCreationTokensFromSteps } from 'src/engine/metadata-modules/ai/ai-billing/utils/extract-cache-creation-tokens.util';
 import { buildAiTelemetry } from 'src/engine/metadata-modules/ai/ai-models/utils/build-ai-telemetry.util';
+import { runWithAgentAbortSignal } from 'src/engine/metadata-modules/ai/ai-agent-execution/utils/agent-execution-abort.util';
 
 type ToolCall = {
   type: 'tool-call';
@@ -36,6 +37,7 @@ export const repairToolCall = async ({
   error,
   model,
   billingContext,
+  abortSignal,
 }: {
   toolCall: ToolCall;
   tools: Record<string, unknown>;
@@ -43,6 +45,7 @@ export const repairToolCall = async ({
   error: Error;
   model: LanguageModel;
   billingContext?: RepairToolCallBillingContext;
+  abortSignal?: AbortSignal;
 }): Promise<ToolCall | null> => {
   // Don't attempt to fix invalid tool names
   if (NoSuchToolError.isInstance(error)) {
@@ -65,30 +68,35 @@ export const repairToolCall = async ({
   let steps: StepResult<ToolSet>[] | undefined;
 
   try {
-    const result = await generateText({
-      model,
-      output: Output.object({ schema: schema as z.ZodTypeAny }),
-      prompt: [
-        `The AI model attempted to call the tool "${toolCall.toolName}" with invalid input.`,
-        ``,
-        `Input provided:`,
-        JSON.stringify(toolCall.input, null, 2),
-        ``,
-        `Error encountered:`,
-        error.message,
-        ``,
-        `Please fix the input to exactly match the required schema.`,
-        `Pay special attention to:`,
-        `- Enum values must match exactly (e.g., "DescNullsLast" not "desc")`,
-        `- Object structures must match the schema shape`,
-        `- Array items must follow the specified format`,
-      ].join('\n'),
-      ...buildAiTelemetry({
-        functionId: 'repair-tool-call',
-        workspaceId: billingContext?.workspaceId,
-        userWorkspaceId: billingContext?.userWorkspaceId,
-      }),
-    });
+    const result = await runWithAgentAbortSignal(
+      () =>
+        generateText({
+          model,
+          abortSignal,
+          output: Output.object({ schema: schema as z.ZodTypeAny }),
+          prompt: [
+            `The AI model attempted to call the tool "${toolCall.toolName}" with invalid input.`,
+            ``,
+            `Input provided:`,
+            JSON.stringify(toolCall.input, null, 2),
+            ``,
+            `Error encountered:`,
+            error.message,
+            ``,
+            `Please fix the input to exactly match the required schema.`,
+            `Pay special attention to:`,
+            `- Enum values must match exactly (e.g., "DescNullsLast" not "desc")`,
+            `- Object structures must match the schema shape`,
+            `- Array items must follow the specified format`,
+          ].join('\n'),
+          ...buildAiTelemetry({
+            functionId: 'repair-tool-call',
+            workspaceId: billingContext?.workspaceId,
+            userWorkspaceId: billingContext?.userWorkspaceId,
+          }),
+        }),
+      abortSignal,
+    );
 
     usage = result.usage;
     steps = result.steps;
@@ -105,7 +113,10 @@ export const repairToolCall = async ({
       toolName: toolCall.toolName,
       input: JSON.stringify(repairedInput),
     };
-  } catch {
+  } catch (error) {
+    if (abortSignal?.aborted) {
+      throw error;
+    }
     return null;
   } finally {
     if (billingContext && usage) {
