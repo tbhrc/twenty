@@ -11,6 +11,7 @@ import { RecordFormFieldInputs } from '@/object-record/record-form/components/Re
 import { useRecordCreationFormSettle } from '@/object-record/record-form/hooks/useRecordCreationFormSettle';
 import { useRecordFormFieldMetadataItems } from '@/object-record/record-form/hooks/useRecordFormFieldMetadataItems';
 import { computeRecordFormCreateRecordInput } from '@/object-record/record-form/utils/computeRecordFormCreateRecordInput';
+import { getRecordFormInitialDraftRecord } from '@/object-record/record-form/utils/getRecordFormInitialDraftRecord';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { recordCreationFormDraftComponentState } from '@/side-panel/pages/record-creation-form/states/recordCreationFormDraftComponentState';
 import { recordCreationFormRequestComponentState } from '@/side-panel/pages/record-creation-form/states/recordCreationFormRequestComponentState';
@@ -35,6 +36,20 @@ const StyledContainer = styled.div`
 `;
 
 const StyledContent = styled.div`
+  background-color: #fff;
+  color: #111827;
+  & :is(label, button, input, textarea, [contenteditable], p, span) {
+    color: #111827 !important;
+  }
+  & input::placeholder,
+  & textarea::placeholder,
+  & [data-placeholder]::before {
+    color: #111827 !important;
+    opacity: 1;
+  }
+  & > div > div:last-child [contenteditable='true'] {
+    min-height: 220px;
+  }
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -85,7 +100,11 @@ const SidePanelRecordCreationForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const currentFocusId = useAtomStateValue(currentFocusIdSelector);
 
-  const draftRecord = recordCreationFormDraft ?? initialDraftRecord;
+  const initialDraft = getRecordFormInitialDraftRecord({
+    fieldMetadataItems: objectMetadataItem.fields,
+    initialDraftRecord,
+  });
+  const draftRecord = recordCreationFormDraft ?? initialDraft;
 
   const { recordFormFieldMetadataItems } = useRecordFormFieldMetadataItems({
     objectMetadataItem,
@@ -93,14 +112,14 @@ const SidePanelRecordCreationForm = ({
 
   const handleFieldValueChange = (gqlFieldName: string, value: JsonValue) => {
     setRecordCreationFormDraft((previousDraftRecord) => ({
-      ...(previousDraftRecord ?? initialDraftRecord),
+      ...(previousDraftRecord ?? initialDraft),
       [gqlFieldName]: value,
     }));
   };
 
   const handleFieldValueClear = (gqlFieldName: string) => {
     setRecordCreationFormDraft((previousDraftRecord) => ({
-      ...(previousDraftRecord ?? initialDraftRecord),
+      ...(previousDraftRecord ?? initialDraft),
       [gqlFieldName]: null,
     }));
   };
@@ -148,7 +167,7 @@ const SidePanelRecordCreationForm = ({
           />
         }
       />
-      <StyledContent>
+      <StyledContent data-record-creation-form="true">
         <RecordFormFieldInputs
           objectMetadataItem={objectMetadataItem}
           fieldMetadataItems={recordFormFieldMetadataItems}

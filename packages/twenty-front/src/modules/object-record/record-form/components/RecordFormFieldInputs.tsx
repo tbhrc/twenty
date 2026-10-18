@@ -3,10 +3,12 @@ import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataIte
 import { formatFieldMetadataItemAsFieldDefinition } from '@/object-metadata/utils/formatFieldMetadataItemAsFieldDefinition';
 import { getFieldMetadataItemGqlFieldName } from '@/object-metadata/utils/getFieldMetadataItemGqlFieldName';
 import { FormFieldInput } from '@/object-record/record-field/ui/components/FormFieldInput';
+import { FormBooleanFieldSwitchInput } from '@/object-record/record-field/ui/form-types/components/FormBooleanFieldSwitchInput';
 import { getRecordFormFieldInputSettings } from '@/object-record/record-form/utils/getRecordFormFieldInputSettings';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { styled } from '@linaria/react';
 import { type JsonValue } from 'type-fest';
+import { FieldMetadataType } from 'twenty-shared/types';
 import { themeCssVariables } from 'twenty-ui/theme';
 
 const StyledFieldList = styled.div`
@@ -33,6 +35,21 @@ export const RecordFormFieldInputs = ({
   <StyledFieldList>
     {fieldMetadataItems.map((fieldMetadataItem) => {
       const gqlFieldName = getFieldMetadataItemGqlFieldName(fieldMetadataItem);
+
+      if (
+        fieldMetadataItem.type === FieldMetadataType.BOOLEAN &&
+        !fieldMetadataItem.isNullable
+      ) {
+        return (
+          <FormBooleanFieldSwitchInput
+            key={fieldMetadataItem.id}
+            description={fieldMetadataItem.label}
+            hint={fieldMetadataItem.description ?? undefined}
+            value={draftRecord[gqlFieldName] === true}
+            onChange={(value) => onFieldValueChange(gqlFieldName, value)}
+          />
+        );
+      }
 
       return (
         <FormFieldInput
