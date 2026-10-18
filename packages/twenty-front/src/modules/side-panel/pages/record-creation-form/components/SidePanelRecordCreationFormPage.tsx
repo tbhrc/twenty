@@ -38,12 +38,13 @@ const StyledContainer = styled.div`
 const StyledContent = styled.div`
   background-color: #fff;
   color: #111827;
-  & :is(label, button, input, textarea, [contenteditable], p, span) {
+  & :is(div, label, button, input, textarea, [contenteditable], p, span) {
     color: #111827 !important;
   }
   & input::placeholder,
   & textarea::placeholder,
-  & [data-placeholder]::before {
+  & [data-placeholder]::before,
+  & .bn-block-content::after {
     color: #111827 !important;
     opacity: 1;
   }
