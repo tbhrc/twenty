@@ -1,3 +1,5 @@
+import { type ServerVariables } from 'twenty-shared/application';
+
 import { ApplicationRegistrationVariableService } from './application-registration-variable.service';
 
 describe('ApplicationRegistrationVariableService schema preservation', () => {
@@ -22,7 +24,12 @@ describe('ApplicationRegistrationVariableService schema preservation', () => {
     return { service, repository };
   };
 
-  it.each([{}, { MARKETING_INQUIRY_SOURCE_KEY: { isSecret: true } }])(
+  const incompleteManifests: ServerVariables[] = [
+    {},
+    { MARKETING_INQUIRY_SOURCE_KEY: { isSecret: true } },
+  ];
+
+  it.each(incompleteManifests)(
     'rejects a manifest that omits a configured integration before any mutation',
     async (manifest) => {
       const { service, repository } = createService([
