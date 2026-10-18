@@ -20,8 +20,11 @@ import { CreateAppMessageChannelInput } from 'src/engine/metadata-modules/messag
 import { ListAppMessageChannelsInput } from 'src/engine/metadata-modules/message-channel/dtos/list-app-message-channels.input';
 import { MessageChannelDTO } from 'src/engine/metadata-modules/message-channel/dtos/message-channel.dto';
 import { UpdateAppMessageChannelInput } from 'src/engine/metadata-modules/message-channel/dtos/update-app-message-channel.input';
+import { AppMessageSourceAccountDTO } from 'src/engine/metadata-modules/message-channel/dtos/app-message-source-account.dto';
+import { RegisterAppMessageSourceInput } from 'src/engine/metadata-modules/message-channel/dtos/register-app-message-source.input';
 import { MessageChannelGraphqlApiExceptionInterceptor } from 'src/engine/metadata-modules/message-channel/interceptors/message-channel-graphql-api-exception.interceptor';
 import { ApplicationMessageChannelsService } from 'src/engine/metadata-modules/message-channel/services/application-message-channels.service';
+import { ApplicationMessageSourceAccountsService } from 'src/engine/metadata-modules/message-channel/services/application-message-source-accounts.service';
 import { AuthGraphqlApiExceptionFilter } from 'src/engine/core-modules/auth/filters/auth-graphql-api-exception.filter';
 
 @UseGuards(WorkspaceAuthGuard, NoPermissionGuard)
@@ -32,7 +35,26 @@ import { AuthGraphqlApiExceptionFilter } from 'src/engine/core-modules/auth/filt
 export class ApplicationMessageChannelsResolver {
   constructor(
     private readonly applicationMessageChannelsService: ApplicationMessageChannelsService,
+    private readonly applicationMessageSourceAccountsService: ApplicationMessageSourceAccountsService,
   ) {}
+
+  @Mutation(() => AppMessageSourceAccountDTO)
+  async registerAppMessageSource(
+    @AuthApplication() application: FlatApplication,
+    @AuthWorkspace() workspace: FlatWorkspace,
+    @AuthUserWorkspaceId() userWorkspaceId: string,
+    @Args('input') input: RegisterAppMessageSourceInput,
+  ): Promise<AppMessageSourceAccountDTO> {
+    return this.applicationMessageSourceAccountsService.register({
+      applicationId: application.id,
+      workspaceId: workspace.id,
+      requestUserWorkspaceId: userWorkspaceId,
+      sourceIdentifier: input.sourceIdentifier,
+      handle: input.handle,
+      displayName: input.displayName,
+      visibility: input.visibility,
+    });
+  }
 
   @Query(() => [MessageChannelDTO])
   async appMessageChannels(

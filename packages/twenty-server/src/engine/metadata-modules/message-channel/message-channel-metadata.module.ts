@@ -13,6 +13,7 @@ import { ApplicationMessageIngestionResolver } from 'src/engine/metadata-modules
 import { MessageChannelResolver } from 'src/engine/metadata-modules/message-channel/resolvers/message-channel.resolver';
 import { ApplicationMessageChannelsService } from 'src/engine/metadata-modules/message-channel/services/application-message-channels.service';
 import { ApplicationMessageIngestionService } from 'src/engine/metadata-modules/message-channel/services/application-message-ingestion.service';
+import { ApplicationMessageSourceAccountsService } from 'src/engine/metadata-modules/message-channel/services/application-message-source-accounts.service';
 import { MessageFolderEntity } from 'src/engine/metadata-modules/message-folder/entities/message-folder.entity';
 import { PermissionsModule } from 'src/engine/metadata-modules/permissions/permissions.module';
 import { WorkspaceEventEmitterModule } from 'src/engine/workspace-event-emitter/workspace-event-emitter.module';
@@ -37,6 +38,7 @@ import { provideWorkspaceScopedRepository } from 'src/engine/twenty-orm/workspac
     MessageChannelMetadataService,
     MessageChannelResolver,
     ApplicationMessageChannelsService,
+    ApplicationMessageSourceAccountsService,
     ApplicationMessageChannelsResolver,
     ApplicationMessageIngestionService,
     ApplicationMessageIngestionResolver,
