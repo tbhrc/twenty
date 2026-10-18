@@ -87,6 +87,30 @@ describe('ApplicationManifestApplyService', () => {
     ).not.toHaveBeenCalled();
   });
 
+  it('forwards narrow role-flag cleanup without changing general deletion defaults', async () => {
+    await service.applyManifestToWorkspace({
+      workspaceId: WORKSPACE_ID,
+      manifest,
+      application,
+      inferDeletionFromMissingEntities: false,
+      inferRolePermissionFlagDeletion: true,
+    });
+
+    expect(applicationSyncService.synchronizeFromManifest).toHaveBeenCalledWith(
+      {
+        workspaceId: WORKSPACE_ID,
+        manifest,
+        applicationRegistrationId: undefined,
+        inferDeletionFromMissingEntities: false,
+        inferRolePermissionFlagDeletion: true,
+        persistVersion: undefined,
+      },
+    );
+    expect(
+      sdkClientGenerationService.generateSdkClientForApplication,
+    ).not.toHaveBeenCalled();
+  });
+
   it('regenerates the SDK client on dev sync when the schema changed', async () => {
     applicationSyncService.synchronizeFromManifest.mockResolvedValue({
       workspaceMigration: { actions: [] },

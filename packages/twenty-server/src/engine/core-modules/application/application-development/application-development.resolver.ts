@@ -86,13 +86,19 @@ export class ApplicationDevelopmentResolver {
       kind: 'applicationUniversalIdentifier',
       idKey: 'manifest.application.universalIdentifier',
     })
-    { manifest, dryRun, inferDeletionFromMissingEntities }: ApplicationInput,
+    {
+      manifest,
+      dryRun,
+      inferDeletionFromMissingEntities,
+      inferRolePermissionFlagDeletion,
+    }: ApplicationInput,
     @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
   ): Promise<WorkspaceMigrationDTO> {
     return this.applicationDevelopmentService.syncApplication({
       manifest,
       dryRun,
       inferDeletionFromMissingEntities,
+      inferRolePermissionFlagDeletion,
       workspaceId,
     });
   }

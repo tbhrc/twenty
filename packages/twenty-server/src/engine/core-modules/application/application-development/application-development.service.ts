@@ -15,6 +15,7 @@ import { ApplicationManifestApplyService } from 'src/engine/core-modules/applica
 import { ApplicationSyncService } from 'src/engine/core-modules/application/application-manifest/application-sync.service';
 import { ApplicationManifestExportService } from 'src/engine/core-modules/application/application-manifest/services/application-manifest-export.service';
 import { type ApplicationExport } from 'src/engine/core-modules/application/application-manifest/types/application-export.type';
+import { resolveAppManifestDeletionInference } from 'src/engine/core-modules/application/application-manifest/utils/resolve-app-manifest-deletion-inference.util';
 import { ApplicationVersionValidationService } from 'src/engine/core-modules/application/application-package/application-version-validation.service';
 import { VERSION_REASON_TO_APPLICATION_EXCEPTION_CODE } from 'src/engine/core-modules/application/application-package/constants/version-reason-to-exception-code.constant';
 import { ApplicationRegistrationAssetService } from 'src/engine/core-modules/application/application-registration/application-registration-asset.service';
@@ -112,15 +113,24 @@ export class ApplicationDevelopmentService {
     manifest,
     dryRun,
     inferDeletionFromMissingEntities,
+    inferRolePermissionFlagDeletion,
     workspaceId,
   }: {
     manifest: ApplicationInput['manifest'];
     dryRun?: boolean;
     inferDeletionFromMissingEntities?: boolean | null;
+    inferRolePermissionFlagDeletion?: boolean | null;
     workspaceId: string;
   }): Promise<WorkspaceMigrationDTO> {
     const shouldInferDeletionFromMissingEntities =
       inferDeletionFromMissingEntities !== false;
+    const shouldInferRolePermissionFlagDeletion =
+      inferRolePermissionFlagDeletion === true;
+
+    resolveAppManifestDeletionInference({
+      inferDeletionFromMissingEntities: shouldInferDeletionFromMissingEntities,
+      inferRolePermissionFlagDeletion: shouldInferRolePermissionFlagDeletion,
+    });
 
     await this.throttlePerApplication(
       manifest.application.universalIdentifier,
@@ -156,6 +166,8 @@ export class ApplicationDevelopmentService {
           dryRun: true,
           inferDeletionFromMissingEntities:
             shouldInferDeletionFromMissingEntities,
+          inferRolePermissionFlagDeletion:
+            shouldInferRolePermissionFlagDeletion,
         });
 
       return {
@@ -171,6 +183,7 @@ export class ApplicationDevelopmentService {
           manifest,
           workspaceId,
           shouldInferDeletionFromMissingEntities,
+          shouldInferRolePermissionFlagDeletion,
         ),
       `app-sync:${workspaceId}`,
       APP_SYNC_LOCK_OPTIONS,
@@ -248,6 +261,7 @@ export class ApplicationDevelopmentService {
     manifest: ApplicationInput['manifest'],
     workspaceId: string,
     inferDeletionFromMissingEntities: boolean,
+    inferRolePermissionFlagDeletion: boolean,
   ): Promise<WorkspaceMigrationDTO> {
     const applicationRegistration =
       await this.applicationRegistrationService.findOneOwnedByWorkspaceOrThrow({
@@ -276,6 +290,7 @@ export class ApplicationDevelopmentService {
         applicationRegistrationId: applicationRegistration.id,
         application,
         inferDeletionFromMissingEntities,
+        inferRolePermissionFlagDeletion,
       });
 
     await this.syncRegistrationMetadata(

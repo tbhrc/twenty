@@ -27,6 +27,7 @@ export class ApplicationManifestApplyService {
     application,
     forceSdkClientGeneration = false,
     inferDeletionFromMissingEntities = true,
+    inferRolePermissionFlagDeletion = false,
     persistVersion,
   }: {
     workspaceId: string;
@@ -37,6 +38,7 @@ export class ApplicationManifestApplyService {
       'id' | 'universalIdentifier' | 'version'
     >;
     inferDeletionFromMissingEntities?: boolean;
+    inferRolePermissionFlagDeletion?: boolean;
     // Installs and upgrades force regeneration so function-only upgrades pick
     // up SDK-level changes; dev sync relies on first-apply/schema-change to
     // avoid regenerating on every save.
@@ -57,6 +59,7 @@ export class ApplicationManifestApplyService {
         manifest,
         applicationRegistrationId,
         inferDeletionFromMissingEntities,
+        inferRolePermissionFlagDeletion,
         persistVersion,
       });
 

@@ -13,6 +13,7 @@ import { toApplicationCapabilities } from 'src/engine/core-modules/application/u
 import { ApplicationManifestMigrationService } from 'src/engine/core-modules/application/application-manifest/application-manifest-migration.service';
 import { ApplicationUninstallService } from 'src/engine/core-modules/application/application-manifest/services/application-uninstall.service';
 import { enrichApplicationManifestSyncError } from 'src/engine/core-modules/application/application-manifest/utils/enrich-application-manifest-sync-error.util';
+import { resolveAppManifestDeletionInference } from 'src/engine/core-modules/application/application-manifest/utils/resolve-app-manifest-deletion-inference.util';
 import { buildFromToAllUniversalFlatEntityMaps } from 'src/engine/core-modules/application/application-manifest/utils/build-from-to-all-universal-flat-entity-maps.util';
 import { ApplicationTranslationSyncService } from 'src/engine/core-modules/application/application-translation/application-translation-sync.service';
 import { getApplicationSubAllFlatEntityMaps } from 'src/engine/core-modules/application/application-manifest/utils/get-application-sub-all-flat-entity-maps.util';
@@ -64,6 +65,7 @@ export class ApplicationSyncService {
     applicationRegistrationId,
     dryRun = false,
     inferDeletionFromMissingEntities = true,
+    inferRolePermissionFlagDeletion = false,
     persistVersion = true,
   }: {
     workspaceId: string;
@@ -71,11 +73,17 @@ export class ApplicationSyncService {
     applicationRegistrationId?: string;
     dryRun?: boolean;
     inferDeletionFromMissingEntities?: boolean;
+    inferRolePermissionFlagDeletion?: boolean;
     persistVersion?: boolean;
   }): Promise<{
     workspaceMigration: WorkspaceMigration;
     hasSchemaMetadataChanged: boolean;
   }> {
+    resolveAppManifestDeletionInference({
+      inferDeletionFromMissingEntities,
+      inferRolePermissionFlagDeletion,
+    });
+
     const ownerFlatApplication: FlatApplication = dryRun
       ? await this.resolveDryRunOwnerFlatApplication({ workspaceId, manifest })
       : await this.syncApplication({
@@ -99,6 +107,7 @@ export class ApplicationSyncService {
             ownerFlatApplication,
             dryRun,
             inferDeletionFromMissingEntities,
+            inferRolePermissionFlagDeletion,
           },
         );
     } catch (error) {

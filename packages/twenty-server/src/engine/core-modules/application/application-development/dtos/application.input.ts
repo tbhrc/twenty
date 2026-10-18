@@ -13,4 +13,7 @@ export class ApplicationInput {
 
   @Field(() => Boolean, { nullable: true })
   inferDeletionFromMissingEntities?: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  inferRolePermissionFlagDeletion?: boolean;
 }

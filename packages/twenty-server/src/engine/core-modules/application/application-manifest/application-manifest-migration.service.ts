@@ -10,6 +10,7 @@ import { buildAllFlatEntityOperationRecordByMetadataNameFromFromTo } from 'src/e
 import { buildFromToAllUniversalFlatEntityMaps } from 'src/engine/core-modules/application/application-manifest/utils/build-from-to-all-universal-flat-entity-maps.util';
 import { getApplicationSubAllFlatEntityMaps } from 'src/engine/core-modules/application/application-manifest/utils/get-application-sub-all-flat-entity-maps.util';
 import { resolveApplicationReferenceIdOrThrow } from 'src/engine/core-modules/application/application-manifest/utils/resolve-application-reference-id-or-throw.util';
+import { resolveAppManifestDeletionInference } from 'src/engine/core-modules/application/application-manifest/utils/resolve-app-manifest-deletion-inference.util';
 import {
   ApplicationException,
   ApplicationExceptionCode,
@@ -173,12 +174,14 @@ export class ApplicationManifestMigrationService {
     ownerFlatApplication,
     dryRun = false,
     inferDeletionFromMissingEntities = true,
+    inferRolePermissionFlagDeletion = false,
   }: {
     manifest: Manifest;
     workspaceId: string;
     ownerFlatApplication: FlatApplication;
     dryRun?: boolean;
     inferDeletionFromMissingEntities?: boolean;
+    inferRolePermissionFlagDeletion?: boolean;
   }): Promise<{
     workspaceMigration: WorkspaceMigration;
     hasSchemaMetadataChanged: boolean;
@@ -226,9 +229,12 @@ export class ApplicationManifestMigrationService {
         toAllUniversalFlatEntityMaps,
         buildOptions: {
           isSystemBuild: false,
-          inferDeletionFromMissingEntities: inferDeletionFromMissingEntities
-            ? true
-            : undefined,
+          inferDeletionFromMissingEntities: resolveAppManifestDeletionInference(
+            {
+              inferDeletionFromMissingEntities,
+              inferRolePermissionFlagDeletion,
+            },
+          ),
           applicationUniversalIdentifier:
             ownerFlatApplication.universalIdentifier,
         },
