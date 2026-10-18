@@ -9,6 +9,8 @@ The mutation requires an APPLICATION_ACCESS context with an original user. The
 service checks existing APPLICATIONS administration permission in the original
 user/application intersection. Background callers and ordinary message-ingest
 permissions cannot register sources. No new permission flag is introduced.
+Registration has its own `ApplicationMessageSourceResolver`; the existing App
+channel resolver and its queries/mutations do not acquire new behavior.
 
 Input contains only `sourceIdentifier`, provider `handle`, optional `displayName`
 and explicit `visibility: user | workspace`. Application, workspace and owner are
