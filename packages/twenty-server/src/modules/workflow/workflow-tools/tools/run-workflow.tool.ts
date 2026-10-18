@@ -27,7 +27,7 @@ export const createRunWorkflowTool = (deps: Dependencies, context: WorkflowToolC
     try {
       const payload = parameters.payload ?? {};
       const encoded = JSON.stringify(payload);
-      if (Buffer.byteLength(encoded) > 32768 || Object.hasOwn(payload, '_executingClient')) throw Error('INVALID_WORKFLOW_PAYLOAD');
+      if (Buffer.byteLength(encoded) > 32768 || Object.prototype.hasOwnProperty.call(payload, '_executingClient')) throw Error('INVALID_WORKFLOW_PAYLOAD');
       const requestHash = createHash('sha256').update(JSON.stringify([parameters.workflowId, encoded])).digest('hex');
       return await deps.workspaceOrmManager.executeInWorkspaceContext(async () => {
         let versionId: string;

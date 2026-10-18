@@ -36,19 +36,31 @@ describe('SendEmailResolver application caller', () => {
     expect(caller.factory(caller.data, context)).toBeUndefined();
   });
 
-  it.each(['workspace', 'user'] as const)(
-    'sends only through workspace-shared connections (visibility %s)',
-    async (visibility) => {
-      const connectedAccounts = Object.create(
-        ConnectedAccountMetadataService.prototype,
-      ) as ConnectedAccountMetadataService;
-      const lookup = jest
-        .spyOn(connectedAccounts, 'findByIdOrThrow')
-        .mockResolvedValue({
-          id: 'account',
-          userWorkspaceId: 'owner',
-          visibility,
-        } as ConnectedAccountEntity);
+  it.each([
+    { visibility: 'workspace', userWorkspaceId: undefined, allowed: true },
+    { visibility: 'user', userWorkspaceId: undefined, allowed: false },
+    { visibility: 'workspace', userWorkspaceId: 'other', allowed: true },
+    { visibility: 'user', userWorkspaceId: 'owner', allowed: true },
+    { visibility: 'user', userWorkspaceId: 'other', allowed: false },
+  ] as const)(
+    'enforces connection visibility $visibility for caller $userWorkspaceId',
+    async ({ visibility, userWorkspaceId, allowed }) => {
+      const findOne = jest.fn().mockResolvedValue({
+        id: 'account',
+        userWorkspaceId: 'owner',
+        visibility,
+      } as ConnectedAccountEntity);
+      const connectedAccounts = new ConnectedAccountMetadataService(
+        { findOne } as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+      );
       const composeEmail = jest.fn().mockResolvedValue({
         success: true,
         data: { shouldPersistMessage: false },
@@ -61,19 +73,14 @@ describe('SendEmailResolver application caller', () => {
         { sendComposedEmail } as unknown as SendEmailService,
       );
 
-      const result = await resolver.sendEmail(input, workspace, undefined);
+      const result = await resolver.sendEmail(input, workspace, userWorkspaceId);
 
-      expect(lookup).toHaveBeenCalledWith({
-        id: 'account',
-        workspaceId: 'workspace',
+      expect(findOne).toHaveBeenCalledWith({
+        where: { id: 'account', workspaceId: 'workspace' },
       });
-      expect(result.success).toBe(visibility === 'workspace');
-      expect(sendComposedEmail).toHaveBeenCalledTimes(
-        visibility === 'workspace' ? 1 : 0,
-      );
-      expect(composeEmail).toHaveBeenCalledTimes(
-        visibility === 'workspace' ? 1 : 0,
-      );
+      expect(result.success).toBe(allowed);
+      expect(sendComposedEmail).toHaveBeenCalledTimes(allowed ? 1 : 0);
+      expect(composeEmail).toHaveBeenCalledTimes(allowed ? 1 : 0);
     },
   );
 
