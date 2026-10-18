@@ -23,7 +23,7 @@ import { buildTimelineActivityRelatedMorphFieldMetadataName } from 'src/modules/
 
 type TimelineActivityPayloadWorkspaceIdAndObjectSingularName = {
   payloads: (Omit<TimelineActivityPayload, 'properties'> & {
-    properties: Pick<TimelineActivityPayload['properties'], 'diff'>;
+    properties: Pick<TimelineActivityPayload['properties'], 'diff' | 'actor'>;
   })[];
   workspaceId: string;
   objectSingularName: string;
@@ -44,6 +44,22 @@ export class TimelineActivityRepository {
   async upsertTimelineActivities(
     args: TimelineActivityPayloadWorkspaceIdAndObjectSingularName,
   ) {
+    // A deployment may explicitly bind unassigned integration events to its
+    // accountable member. Never infer that member from the current viewer.
+    if (
+      process.env.TIMELINE_DEFAULT_WORKSPACE_ID === args.workspaceId &&
+      isDefined(process.env.TIMELINE_DEFAULT_WORKSPACE_MEMBER_ID)
+    ) {
+      args = {
+        ...args,
+        payloads: args.payloads.map((payload) => ({
+          ...payload,
+          workspaceMemberId:
+            payload.workspaceMemberId ??
+            process.env.TIMELINE_DEFAULT_WORKSPACE_MEMBER_ID,
+        })),
+      };
+    }
     try {
       await this.upsertTimelineActivitiesOnce({
         ...args,
@@ -235,17 +251,27 @@ export class TimelineActivityRepository {
                 )
                 .find(
                   (timelineActivity) =>
-                    !isDefined(payload.linkedRecordId) ||
-                    timelineActivity.linkedRecordId === payload.linkedRecordId,
+                    (!isDefined(payload.linkedRecordId) ||
+                      timelineActivity.linkedRecordId ===
+                        payload.linkedRecordId) &&
+                    JSON.stringify(timelineActivity.properties?.actor) ===
+                      JSON.stringify(payload.properties.actor),
                 );
 
             if (isDefined(recentTimelineActivity)) {
               mergesToApply.push({
                 id: recentTimelineActivity.id,
-                properties: objectRecordDiffMerge(
-                  recentTimelineActivity.properties,
-                  payload.properties,
-                ),
+                properties: {
+                  ...objectRecordDiffMerge(
+                    recentTimelineActivity.properties,
+                    payload.properties,
+                  ),
+                  ...(payload.properties.actor
+                    ? {
+                        actor: payload.properties.actor,
+                      }
+                    : {}),
+                },
                 workspaceMemberId: payload.workspaceMemberId,
                 ...(!isDefined(
                   recentTimelineActivity.timelineActivityTypeSnapshot,

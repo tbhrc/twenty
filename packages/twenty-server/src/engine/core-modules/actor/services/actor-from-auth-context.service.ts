@@ -117,7 +117,15 @@ export class ActorFromAuthContextService {
 
     const clonedRecords = structuredClone(records);
 
-    const actorMetadata = this.buildActorMetadata(authContext);
+    let actorMetadata = this.buildActorMetadata(authContext);
+
+    // Bind integration attribution only when the deployment explicitly names
+    // the accountable member for this workspace; keep the executor's identity.
+    if (!isDefined(actorMetadata.workspaceMemberId) &&
+      process.env.TIMELINE_DEFAULT_WORKSPACE_ID === workspace.id &&
+      isDefined(process.env.TIMELINE_DEFAULT_WORKSPACE_MEMBER_ID)) {
+      actorMetadata = { ...actorMetadata, workspaceMemberId: process.env.TIMELINE_DEFAULT_WORKSPACE_MEMBER_ID };
+    }
 
     for (const record of clonedRecords) {
       this.injectActorToRecord(actorMetadata, record, fieldName);
@@ -139,6 +147,9 @@ export class ActorFromAuthContextService {
           ...actorMetadata,
           source: existingValue?.source ?? actorMetadata.source,
         };
+      } else if (existingValue && !isDefined(existingValue.workspaceMemberId) &&
+        isDefined(actorMetadata.workspaceMemberId)) {
+        record[fieldName] = { ...existingValue, workspaceMemberId: actorMetadata.workspaceMemberId };
       }
     } else {
       record[fieldName] = actorMetadata;

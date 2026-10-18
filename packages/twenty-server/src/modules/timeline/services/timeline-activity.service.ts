@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { type ObjectRecordBaseEvent } from 'twenty-shared/database-events';
-import { type ObjectRecord } from 'twenty-shared/types';
+import { type ObjectRecordBaseEvent as BaseEvent } from 'twenty-shared/database-events';
+import { type ActorMetadata, type ObjectRecord } from 'twenty-shared/types';
 import { isNonEmptyString } from '@sniptt/guards';
 import { fromArrayToValuesByKeyRecord, isDefined } from 'twenty-shared/utils';
 import { In } from 'typeorm';
@@ -36,6 +36,10 @@ import { excludeNonAuditLoggedFieldsFromEvents } from 'src/modules/timeline/util
 import { resolveTimelineActivityRuleAction } from 'src/modules/timeline/utils/resolve-timeline-activity-rule-action.util';
 import { resolveTimelineActivityTypeForRule } from 'src/modules/timeline/utils/resolve-timeline-activity-type-for-rule.util';
 
+type ObjectRecordBaseEvent = BaseEvent & {
+  properties: BaseEvent['properties'] & { actor?: ActorMetadata };
+};
+
 type BuildPayloadsForRuleArgs = {
   rule: TimelineActivityRule;
   events: ObjectRecordBaseEvent[];
@@ -49,12 +53,13 @@ const hasNonEmptyDiff = (
 ): boolean =>
   isDefined(properties.diff) && Object.keys(properties.diff).length > 0;
 
-// Only the diff is worth storing: the rest of an event payload is the record
-// itself, which the timeline reads live.
+// The actor belongs to this event; reading the record later loses its executor.
 const keepDiffOnly = (
   properties: ObjectRecordBaseEvent['properties'],
-): Pick<ObjectRecordBaseEvent['properties'], 'diff'> =>
-  hasNonEmptyDiff(properties) ? { diff: properties.diff } : {};
+): Pick<ObjectRecordBaseEvent['properties'], 'diff' | 'actor'> => ({
+  ...(hasNonEmptyDiff(properties) ? { diff: properties.diff } : {}),
+  ...(isDefined(properties.actor) ? { actor: properties.actor } : {}),
+});
 
 const resolveEventRecordForRuleAction = ({
   event,
@@ -149,6 +154,7 @@ export class TimelineActivityService {
         // objects mostly, never pay the workspace member query.
         const enrichedEvents = await this.enrichEventsWithWorkspaceMemberId({
           events: auditLoggedEvents,
+          action,
         });
 
         return Promise.all([
@@ -288,8 +294,7 @@ export class TimelineActivityService {
 
     if (rule.targetShape.kind === 'SELF') {
       return matchingEvents.map((event) => {
-        const properties =
-          ruleAction === 'updated' ? keepDiffOnly(event.properties) : {};
+        const properties = keepDiffOnly(event.properties);
 
         return {
           timelineActivityTypeId: timelineActivityType.id,
@@ -482,16 +487,37 @@ export class TimelineActivityService {
           happensAtFieldName: rule.happensAtFieldName,
           sourceRecord,
         }),
-        properties: {},
+        properties: { actor: event.properties.actor },
       });
     });
   }
 
   private async enrichEventsWithWorkspaceMemberId({
     events,
+    action,
   }: {
     events: ObjectRecordBaseEvent[];
+    action: DatabaseEventAction;
   }): Promise<ObjectRecordBaseEvent[]> {
+    events = events.map((event) => {
+      const record = event.properties.after as ObjectRecord | undefined;
+      // A deletion's last updatedBy is a previous action, not its deleting actor.
+      const actor =
+        action === 'created'
+          ? record?.createdBy
+          : action === 'updated'
+            ? record?.updatedBy
+            : undefined;
+
+      return {
+        ...event,
+        workspaceMemberId: event.workspaceMemberId ?? actor?.workspaceMemberId,
+        properties: {
+          ...event.properties,
+          ...(isDefined(actor) ? { actor } : {}),
+        },
+      };
+    });
     const userIds = events.map((event) => event.userId).filter(isDefined);
 
     if (userIds.length === 0) {
