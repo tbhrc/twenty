@@ -115,7 +115,7 @@ export const UpdateViewButtonGroup = () => {
           <Button
             onClick={handleUpdateViewClick}
             disabled={!canPersistChanges}
-          >{t`Update view`}</Button>
+          >{t`Save view`}</Button>
           <DropdownRoot dropdownId={updateViewButtonDropdownId} type="menu">
             <Dropdown.Trigger
               render={
