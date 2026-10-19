@@ -8,6 +8,8 @@ import { SCROLLABLE_TAB_ROW_CSS } from '../styles/ScrollableTabRowCSS';
 const StyledContainer = styled.div<{ isScrollable: boolean }>`
   display: flex;
   gap: ${TAB_LIST_GAP}px;
+  flex: 1;
+  min-width: 0;
   max-width: 100%;
   overflow-x: ${({ isScrollable }) => (isScrollable ? 'auto' : 'hidden')};
   position: relative;
