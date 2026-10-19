@@ -15,10 +15,6 @@ import { IconPinned, IconChevronLeft, IconChevronRight } from 'twenty-ui/icon';
 import { IconButton } from 'twenty-ui/components';
 import { themeCssVariables } from 'twenty-ui/theme';
 
-const SIDE_TRACK = `min(${PAGE_LAYOUT_LEFT_PANEL_CONTAINER_WIDTH}px, calc(100% / 3))`;
-
-// Equal side tracks center the tabs independently of the record name. Their
-// width stays independent of visible tabs so overflow can recover on resize.
 const StyledBar = styled.div<{
   hasPinnedTab: boolean;
   hasTabList: boolean;
@@ -39,7 +35,7 @@ const StyledBar = styled.div<{
     hasPinnedTab
       ? `${isPinnedPanelCollapsed ? PAGE_LAYOUT_LEFT_PANEL_COLLAPSED_WIDTH : PAGE_LAYOUT_LEFT_PANEL_CONTAINER_WIDTH}px minmax(0, 1fr)`
       : hasTabList
-        ? `${SIDE_TRACK} minmax(0, 1fr) ${SIDE_TRACK}`
+        ? 'fit-content(30%) minmax(0, 1fr) max-content'
         : 'minmax(0, 1fr) auto'};
   height: ${PAGE_LAYOUT_RECORD_IDENTIFIER_BAR_HEIGHT}px;
   width: 100%;
