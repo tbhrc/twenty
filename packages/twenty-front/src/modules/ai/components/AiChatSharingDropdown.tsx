@@ -1,8 +1,8 @@
 import { useLingui } from '@lingui/react/macro';
 import { AppPath } from 'twenty-shared/types';
-import { getAppPath } from 'twenty-shared/utils';
+import { getAppPath, isDefined } from 'twenty-shared/utils';
 
-import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
+import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
 import { RecordSharingDropdown } from '@/object-record/record-sharing/components/RecordSharingDropdown';
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { FeatureFlagKey } from '~/generated-metadata/graphql';
@@ -16,11 +16,12 @@ export const AiChatSharingDropdown = ({
   const isAiChatSharingDropdownEnabled = useIsFeatureEnabled(
     FeatureFlagKey.IS_AI_CHAT_SHARING_DROPDOWN_ENABLED,
   );
-  const { objectMetadataItem } = useObjectMetadataItem({
-    objectNameSingular: 'agentChatThread',
-  });
+  const { objectMetadataItems } = useObjectMetadataItems();
+  const objectMetadataItem = objectMetadataItems.find(
+    (item) => item.nameSingular === 'agentChatThread',
+  );
 
-  if (!isAiChatSharingDropdownEnabled) {
+  if (!isAiChatSharingDropdownEnabled || !isDefined(objectMetadataItem)) {
     return null;
   }
 
