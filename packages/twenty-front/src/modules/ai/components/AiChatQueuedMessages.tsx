@@ -1,4 +1,3 @@
-import { useIsCurrentAiChatThreadReadOnly } from '@/ai/hooks/useIsCurrentAiChatThreadReadOnly';
 import { StyledAiChatContentContainer } from '@/ai/components/StyledAiChatContentContainer';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
@@ -45,7 +44,6 @@ const StyledQueuedText = styled.span`
 `;
 
 export const AiChatQueuedMessages = () => {
-  const isReadOnly = useIsCurrentAiChatThreadReadOnly();
   const currentAiChatThread = useAtomStateValue(currentAiChatThreadState);
   const agentChatQueuedMessages = useAtomComponentFamilyStateValue(
     agentChatQueuedMessagesComponentFamilyState,
@@ -69,15 +67,13 @@ export const AiChatQueuedMessages = () => {
         return (
           <StyledQueuedItem key={message.id}>
             <StyledQueuedText>{displayText}</StyledQueuedText>
-            {!isReadOnly && (
-              <LightIconButton
-                onClick={() => deleteQueuedMessage(message.id)}
-                size="sm"
-                aria-label={t`Remove queued message`}
-              >
-                <IconX />
-              </LightIconButton>
-            )}
+            <LightIconButton
+              onClick={() => deleteQueuedMessage(message.id)}
+              size="sm"
+              aria-label={t`Remove queued message`}
+            >
+              <IconX />
+            </LightIconButton>
           </StyledQueuedItem>
         );
       })}

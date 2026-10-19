@@ -55,7 +55,13 @@ export const useWidgetRendererState = (widget: PageLayoutWidget) => {
     widget.type === WidgetType.MESSAGE_CAMPAIGN_DETAILS ||
     widget.type === WidgetType.WORKFLOW ||
     widget.type === WidgetType.WORKFLOW_VERSION ||
-    widget.type === WidgetType.WORKFLOW_RUN;
+    widget.type === WidgetType.WORKFLOW_RUN ||
+    // A field widget bound to a saved view (e.g. a job's candidate board)
+    // already carries its own view bar; the extra title card wastes space.
+    (widget.type === WidgetType.FIELD &&
+      isDefined(
+        (widget.configuration as { viewId?: string | null } | null)?.viewId,
+      ));
   const hideHeaderInViewMode =
     isHeaderHiddenInViewMode && !isPageLayoutInEditMode;
 

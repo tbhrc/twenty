@@ -13,7 +13,6 @@ import { AiChatEditorSection } from '@/ai/components/AiChatEditorSection';
 import { useAiChatFileUpload } from '@/ai/hooks/useAiChatFileUpload';
 import { AGENT_CHAT_NEW_THREAD_DRAFT_KEY } from '@/ai/states/agentChatDraftsByThreadIdState';
 import { currentAiChatThreadState } from '@/ai/states/currentAiChatThreadState';
-import { threadIdCreatedFromDraftState } from '@/ai/states/threadIdCreatedFromDraftState';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 import { AiChatQueuedMessages } from '@/ai/components/AiChatQueuedMessages';
@@ -33,15 +32,7 @@ export const AiChatTab = () => {
   const isWorkspaceSetupChat = useIsWorkspaceSetupChat();
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const currentAiChatThread = useAtomStateValue(currentAiChatThreadState);
-  const threadIdCreatedFromDraft = useAtomStateValue(
-    threadIdCreatedFromDraftState,
-  );
-  const draftKey = currentAiChatThread ?? AGENT_CHAT_NEW_THREAD_DRAFT_KEY;
-  const editorSectionKey =
-    draftKey !== AGENT_CHAT_NEW_THREAD_DRAFT_KEY &&
-    draftKey === threadIdCreatedFromDraft
-      ? AGENT_CHAT_NEW_THREAD_DRAFT_KEY
-      : draftKey;
+  const editorSectionKey = currentAiChatThread ?? AGENT_CHAT_NEW_THREAD_DRAFT_KEY;
 
   const { uploadFiles } = useAiChatFileUpload();
 

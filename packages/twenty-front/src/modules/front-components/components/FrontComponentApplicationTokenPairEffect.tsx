@@ -1,50 +1,25 @@
+import { frontComponentApplicationTokenPairComponentState } from '@/front-components/states/frontComponentApplicationTokenPairComponentState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { useEffect } from 'react';
-
-import { useFrontComponentApplicationTokenPair } from '@/front-components/hooks/useFrontComponentApplicationTokenPair';
-import { type FrontComponentApplicationTokenPair } from '@/front-components/types/FrontComponentApplicationTokenPair';
+import { type ApplicationTokenPair } from '~/generated-metadata/graphql';
 
 type FrontComponentApplicationTokenPairEffectProps = {
-  applicationId: string;
-  onApplicationTokenPairLoaded: (
-    applicationTokenPair: FrontComponentApplicationTokenPair,
-  ) => void;
-  onApplicationTokenPairLoadFailed: (error: Error) => void;
+  frontComponentId: string;
+  applicationTokenPair: ApplicationTokenPair | null;
 };
 
 export const FrontComponentApplicationTokenPairEffect = ({
-  applicationId,
-  onApplicationTokenPairLoaded,
-  onApplicationTokenPairLoadFailed,
+  frontComponentId,
+  applicationTokenPair,
 }: FrontComponentApplicationTokenPairEffectProps) => {
-  const { loadFrontComponentApplicationTokenPair } =
-    useFrontComponentApplicationTokenPair();
+  const setFrontComponentApplicationTokenPair = useSetAtomComponentState(
+    frontComponentApplicationTokenPairComponentState,
+    frontComponentId,
+  );
 
   useEffect(() => {
-    let isCancelled = false;
-
-    loadFrontComponentApplicationTokenPair(applicationId)
-      .then((applicationTokenPair) => {
-        if (!isCancelled) {
-          onApplicationTokenPairLoaded(applicationTokenPair);
-        }
-      })
-      .catch((error: unknown) => {
-        if (!isCancelled) {
-          onApplicationTokenPairLoadFailed(
-            error instanceof Error ? error : new Error(String(error)),
-          );
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    applicationId,
-    loadFrontComponentApplicationTokenPair,
-    onApplicationTokenPairLoaded,
-    onApplicationTokenPairLoadFailed,
-  ]);
+    setFrontComponentApplicationTokenPair(applicationTokenPair);
+  }, [applicationTokenPair, setFrontComponentApplicationTokenPair]);
 
   return null;
 };

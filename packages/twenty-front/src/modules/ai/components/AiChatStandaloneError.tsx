@@ -1,4 +1,3 @@
-import { useCanRetryCurrentAiChatTurn } from '@/ai/hooks/useCanRetryCurrentAiChatTurn';
 import { StyledAiChatContentContainer } from '@/ai/components/StyledAiChatContentContainer';
 import { styled } from '@linaria/react';
 import { themeCssVariables } from 'twenty-ui/theme';
@@ -24,7 +23,6 @@ const StyledErrorContainer = styled(StyledAiChatContentContainer)`
 export const AiChatStandaloneError = () => {
   const agentChatIsLoading = useAtomStateValue(agentChatIsLoadingState);
   const { retryChatMessage } = useRetryChatMessage();
-  const canRetry = useCanRetryCurrentAiChatTurn();
 
   const agentChatDisplayedThread = useAtomStateValue(
     agentChatDisplayedThreadState,
@@ -47,10 +45,7 @@ export const AiChatStandaloneError = () => {
 
   return (
     <StyledErrorContainer>
-      <AiChatErrorRenderer
-        error={agentChatError}
-        onRetry={canRetry ? retryChatMessage : undefined}
-      />
+      <AiChatErrorRenderer error={agentChatError} onRetry={retryChatMessage} />
     </StyledErrorContainer>
   );
 };

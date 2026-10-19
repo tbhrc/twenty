@@ -12,6 +12,7 @@ import { ObjectFilterDropdownComponentInstanceContext } from '@/object-record/ob
 import { getObjectSortDropdownId } from '@/object-record/object-sort-dropdown/utils/getObjectSortDropdownId';
 import { ObjectSortDropdownComponentInstanceContext } from '@/object-record/object-sort-dropdown/states/context/ObjectSortDropdownComponentInstanceContext';
 import { QueryParamsCleanupEffect } from '@/views/components/QueryParamsCleanupEffect';
+import { ViewBarAutoSaveEffect } from '@/views/components/ViewBarAutoSaveEffect';
 import { ViewBarAnyFieldFilterEffect } from '@/views/components/ViewBarAnyFieldFilterEffect';
 import { ViewBarFilterDropdown } from '@/views/components/ViewBarFilterDropdown';
 import { ViewBarRecordFieldEffect } from '@/views/components/ViewBarRecordFieldEffect';
@@ -56,6 +57,7 @@ export const ViewBar = ({
       <ViewBarRecordFieldEffect />
       <ViewBarRecordFilterEffect />
       <ViewBarRecordSortEffect />
+      <ViewBarAutoSaveEffect />
       <QueryParamsFiltersEffect />
       <QueryParamsSortsEffect />
       <QueryParamsCleanupEffect />

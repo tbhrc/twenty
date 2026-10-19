@@ -1,12 +1,10 @@
 import { currentUserWorkspaceState } from '@/auth/states/currentUserWorkspaceState';
-import { useRefreshAgentChatThreadPermissions } from '@/ai/hooks/useRefreshAgentChatThreadPermissions';
-import { currentAiChatThreadState } from '@/ai/states/currentAiChatThreadState';
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
 import { useApolloClient } from '@apollo/client/react';
 import { useStore } from 'jotai';
 import { useCallback } from 'react';
-import { isDefined, isValidUuid } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
 
 import { useUpdateMetadataStoreDraft } from '@/metadata-store/hooks/useUpdateMetadataStoreDraft';
 import { metadataStoreState } from '@/metadata-store/states/metadataStoreState';
@@ -15,8 +13,6 @@ import { GetChatThreadsDocument } from '~/generated-metadata/graphql';
 export const useRefreshAgentChatThreads = () => {
   const client = useApolloClient();
   const store = useStore();
-  const { refreshAgentChatThreadPermissions } =
-    useRefreshAgentChatThreadPermissions();
   const { replaceDraft, applyChanges } = useUpdateMetadataStoreDraft();
 
   const refreshAgentChatThreads = useCallback(async () => {
@@ -54,13 +50,6 @@ export const useRefreshAgentChatThreads = () => {
         continue;
       }
 
-      const selectedThreadId = store.get(currentAiChatThreadState.atom);
-      await refreshAgentChatThreadPermissions([
-        ...agentChatThreads.map(({ id }) => id),
-        ...(isDefined(selectedThreadId) && isValidUuid(selectedThreadId)
-          ? [selectedThreadId]
-          : []),
-      ]);
       if (
         store.get(currentWorkspaceState.atom)?.id !== workspaceId ||
         store.get(currentWorkspaceMemberState.atom)?.id !== workspaceMemberId ||
@@ -84,7 +73,6 @@ export const useRefreshAgentChatThreads = () => {
     store,
     replaceDraft,
     applyChanges,
-    refreshAgentChatThreadPermissions,
   ]);
 
   return { refreshAgentChatThreads };

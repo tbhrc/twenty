@@ -62,11 +62,10 @@ jest.mock('~/hooks/useNavigateApp', () => ({
 }));
 
 jest.mock(
-  '@/front-components/hooks/useFrontComponentApplicationTokenPair',
+  '@/front-components/hooks/useRequestApplicationTokenRefresh',
   () => ({
-    useFrontComponentApplicationTokenPair: () => ({
-      requestApplicationAccessTokenRefresh:
-        mockRequestApplicationAccessTokenRefresh,
+    useRequestApplicationTokenRefresh: () => ({
+      requestAccessTokenRefresh: mockRequestApplicationAccessTokenRefresh,
     }),
   }),
 );
@@ -1022,9 +1021,7 @@ describe('useFrontComponentExecutionContext', () => {
       });
 
       expect(accessToken).toBe('renewed-access-token');
-      expect(mockRequestApplicationAccessTokenRefresh).toHaveBeenCalledWith(
-        APPLICATION_ID,
-      );
+      expect(mockRequestApplicationAccessTokenRefresh).toHaveBeenCalledWith();
     });
   });
 

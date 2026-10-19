@@ -1,11 +1,9 @@
 import { useCallback, useEffect } from 'react';
 import { isValidUuid } from 'twenty-shared/utils';
 
-import { AGENT_CHAT_ENSURE_THREAD_FOR_DRAFT_EVENT_NAME } from '@/ai/constants/AgentChatEnsureThreadForDraftEventName';
 import { useAgentChat } from '@/ai/hooks/useAgentChat';
 import { useAgentChatSubscription } from '@/ai/hooks/useAgentChatSubscription';
 import { useCreateAgentChatThread } from '@/ai/hooks/useCreateAgentChatThread';
-import { useEnsureAgentChatThreadExistsForDraft } from '@/ai/hooks/useEnsureAgentChatThreadExistsForDraft';
 import { useEnsureAgentChatThreadIdForSend } from '@/ai/hooks/useEnsureAgentChatThreadIdForSend';
 import { agentChatDisplayedThreadState } from '@/ai/states/agentChatDisplayedThreadState';
 import { agentChatFetchedMessagesComponentFamilyState } from '@/ai/states/agentChatFetchedMessagesComponentFamilyState';
@@ -17,7 +15,6 @@ import { agentChatMessagesComponentFamilyState } from '@/ai/states/agentChatMess
 import { agentChatMessagesLoadingState } from '@/ai/states/agentChatMessagesLoadingState';
 import { agentChatThreadsLoadingState } from '@/ai/states/agentChatThreadsLoadingState';
 import { currentAiChatThreadState } from '@/ai/states/currentAiChatThreadState';
-import { useListenToBrowserEvent } from '@/browser-event/hooks/useListenToBrowserEvent';
 import { useAtomComponentFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilyStateValue';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useSetAtomComponentFamilyState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentFamilyState';
@@ -28,16 +25,8 @@ export const AgentChatStreamSubscriptionEffect = () => {
 
   const { createChatThread } = useCreateAgentChatThread();
 
-  const { ensureThreadExistsForDraft } =
-    useEnsureAgentChatThreadExistsForDraft(createChatThread);
-
   const { ensureThreadIdForSend } =
     useEnsureAgentChatThreadIdForSend(createChatThread);
-
-  useListenToBrowserEvent({
-    eventName: AGENT_CHAT_ENSURE_THREAD_FOR_DRAFT_EVENT_NAME,
-    onBrowserEvent: ensureThreadExistsForDraft,
-  });
 
   useAgentChat(ensureThreadIdForSend);
 

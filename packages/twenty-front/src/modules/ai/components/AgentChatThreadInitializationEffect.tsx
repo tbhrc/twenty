@@ -19,7 +19,6 @@ import { agentChatVisibleThreadsSelector } from '@/ai/states/selectors/agentChat
 import { currentAiChatThreadState } from '@/ai/states/currentAiChatThreadState';
 import { currentAiChatThreadTitleComponentFamilyState } from '@/ai/states/currentAiChatThreadTitleComponentFamilyState';
 import { hasInitializedAgentChatThreadsState } from '@/ai/states/hasInitializedAgentChatThreadsState';
-import { hasTriggeredCreateForDraftState } from '@/ai/states/hasTriggeredCreateForDraftState';
 import { sortChatThreadsByLastActivityDesc } from '@/ai/utils/sortChatThreadsByLastActivityDesc';
 import { metadataStoreState } from '@/metadata-store/states/metadataStoreState';
 import { useHasPermissionFlag } from '@/settings/roles/hooks/useHasPermissionFlag';
@@ -146,7 +145,6 @@ export const AgentChatThreadInitializationEffect = () => {
         getAgentChatUsageFromThread(firstThread),
       );
     } else {
-      store.set(hasTriggeredCreateForDraftState.atom, false);
       setCurrentAiChatThread(AGENT_CHAT_NEW_THREAD_DRAFT_KEY);
       setAgentChatInput(
         tipTapDocumentToMarkdown(

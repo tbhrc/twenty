@@ -5,7 +5,6 @@ export const COMMAND_MENU_ITEM_FRAGMENT = gql`
     id
     universalIdentifier
     applicationId
-    coreWorkflowVersionId
     workflowVersionId
     frontComponentId
     frontComponent {

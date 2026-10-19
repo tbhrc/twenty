@@ -34,7 +34,7 @@ import { commandMenuItemProgressFamilyState } from '@/command-menu-item/states/c
 import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
 import { contextStoreRecordShowParentViewComponentState } from '@/context-store/states/contextStoreRecordShowParentViewComponentState';
 import { useDirectFileUpload } from '@/file/hooks/useDirectFileUpload';
-import { useFrontComponentApplicationTokenPair } from '@/front-components/hooks/useFrontComponentApplicationTokenPair';
+import { useRequestApplicationTokenRefresh } from '@/front-components/hooks/useRequestApplicationTokenRefresh';
 import { getMediaFileExtension } from '@/front-components/media-session/utils/getMediaFileExtension';
 import { setRecordPageActiveTabId } from '@/page-layout/utils/setRecordPageActiveTabId';
 import { useNavigateSidePanel } from '@/side-panel/hooks/useNavigateSidePanel';
@@ -143,8 +143,9 @@ export const useFrontComponentExecutionContext = ({
   const currentUser = useAtomStateValue(currentUserState);
   const navigateApp = useNavigateApp();
   const store = useStore();
-  const { requestApplicationAccessTokenRefresh } =
-    useFrontComponentApplicationTokenPair();
+  const { requestAccessTokenRefresh } = useRequestApplicationTokenRefresh({
+    frontComponentId,
+  });
   const { openConfirmationModal } = useCommandMenuConfirmationModal();
   const { openAskAiPageWithPreprompt } = useOpenAskAiPageWithPreprompt();
   const { navigateSidePanel } = useNavigateSidePanel();
@@ -598,8 +599,6 @@ export const useFrontComponentExecutionContext = ({
       });
     };
 
-  const requestAccessTokenRefresh: FrontComponentHostCommunicationApi['requestAccessTokenRefresh'] =
-    () => requestApplicationAccessTokenRefresh(applicationId);
 
   const frontComponentHostCommunicationApi: FrontComponentHostCommunicationApi =
     {

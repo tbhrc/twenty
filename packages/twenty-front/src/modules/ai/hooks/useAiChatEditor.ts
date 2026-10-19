@@ -14,7 +14,6 @@ import {
 } from '@/ai/states/agentChatDraftsByThreadIdState';
 import { agentChatInputState } from '@/ai/states/agentChatInputState';
 import { currentAiChatThreadState } from '@/ai/states/currentAiChatThreadState';
-import { dispatchAgentChatEnsureThreadForDraftEvent } from '@/ai/utils/dispatchAgentChatEnsureThreadForDraftEvent';
 import { dispatchAgentChatSendMessageEvent } from '@/ai/utils/dispatchAgentChatSendMessageEvent';
 import { MENTION_SUGGESTION_PLUGIN_KEY } from '@/mention/constants/MentionSuggestionPluginKey';
 import { useMentionSearch } from '@/mention/hooks/useMentionSearch';
@@ -82,9 +81,6 @@ export const useAiChatEditor = () => {
         ...prev,
         [draftKey]: serializedDraft,
       }));
-      if (draftKey === AGENT_CHAT_NEW_THREAD_DRAFT_KEY && text.trim() !== '') {
-        dispatchAgentChatEnsureThreadForDraftEvent();
-      }
     },
     onFocus: () => {
       pushFocusItemToFocusStack({

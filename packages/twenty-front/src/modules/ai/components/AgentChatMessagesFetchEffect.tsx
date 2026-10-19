@@ -1,4 +1,3 @@
-import { isGraphqlErrorOfType } from '~/utils/is-graphql-error-of-type.util';
 import { useStore } from 'jotai';
 import { useCallback, useMemo } from 'react';
 import { type AgentChatSubscriptionEvent } from 'twenty-shared/ai';
@@ -6,7 +5,6 @@ import { isDefined } from 'twenty-shared/utils';
 
 import { AGENT_CHAT_REFETCH_MESSAGES_EVENT_NAME } from '@/ai/constants/AgentChatRefetchMessagesEventName';
 import { AGENT_CHAT_NEW_THREAD_DRAFT_KEY } from '@/ai/states/agentChatDraftsByThreadIdState';
-import { agentChatErrorComponentFamilyState } from '@/ai/states/agentChatErrorComponentFamilyState';
 import { agentChatFetchedMessagesComponentFamilyState } from '@/ai/states/agentChatFetchedMessagesComponentFamilyState';
 import { agentChatFirstLiveSeqComponentFamilyState } from '@/ai/states/agentChatFirstLiveSeqComponentFamilyState';
 import { agentChatHandleEventCallbackComponentFamilyState } from '@/ai/states/agentChatHandleEventCallbackComponentFamilyState';
@@ -66,9 +64,6 @@ export const AgentChatMessagesFetchEffect = () => {
     useAtomComponentFamilyStateCallbackState(
       agentChatHandleEventCallbackComponentFamilyState,
     );
-  const errorFamilyCallback = useAtomComponentFamilyStateCallbackState(
-    agentChatErrorComponentFamilyState,
-  );
   const firstLiveSeqFamilyCallback = useAtomComponentFamilyStateCallbackState(
     agentChatFirstLiveSeqComponentFamilyState,
   );
@@ -82,12 +77,6 @@ export const AgentChatMessagesFetchEffect = () => {
 
   const handleDataLoaded = useCallback(
     (data: GetChatMessagesQuery) => {
-      const error = store.get(
-        errorFamilyCallback({ threadId: currentAiChatThread }),
-      );
-      if (isGraphqlErrorOfType(error, 'NOT_FOUND')) {
-        return;
-      }
       const uiMessages = mapDBMessagesToUIMessages(data.chatMessages ?? []);
       setAgentChatFetchedMessages(
         uiMessages.filter((message) => message.status !== 'queued'),
@@ -138,8 +127,6 @@ export const AgentChatMessagesFetchEffect = () => {
       }
     },
     [
-      currentAiChatThread,
-      errorFamilyCallback,
       setAgentChatFetchedMessages,
       setAgentChatQueuedMessages,
       setAgentChatIsAwaitingPersistedRefetch,
@@ -164,7 +151,6 @@ export const AgentChatMessagesFetchEffect = () => {
     GetChatMessagesDocument,
     {
       variables: { threadId: currentAiChatThread ?? '' },
-      fetchPolicy: 'network-only',
       skip: !isDefined(currentAiChatThread) || isNewThread,
       onFirstLoad: handleFirstLoad,
       onDataLoaded: handleDataLoaded,

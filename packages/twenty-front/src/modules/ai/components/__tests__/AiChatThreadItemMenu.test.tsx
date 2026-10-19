@@ -1,4 +1,3 @@
-import { setAgentChatThreadPermissions } from '@/ai/testing/setAgentChatThreadPermissions';
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -50,17 +49,10 @@ it.each([
     const user = userEvent.setup();
     const onRowClick = jest.fn();
     archiveChatThread.mockReturnValue(new Promise(() => {}));
-    const store = createStore();
-    setAgentChatThreadPermissions(store, 'thread-archive', {
-      canRead: true,
-      canUpdate: false,
-      canDelete: false,
-      canSoftDelete: true,
-    });
 
     render(
       <I18nProvider i18n={i18n}>
-        <Provider store={store}>
+        <Provider store={createStore()}>
           <MemoryRouter initialEntries={['/initial']}>
             <CurrentLocation />
             <NavigationDrawerItem
@@ -89,8 +81,6 @@ it.each([
 
     const trigger = screen.getByRole('button', { name: 'Chat actions' });
     await user.click(trigger);
-    expect(screen.queryByRole('menuitem', { name: 'Rename' })).toBeNull();
-    expect(screen.queryByRole('menuitem', { name: 'Delete' })).toBeNull();
     await user.click(await screen.findByRole('menuitem', { name: 'Archive' }));
 
     expect(archiveChatThread).toHaveBeenCalledWith('thread-archive');
