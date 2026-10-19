@@ -391,7 +391,7 @@ export const PageLayoutTabList = ({
 
   const canReorderTabs = isReorderEnabled;
 
-  const shouldScrollTabs = isMobile && !canReorderTabs;
+  const shouldScrollTabs = (isMobile || pageLayoutType === PageLayoutType.RECORD_PAGE) && !canReorderTabs;
 
   const shouldRenderReorderableDropdown = hasHiddenTabs && canReorderTabs;
 
@@ -448,7 +448,7 @@ export const PageLayoutTabList = ({
         <StyledContainer
           className={className}
           isInIdentifierBar={isInIdentifierBar}
-          centerTabs={centerTabs}
+          centerTabs={centerTabs && !shouldScrollTabs}
         >
           <PageLayoutTabListVisibleTabs
             aria-label={ariaLabel}
