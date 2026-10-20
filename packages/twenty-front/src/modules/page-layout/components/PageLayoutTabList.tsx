@@ -118,6 +118,7 @@ type PageLayoutTabListProps = Omit<TabListProps, 'tabs'> & {
   addTabStrategy?: PageLayoutAddTabStrategy;
   behaveAsLinks: boolean;
   pageLayoutType: PageLayoutType;
+  limitVisibleTabsTo?: number;
 };
 
 export const PageLayoutTabList = ({
@@ -133,6 +134,7 @@ export const PageLayoutTabList = ({
   addTabStrategy,
   isReorderEnabled,
   pageLayoutType,
+  limitVisibleTabsTo,
 }: PageLayoutTabListProps) => {
   const { getIcon } = useIcons();
   const { t } = useLingui();
@@ -155,10 +157,7 @@ export const PageLayoutTabList = ({
   );
 
   const {
-    visibleTabCount,
-    hiddenTabs,
-    hiddenTabsCount,
-    hasHiddenTabs,
+    visibleTabCount: measuredVisibleTabCount,
     onTabWidthChange,
     onContainerWidthChange,
     onMoreButtonWidthChange,
@@ -168,6 +167,16 @@ export const PageLayoutTabList = ({
     hasAddButton: isDefined(addTabStrategy),
     rightPadding: isInIdentifierBar ? TAB_LIST_HORIZONTAL_PADDING : 0,
   });
+
+  // FDOS #95: preserve all native tab IDs and deep links, but put detail
+  // destinations in the existing More menu on the shared Person record.
+  // Width measurement still takes precedence on a narrow viewport.
+  const visibleTabCount = isDefined(limitVisibleTabsTo)
+    ? Math.min(measuredVisibleTabCount, limitVisibleTabsTo)
+    : measuredVisibleTabCount;
+  const hiddenTabs = tabsWithIcons.slice(visibleTabCount);
+  const hiddenTabsCount = hiddenTabs.length;
+  const hasHiddenTabs = hiddenTabsCount > 0;
 
   const pageLayoutId = useAvailableComponentInstanceIdOrThrow(
     PageLayoutComponentInstanceContext,
@@ -391,7 +400,7 @@ export const PageLayoutTabList = ({
 
   const canReorderTabs = isReorderEnabled;
 
-  const shouldScrollTabs = isMobile && !canReorderTabs;
+  const shouldScrollTabs = isMobile && !canReorderTabs && !isDefined(limitVisibleTabsTo);
 
   const shouldRenderReorderableDropdown = hasHiddenTabs && canReorderTabs;
 

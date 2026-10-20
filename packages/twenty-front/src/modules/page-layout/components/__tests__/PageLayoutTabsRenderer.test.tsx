@@ -1,6 +1,6 @@
 import { PageLayoutTabsRenderer } from '@/page-layout/components/PageLayoutTabsRenderer';
 import { WorkspaceSurfaceContext } from '@/ui/layout/contexts/WorkspaceSurfaceContext';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import {
@@ -13,6 +13,8 @@ let mockActiveTabId = 'hidden-transcript-tab-id';
 let mockPrerenderedTabIds: string[] = [];
 let mockTargetRecordId = 'calendar-event-id';
 let mockIsInSidePanel = false;
+let mockTargetObjectNameSingular = 'calendarEvent';
+let mockPersonTabsEnabled = false;
 const mockSetPrerenderedTabIds = jest.fn();
 
 const homeTab = {
@@ -87,7 +89,10 @@ jest.mock('@/page-layout/hooks/usePageLayoutAddTabStrategy', () => ({
 
 jest.mock('@/page-layout/hooks/usePageLayoutRenderableTabs', () => ({
   usePageLayoutRenderableTabs: () => ({
-    tabsToRenderInTabList: [homeTab, timelineTab, frontComponentTab],
+    tabsToRenderInTabList: mockPersonTabsEnabled
+      ? [homeTab, { ...timelineTab, title: 'ATS' },
+          { ...frontComponentTab, title: 'CRM' }, { ...timelineTab, id: 'notes-tab-id', title: 'Notes', position: 3 }]
+      : [homeTab, timelineTab, frontComponentTab],
     pinnedLeftTab: undefined,
   }),
 }));
@@ -103,7 +108,7 @@ jest.mock('@/ui/layout/contexts/LayoutRenderingContext', () => ({
     layoutType: PageLayoutType.RECORD_PAGE,
     targetRecordIdentifier: {
       id: mockTargetRecordId,
-      targetObjectNameSingular: 'calendarEvent',
+      targetObjectNameSingular: mockTargetObjectNameSingular,
     },
   }),
 }));
@@ -163,6 +168,8 @@ describe('PageLayoutTabsRenderer', () => {
     mockPrerenderedTabIds = [];
     mockTargetRecordId = 'calendar-event-id';
     mockIsInSidePanel = false;
+    mockTargetObjectNameSingular = 'calendarEvent';
+    mockPersonTabsEnabled = false;
     mockSetPrerenderedTabIds.mockClear();
   });
 
@@ -249,6 +256,34 @@ describe('PageLayoutTabsRenderer', () => {
     expect(
       screen.queryByText('Rendered tab: home-tab-id'),
     ).not.toBeInTheDocument();
+  });
+
+  it('opens full Home and collapses/expands without hiding specialist tabs', () => {
+    mockTargetObjectNameSingular = 'person';
+    mockPersonTabsEnabled = true;
+    mockActiveTabId = 'home-tab-id';
+
+    render(<PageLayoutTabsRenderer />, { wrapper: TestWrapper });
+    expect(screen.getByText('Rendered tab: home-tab-id')).toBeVisible();
+    const collapse = screen.getByRole('button', { name: 'Collapse Home' });
+    expect(collapse).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(collapse);
+    expect(screen.queryByText('Rendered tab: home-tab-id')).not.toBeInTheDocument();
+    expect(screen.getByText(/Home collapsed/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand Home' }));
+    expect(screen.getByText('Rendered tab: home-tab-id')).toBeVisible();
+  });
+
+  it('resets collapsed Home when navigating to another Person', () => {
+    mockTargetObjectNameSingular = 'person';
+    mockPersonTabsEnabled = true;
+    mockActiveTabId = 'home-tab-id';
+    const { rerender } = render(<PageLayoutTabsRenderer />, { wrapper: TestWrapper });
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse Home' }));
+    mockTargetRecordId = 'another-person-id';
+    rerender(<PageLayoutTabsRenderer />);
+    expect(screen.getByRole('button', { name: 'Collapse Home' })).toHaveAttribute('aria-expanded','true');
+    expect(screen.getByText('Rendered tab: home-tab-id')).toBeVisible();
   });
 
   it('resets the scroll position when the target record changes', () => {

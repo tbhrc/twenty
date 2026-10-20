@@ -23,6 +23,7 @@ const mockOpenTabSettings = jest.fn();
 const mockCloseSidePanelMenu = jest.fn();
 const mockCloseDropdown = jest.fn();
 let mockIsInEditMode = true;
+let mockMeasuredVisibleCount = 2;
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -69,10 +70,10 @@ jest.mock('@/ui/layout/tab-list/hooks/useTabListMeasurements', () => ({
   }: {
     visibleTabs: SingleTabProps[];
   }) => ({
-    visibleTabCount: 2,
-    hiddenTabs: visibleTabs.slice(2),
-    hiddenTabsCount: 1,
-    hasHiddenTabs: true,
+    visibleTabCount: mockMeasuredVisibleCount,
+    hiddenTabs: visibleTabs.slice(mockMeasuredVisibleCount),
+    hiddenTabsCount: visibleTabs.length > mockMeasuredVisibleCount ? visibleTabs.length - mockMeasuredVisibleCount : 0,
+    hasHiddenTabs: visibleTabs.length > mockMeasuredVisibleCount,
     onTabWidthChange: jest.fn(),
     onContainerWidthChange: jest.fn(),
     onMoreButtonWidthChange: jest.fn(),
@@ -146,11 +147,15 @@ const renderTabList = ({
   settingsTabId = null,
   isInSidePanel = false,
   behaveAsLinks = false,
+  limitVisibleTabsTo,
+  tabs = TABS,
 }: {
   pageLayoutType?: PageLayoutType;
   settingsTabId?: string | null;
   isInSidePanel?: boolean;
   behaveAsLinks?: boolean;
+  limitVisibleTabsTo?: number;
+  tabs?: typeof TABS;
 } = {}) => {
   const store = createStore();
   const settingsTabAtom =
@@ -181,7 +186,8 @@ const renderTabList = ({
           >
             <PageLayoutTabList
               aria-label="Record sections"
-              tabs={TABS}
+              tabs={tabs}
+              limitVisibleTabsTo={limitVisibleTabsTo}
               componentInstanceId={TAB_LIST_ID}
               pageLayoutType={pageLayoutType}
               behaveAsLinks={behaveAsLinks}
@@ -200,6 +206,7 @@ describe('PageLayoutTabList selection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockIsInEditMode = true;
+    mockMeasuredVisibleCount = 2;
   });
 
   it.each(['Notes', 'Files'])(
@@ -361,5 +368,34 @@ describe('PageLayoutTabList selection', () => {
     expect(mockCloseDropdown).toHaveBeenCalledWith(
       `tab-overflow-${TAB_LIST_ID}`,
     );
+  });
+});
+
+describe('FDOS Person primary navigation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockIsInEditMode = false;
+    mockMeasuredVisibleCount = 7;
+  });
+
+  it('shows only Home ATS CRM while retaining original destinations under More', async () => {
+    const personTabs = ['Home', 'ATS', 'CRM', 'CV', 'Notes', 'Jobs', 'Activity']
+      .map((title, index) => makeTab(title, [], index));
+    renderTabList({ tabs: personTabs, limitVisibleTabsTo: 3 });
+    expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ATS' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'CRM' })).toBeInTheDocument();
+    expect(screen.getByLabelText('More tabs')).toHaveTextContent('CV');
+    expect(screen.getByLabelText('More tabs')).toHaveTextContent('Activity');
+    await userEvent.setup().click(screen.getByRole('button', { name: 'CV' }));
+    expect(screen.getByRole('button', { name: 'CV' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('leaves other record tab bars alone without a Person limit', () => {
+    const tabs = ['Home', 'ATS', 'CRM', 'CV']
+      .map((title, index) => makeTab(title, [], index));
+    renderTabList({ tabs });
+    expect(screen.getAllByRole('button')).toHaveLength(4);
+    expect(screen.queryByLabelText('More tabs')).not.toBeInTheDocument();
   });
 });
