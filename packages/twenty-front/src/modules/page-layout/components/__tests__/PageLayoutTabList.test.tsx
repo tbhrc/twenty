@@ -206,14 +206,17 @@ describe('PageLayoutTabList selection', () => {
     PageLayoutType.RECORD_PAGE,
     PageLayoutType.DASHBOARD,
     PageLayoutType.STANDALONE_PAGE,
-  ])('keeps every %s tab visible in the strip while reordering', (pageLayoutType) => {
-    renderTabList({ pageLayoutType });
+  ])(
+    'keeps every %s tab visible in the strip while reordering',
+    (pageLayoutType) => {
+      renderTabList({ pageLayoutType });
 
-    for (const name of ['Tasks', 'Notes', 'Files']) {
-      expect(screen.getByRole('button', { name })).toBeVisible();
-    }
-    expect(screen.queryByLabelText('More tabs')).not.toBeInTheDocument();
-  });
+      for (const name of ['Tasks', 'Notes', 'Files']) {
+        expect(screen.getByRole('button', { name })).toBeVisible();
+      }
+      expect(screen.queryByLabelText('More tabs')).not.toBeInTheDocument();
+    },
+  );
 
   it.each(['Notes', 'Files'])(
     'navigates to %s first and opens settings on a second click',
