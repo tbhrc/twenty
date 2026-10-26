@@ -1,4 +1,4 @@
-import { GraphQLError } from 'graphql';
+import { UserInputError } from 'src/engine/core-modules/graphql/utils/graphql-errors.util';
 
 type SearchToken =
   | { kind: 'TERM' | 'PHRASE'; value: string }
@@ -17,9 +17,7 @@ const OPERATORS: Partial<
 };
 
 const invalidSearch = (message: string): never => {
-  throw new GraphQLError(`Invalid Boolean search: ${message}`, {
-    extensions: { code: 'BAD_USER_INPUT' },
-  });
+  throw new UserInputError(`Invalid Boolean search: ${message}`);
 };
 
 export const isBooleanSearch = (input: string) =>
