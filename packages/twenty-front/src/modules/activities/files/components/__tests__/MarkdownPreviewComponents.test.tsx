@@ -16,6 +16,7 @@ const {
   img: Image,
   table: Table,
   pre: Pre,
+  ul: List,
 } = MARKDOWN_PREVIEW_COMPONENTS;
 
 const renderWithI18n = (children: ReactNode) =>
@@ -69,6 +70,30 @@ describe('MarkdownPreviewComponents', () => {
 
       expect(container.querySelector('img')).toBeNull();
       expect(screen.getByText('Image')).toBeInTheDocument();
+    });
+  });
+
+  describe('lists', () => {
+    it('should restore bullets on ordinary unordered lists', () => {
+      renderWithI18n(
+        <List>
+          <li>one</li>
+        </List>,
+      );
+
+      expect(screen.getByRole('list')).toHaveStyle({ listStyleType: 'disc' });
+    });
+
+    it('should leave GFM task lists without bullets', () => {
+      renderWithI18n(
+        <List className="contains-task-list">
+          <li>task</li>
+        </List>,
+      );
+
+      expect(screen.getByRole('list')).not.toHaveStyle({
+        listStyleType: 'disc',
+      });
     });
   });
 

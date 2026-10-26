@@ -42,8 +42,30 @@ const MarkdownPreviewImage = ({ alt }: { alt?: string }) => {
   return <span>{alt?.trim() || t`Image`}</span>;
 };
 
+// The shared markdown container resets list styles for chat; a document needs
+// bullets back, except on GFM task lists whose checkboxes are the marker.
+const MarkdownPreviewList = ({
+  children,
+  className,
+}: {
+  children?: ReactNode;
+  className?: string;
+}) => (
+  <ul
+    className={className}
+    style={
+      className?.includes('contains-task-list')
+        ? undefined
+        : { listStyleType: 'disc', paddingLeft: 20 }
+    }
+  >
+    {children}
+  </ul>
+);
+
 export const MARKDOWN_PREVIEW_COMPONENTS = {
   a: MarkdownPreviewLink,
+  ul: MarkdownPreviewList,
   img: MarkdownPreviewImage,
   table: ({ children }: { children?: ReactNode }) => (
     <StyledTableScrollContainer>
