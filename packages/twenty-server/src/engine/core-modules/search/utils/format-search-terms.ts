@@ -1,4 +1,7 @@
-import { compileBooleanSearch, isBooleanSearch } from 'src/engine/core-modules/search/utils/compile-boolean-search';
+import {
+  compileBooleanSearch,
+  isBooleanSearch,
+} from 'src/engine/core-modules/search/utils/compile-boolean-search';
 
 export const formatSearchTerms = (
   searchTerm: string,

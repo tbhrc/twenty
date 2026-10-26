@@ -4,8 +4,16 @@ type SearchToken =
   | { kind: 'TERM' | 'PHRASE'; value: string }
   | { kind: 'AND' | 'OR' | 'NOT' | 'LEFT' | 'RIGHT' };
 
-const OPERATORS: Partial<Record<string, 'LEFT' | 'RIGHT' | 'AND' | 'OR' | 'NOT'>> = {
-  '(': 'LEFT', ')': 'RIGHT', '&': 'AND', '|': 'OR', ',': 'OR', '!': 'NOT', '-': 'NOT',
+const OPERATORS: Partial<
+  Record<string, 'LEFT' | 'RIGHT' | 'AND' | 'OR' | 'NOT'>
+> = {
+  '(': 'LEFT',
+  ')': 'RIGHT',
+  '&': 'AND',
+  '|': 'OR',
+  ',': 'OR',
+  '!': 'NOT',
+  '-': 'NOT',
 };
 
 const invalidSearch = (message: string): never => {
@@ -27,7 +35,8 @@ const tokenize = (input: string): SearchToken[] => {
       offset++;
       continue;
     }
-    if (tokens.length >= 256) invalidSearch('Use at most 256 terms and operators.');
+    if (tokens.length >= 256)
+      invalidSearch('Use at most 256 terms and operators.');
     if (character === '"') {
       offset++;
       let phrase = '';
@@ -45,7 +54,11 @@ const tokenize = (input: string): SearchToken[] => {
     if (operator) {
       tokens.push({ kind: operator });
       offset++;
-      if ((character === '&' || character === '|') && input[offset] === character) offset++;
+      if (
+        (character === '&' || character === '|') &&
+        input[offset] === character
+      )
+        offset++;
       continue;
     }
     let value = '';
@@ -67,7 +80,9 @@ const tokenize = (input: string): SearchToken[] => {
 const lexeme = (value: string, prefix: boolean) => {
   const word = prefix && value.endsWith('*') ? value.slice(0, -1) : value;
   if (!word || word.includes('*')) {
-    invalidSearch('Use * only at the end of an unquoted word, such as recruit*.');
+    invalidSearch(
+      'Use * only at the end of an unquoted word, such as recruit*.',
+    );
   }
   return `'${word.replace(/[\\']/g, '\\$&')}'${prefix ? ':*' : ''}`;
 };
@@ -81,7 +96,8 @@ export const compileBooleanSearch = (input: string): string => {
   const parseUnary = (): string => {
     const token = current();
     if (!token) return invalidSearch('Add a term after the operator.');
-    if (++depth > 32) invalidSearch('Use at most 32 nested groups or NOT operators.');
+    if (++depth > 32)
+      invalidSearch('Use at most 32 nested groups or NOT operators.');
     let result: string;
     if (token.kind === 'NOT') {
       position++;
@@ -94,11 +110,18 @@ export const compileBooleanSearch = (input: string): string => {
       result = `(${result})`;
     } else if (token.kind === 'TERM' || token.kind === 'PHRASE') {
       position++;
-      result = token.kind === 'TERM'
-        ? lexeme(token.value, true)
-        : `(${token.value.trim().split(/\s+/).map((word) => lexeme(word, false)).join(' <-> ')})`;
+      result =
+        token.kind === 'TERM'
+          ? lexeme(token.value, true)
+          : `(${token.value
+              .trim()
+              .split(/\s+/)
+              .map((word) => lexeme(word, false))
+              .join(' <-> ')})`;
     } else {
-      return invalidSearch('Expected a word, quoted phrase or parenthesized group.');
+      return invalidSearch(
+        'Expected a word, quoted phrase or parenthesized group.',
+      );
     }
     depth--;
     return result;
@@ -124,6 +147,7 @@ export const compileBooleanSearch = (input: string): string => {
 
   if (tokens.length === 0) return '';
   const result = parseOr();
-  if (position !== tokens.length) invalidSearch('Remove the unexpected closing parenthesis.');
+  if (position !== tokens.length)
+    invalidSearch('Remove the unexpected closing parenthesis.');
   return result;
 };

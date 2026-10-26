@@ -1,4 +1,7 @@
-import { compileBooleanSearch, isBooleanSearch } from 'src/engine/core-modules/search/utils/compile-boolean-search';
+import {
+  compileBooleanSearch,
+  isBooleanSearch,
+} from 'src/engine/core-modules/search/utils/compile-boolean-search';
 import { formatSearchTerms } from 'src/engine/core-modules/search/utils/format-search-terms';
 
 describe('Boolean search', () => {
@@ -18,7 +21,7 @@ describe('Boolean search', () => {
     ['a && b || !c', "(('a':* & 'b':*) | !('c':*))"],
     ['a -b', "('a':* & !('b':*))"],
     ['recruit* AND Dubai', "('recruit':* & 'Dubai':*)"],
-    ['O\'Reilly AND R&D', "(('O\\'Reilly':* & 'R':*) & 'D':*)"],
+    ["O'Reilly AND R&D", "(('O\\'Reilly':* & 'R':*) & 'D':*)"],
     ['"Gowtham Vijayaragavan"', "('Gowtham' <-> 'Vijayaragavan')"],
   ])('compiles %s with precedence and literal escaping', (input, expected) => {
     expect(compileBooleanSearch(input)).toBe(expected);
@@ -26,18 +29,39 @@ describe('Boolean search', () => {
     expect(formatSearchTerms(input, 'or')).toBe(expected);
   });
 
-  it.each(['a AND', 'OR a', 'a OR OR b', '(a OR b', 'a)', '()', '""', '"unclosed', '*engineer', 'engi*neer', '*', 'a AND ()'])('rejects malformed syntax: %s', (input) => {
-    expect(() => compileBooleanSearch(input)).toThrow('Invalid Boolean search:');
+  it.each([
+    'a AND',
+    'OR a',
+    'a OR OR b',
+    '(a OR b',
+    'a)',
+    '()',
+    '""',
+    '"unclosed',
+    '*engineer',
+    'engi*neer',
+    '*',
+    'a AND ()',
+  ])('rejects malformed syntax: %s', (input) => {
+    expect(() => compileBooleanSearch(input)).toThrow(
+      'Invalid Boolean search:',
+    );
   });
 
   it('does not interpret ordinary words or hyphens inside a word as operators', () => {
     expect(isBooleanSearch('Andrew Norton')).toBe(false);
     expect(isBooleanSearch('front-end')).toBe(false);
-    expect(formatSearchTerms('my search input', 'or')).toBe('my:* | search:* | input:*');
+    expect(formatSearchTerms('my search input', 'or')).toBe(
+      'my:* | search:* | input:*',
+    );
   });
 
   it('bounds nesting and token count with useful input errors', () => {
-    expect(() => compileBooleanSearch('('.repeat(33) + 'a' + ')'.repeat(33))).toThrow('32 nested');
-    expect(() => compileBooleanSearch(Array(258).fill('a').join(' OR '))).toThrow('256 terms');
+    expect(() =>
+      compileBooleanSearch('('.repeat(33) + 'a' + ')'.repeat(33)),
+    ).toThrow('32 nested');
+    expect(() =>
+      compileBooleanSearch(Array(258).fill('a').join(' OR ')),
+    ).toThrow('256 terms');
   });
 });
