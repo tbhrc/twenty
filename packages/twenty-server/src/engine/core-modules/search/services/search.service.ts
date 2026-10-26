@@ -40,6 +40,7 @@ import {
 } from 'src/engine/core-modules/search/exceptions/search.exception';
 import { type RecordsWithObjectMetadataItem } from 'src/engine/core-modules/search/types/records-with-object-metadata-item.type';
 import { formatSearchTerms } from 'src/engine/core-modules/search/utils/format-search-terms';
+import { isBooleanSearch } from 'src/engine/core-modules/search/utils/compile-boolean-search';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { type IDataloaders } from 'src/engine/dataloaders/dataloader.interface';
 import { computeCompositeColumnName } from 'src/engine/metadata-modules/field-metadata/utils/compute-column-name.util';
@@ -246,6 +247,7 @@ export class SearchService {
 
     if (
       tsvectorResults.length > 0 ||
+      isBooleanSearch(searchInput) ||
       !isNonEmptyString(searchInput.trim()) ||
       isDefined(after)
     ) {
