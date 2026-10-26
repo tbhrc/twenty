@@ -9,6 +9,8 @@ export const PREVIEWABLE_EXTENSIONS = [
   'html',
   'jpg',
   'jpeg',
+  'markdown',
+  'md',
   'pdf',
   'png',
   'ppt',

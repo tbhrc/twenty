@@ -1,3 +1,4 @@
+import { MarkdownPreview } from '@/activities/files/components/MarkdownPreview';
 import { UnavailableFilePreview } from '@/activities/files/components/UnavailableFilePreview';
 import { VideoPreview } from '@/activities/files/components/VideoPreview';
 import { PREVIEWABLE_EXTENSIONS } from '@/activities/files/const/previewable-extensions.const';
@@ -7,6 +8,7 @@ import {
   fetchCsvPreview,
 } from '@/activities/files/utils/fetchCsvPreview';
 import { getFileType } from '@/activities/files/utils/getFileType';
+import { isMarkdownExtension } from '@/activities/files/utils/isMarkdownExtension';
 import DocViewer, { DocViewerRenderers } from '@cyntler/react-doc-viewer';
 import '@cyntler/react-doc-viewer/dist/index.css';
 import { styled } from '@linaria/react';
@@ -176,6 +178,8 @@ const MIME_TYPE_MAPPING: Record<
   html: 'text/html',
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
+  markdown: 'text/markdown',
+  md: 'text/markdown',
   pdf: 'application/pdf',
   png: 'image/png',
   ppt: 'application/vnd.ms-powerpoint',
@@ -205,6 +209,8 @@ export const DocumentViewer = ({
     : (extension?.toLowerCase().replace('.', '') ?? '');
   const fileCategory = getFileType(documentName);
   const isPreviewable = PREVIEWABLE_EXTENSIONS.includes(fileExtension);
+  const isMarkdown =
+    isMarkdownExtension(fileExtension) || isMarkdownExtension(extension);
   const isMsOfficeFile = MS_OFFICE_EXTENSIONS.includes(fileExtension);
 
   const mimeType = isPreviewable ? MIME_TYPE_MAPPING[fileExtension] : undefined;
@@ -215,6 +221,18 @@ export const DocumentViewer = ({
       fetchCsvPreview(documentUrl).then(setCsvPreview);
     }
   }, [documentUrl, fileExtension]);
+
+  if (isMarkdown) {
+    return (
+      <StyledDocumentViewerContainer>
+        <MarkdownPreview
+          key={documentUrl}
+          fileName={documentName}
+          fileUrl={documentUrl}
+        />
+      </StyledDocumentViewerContainer>
+    );
+  }
 
   if (!isPreviewable) {
     return (
