@@ -26,6 +26,7 @@ import { useWorkspaceSurfaceScopedComponentInstanceId } from '@/ui/layout/hooks/
 import { useWorkspaceSurface } from '@/ui/layout/hooks/useWorkspaceSurface';
 import { activeTabIdComponentState } from '@/ui/layout/tab-list/states/activeTabIdComponentState';
 import { useIsMobile } from 'twenty-ui/utilities';
+import { useEffect, useState } from 'react';
 import { ScrollWrapper } from '@/ui/utilities/scroll/components/ScrollWrapper';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { styled } from '@linaria/react';
@@ -103,6 +104,23 @@ const StyledTabsAndDashboardContainer = styled.div`
 // Apollo starts useQuery fetches from effects, which hidden activities do not
 // mount, so nothing would preload (see pageLayoutTabPrerenderContract.test).
 // display: contents keeps the active tab's layout identical to an unwrapped mount.
+const StyledPersonHomeToggle = styled.button`
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: ${themeCssVariables.border.radius.sm};
+  color: ${themeCssVariables.font.color.secondary};
+  cursor: pointer;
+  flex-shrink: 0;
+  margin: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
+`;
+
+const StyledPersonHomeCollapsed = styled.div`
+  color: ${themeCssVariables.font.color.secondary};
+  padding: ${themeCssVariables.spacing[3]};
+`;
+
 const StyledTabContentDisplay = styled.div<{ isActiveTab: boolean }>`
   display: ${({ isActiveTab }) => (isActiveTab ? 'contents' : 'none')};
 `;
@@ -190,6 +208,17 @@ export const PageLayoutTabsRenderer = () => {
     usePageLayoutRenderableTabs();
 
   const sortedTabs = sortTabsByPosition(tabsToRenderInTabList);
+  const isPersonWorkspace =
+    currentPageLayout.type === PageLayoutType.RECORD_PAGE &&
+    targetRecordIdentifier?.targetObjectNameSingular === 'person' &&
+    workspaceSurface.type === 'main' &&
+    sortedTabs[0]?.title === 'Home' &&
+    sortedTabs[1]?.title === 'ATS' &&
+    sortedTabs[2]?.title === 'CRM';
+  const homeTabId = sortedTabs[0]?.id;
+  const [isHomeCollapsed, setIsHomeCollapsed] = useState(false);
+  useEffect(() => setIsHomeCollapsed(false), [targetRecordIdentifier?.id]);
+  const isActivePersonHome = isPersonWorkspace && activeTabId === homeTabId;
 
   const activeTabExistsInRenderableTabs = sortedTabs.some(
     (tab) => tab.id === activeTabId,
@@ -282,8 +311,22 @@ export const PageLayoutTabsRenderer = () => {
                 }
               />
               {!shouldRenderRecordIdentifierBar && tabList}
-
-              <StyledScrollWrapperContainer>
+              {isActivePersonHome && !isPageLayoutInEditMode && (
+                <StyledPersonHomeToggle
+                  type="button"
+                  aria-expanded={!isHomeCollapsed}
+                  aria-controls="fdos-person-home-content"
+                  onClick={() => setIsHomeCollapsed((value) => !value)}
+                >
+                  {isHomeCollapsed ? 'Expand Home' : 'Collapse Home'}
+                </StyledPersonHomeToggle>
+              )}
+              {isActivePersonHome && isHomeCollapsed ? (
+                <StyledPersonHomeCollapsed id="fdos-person-home-content">
+                  Home collapsed. Choose ATS or CRM above, or expand Home.
+                </StyledPersonHomeCollapsed>
+              ) : (
+              <StyledScrollWrapperContainer id={isActivePersonHome ? 'fdos-person-home-content' : undefined}>
                 <ScrollWrapper
                   className="page-layout-scroll-wrapper"
                   componentInstanceId={scrollWrapperInstanceId}
@@ -312,6 +355,7 @@ export const PageLayoutTabsRenderer = () => {
                     )}
                 </ScrollWrapper>
               </StyledScrollWrapperContainer>
+              )}
             </StyledTabsAndDashboardContainer>
           </StyledContainer>
         </StyledRoot>
