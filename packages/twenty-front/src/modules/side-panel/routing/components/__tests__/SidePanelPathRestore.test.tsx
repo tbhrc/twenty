@@ -42,9 +42,7 @@ const routeObjects: WorkspaceRouteObject[] = [
   },
 ];
 
-// Restoring opens the panel, which is what the sync effect writes the param
-// from. Writing before that lands would clear the param being restored, so
-// this records every value the url took rather than only where it settled.
+// Record URL changes to prove panel navigation never reintroduces its parameter.
 const useRecordedSearchValues = (recorded: string[]) => {
   const { search } = useLocation();
 
@@ -60,7 +58,7 @@ const SearchRecorderEffect = ({ recorded }: { recorded: string[] }) => {
 };
 
 describe('restoring the panel from the url', () => {
-  it('should open the panel without ever dropping the param it read', async () => {
+  it('restores a legacy panel link and cleans the URL without closing it', async () => {
     const recordedSearchValues: string[] = [];
     let capturedStore: ReturnType<typeof getDefaultStore> | undefined;
 
@@ -104,14 +102,14 @@ describe('restoring the panel from the url', () => {
 
     expect(recordedSearchValues).not.toContain('');
     expect(recordedSearchValues.at(-1)).toBe(
-      `?thread=thread-1&panel=${encodeURIComponent(OBJECT_PATH)}`,
+      '?thread=thread-1',
     );
     expect(capturedStore?.get(sidePanelNavigationStackState.atom)).toHaveLength(
       1,
     );
   });
 
-  it('should follow the panel when it navigates to another hosted route', async () => {
+  it('keeps URLs clean during panel navigation and restores another legacy link', async () => {
     let openNext: ((path: string) => string | null) | undefined;
     let navigateUrl: ((path: string) => void) | undefined;
     let currentLocation: ReturnType<typeof useLocation> | undefined;
@@ -171,7 +169,7 @@ describe('restoring the panel from the url', () => {
     await waitFor(() => {
       expect(openNext).toBeDefined();
       expect(recordedSearchValues.at(-1)).toBe(
-        `?thread=thread-1&panel=${encodeURIComponent(OBJECT_PATH)}`,
+        '?thread=thread-1',
       );
     });
 
@@ -183,17 +181,18 @@ describe('restoring the panel from the url', () => {
     });
 
     expect(recordedSearchValues.at(-1)).toBe(
-      `?thread=thread-1&panel=${encodeURIComponent(OBJECT_PATH)}`,
+      '?thread=thread-1',
     );
 
     act(() => openNext?.(FIELD_PATH));
 
     await waitFor(() => {
       expect(recordedSearchValues.at(-1)).toBe(
-        `?thread=thread-1&panel=${encodeURIComponent(FIELD_PATH)}`,
+        '?thread=thread-1',
       );
     });
 
+    expect(capturedStore?.get(sidePanelNavigationStackState.atom).at(-1)?.routedLocation?.pathname).toBe(FIELD_PATH);
     expect(currentLocation?.hash).toBe('#conversation');
     expect(currentLocation?.state).toEqual({ source: 'history' });
 
@@ -219,6 +218,7 @@ describe('restoring the panel from the url', () => {
           ? createPath(currentItem.routedLocation)
           : null,
       ).toBe(externallySelectedPath);
+      expect(currentLocation?.search).toBe('?thread=thread-1');
       expect(currentItem?.pageId).not.toBe(previousNavigationItem?.pageId);
       expect(currentItem?.routedFlowStateScopeId).toBe(currentItem?.pageId);
       expect(

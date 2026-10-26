@@ -3,6 +3,11 @@
 // scrollbar.
 export const SCROLLABLE_TAB_ROW_CSS = `
   overflow-y: hidden;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
 
   @media (pointer: coarse) {
     scrollbar-width: none;
