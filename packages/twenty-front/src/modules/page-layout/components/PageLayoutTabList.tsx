@@ -21,7 +21,6 @@ import { activeTabIdComponentState } from '@/ui/layout/tab-list/states/activeTab
 import { TabListComponentInstanceContext } from '@/ui/layout/tab-list/states/contexts/TabListComponentInstanceContext';
 import { type TabListProps } from '@/ui/layout/tab-list/types/TabListProps';
 import { NodeDimension } from '@/ui/utilities/dimensions/components/NodeDimension';
-import { useIsMobile } from 'twenty-ui/utilities';
 import { useWorkspaceSurface } from '@/ui/layout/hooks/useWorkspaceSurface';
 import { useClickOutsideListener } from '@/ui/utilities/pointer-event/hooks/useClickOutsideListener';
 import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
@@ -147,7 +146,6 @@ export const PageLayoutTabList = ({
 
   const navigate = useNavigate();
   const location = useLocation();
-  const isMobile = useIsMobile();
 
   const [activeTabId, setActiveTabId] = useAtomComponentState(
     activeTabIdComponentState,
@@ -391,9 +389,11 @@ export const PageLayoutTabList = ({
 
   const canReorderTabs = isReorderEnabled;
 
-  const shouldScrollTabs = (isMobile || pageLayoutType === PageLayoutType.RECORD_PAGE) && !canReorderTabs;
+  // Keep every tab in the strip, including while editing or reordering.
+  const shouldScrollTabs = true;
 
-  const shouldRenderReorderableDropdown = hasHiddenTabs && canReorderTabs;
+  const shouldRenderReorderableDropdown =
+    hasHiddenTabs && canReorderTabs && !shouldScrollTabs;
 
   const shouldRenderStaticDropdown =
     hasHiddenTabs && !canReorderTabs && !shouldScrollTabs;

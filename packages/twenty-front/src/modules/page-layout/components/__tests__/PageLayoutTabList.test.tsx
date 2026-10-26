@@ -202,6 +202,19 @@ describe('PageLayoutTabList selection', () => {
     mockIsInEditMode = true;
   });
 
+  it.each([
+    PageLayoutType.RECORD_PAGE,
+    PageLayoutType.DASHBOARD,
+    PageLayoutType.STANDALONE_PAGE,
+  ])('keeps every %s tab visible in the strip while reordering', (pageLayoutType) => {
+    renderTabList({ pageLayoutType });
+
+    for (const name of ['Tasks', 'Notes', 'Files']) {
+      expect(screen.getByRole('button', { name })).toBeVisible();
+    }
+    expect(screen.queryByLabelText('More tabs')).not.toBeInTheDocument();
+  });
+
   it.each(['Notes', 'Files'])(
     'navigates to %s first and opens settings on a second click',
     async (title) => {
@@ -341,7 +354,7 @@ describe('PageLayoutTabList selection', () => {
     expect(mockOpenTabSettings).toHaveBeenCalledWith('Notes');
   });
 
-  it('preserves URL-driven navigation for overflow tabs in read mode', async () => {
+  it('preserves URL navigation for every scrollable tab in read mode', async () => {
     mockIsInEditMode = false;
     renderTabList({ behaveAsLinks: true });
 
@@ -358,8 +371,7 @@ describe('PageLayoutTabList selection', () => {
       'true',
     );
     expect(mockOpenTabSettings).not.toHaveBeenCalled();
-    expect(mockCloseDropdown).toHaveBeenCalledWith(
-      `tab-overflow-${TAB_LIST_ID}`,
-    );
+    expect(screen.queryByLabelText('More tabs')).not.toBeInTheDocument();
+    expect(mockCloseDropdown).not.toHaveBeenCalled();
   });
 });
