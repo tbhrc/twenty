@@ -18,7 +18,8 @@ const mockTextResponse = ({
       ok,
       status,
       headers: { get: () => contentLength ?? null },
-      body: { cancel },
+      // Only the declared-length path touches the body before text() is used.
+      body: contentLength === undefined ? undefined : { cancel },
       text: () => Promise.resolve(text),
     } as unknown as Response),
   );
