@@ -163,5 +163,14 @@ export const isWidgetConfigurationOfType = <
     | undefined,
   typename: T,
 ): configuration is WidgetConfigurationTypenameMap[T] => {
-  return configuration?.__typename === typename;
+  if (!configuration) return false;
+  if (configuration.__typename) return configuration.__typename === typename;
+
+  // Flat metadata stores the native discriminator without GraphQL's typename.
+  const configurationType = typename
+    .replace(/Configuration$/, '')
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .toUpperCase();
+
+  return configuration.configurationType === configurationType;
 };

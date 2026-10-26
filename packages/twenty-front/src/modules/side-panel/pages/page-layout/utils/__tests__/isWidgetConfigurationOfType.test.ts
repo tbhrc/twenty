@@ -1,4 +1,5 @@
 import { isWidgetConfigurationOfType } from '@/side-panel/pages/page-layout/utils/isWidgetConfigurationOfType';
+import { WidgetConfigurationType } from '~/generated-metadata/graphql';
 import {
   ALL_CHART_CONFIGURATIONS,
   TEST_BAR_CHART_CONFIGURATION,
@@ -8,6 +9,21 @@ import {
 } from '~/testing/mock-data/widget-configurations';
 
 describe('isWidgetConfigurationOfType', () => {
+  it('accepts saved native front component configurations without GraphQL typename', () => {
+    const configuration = {
+      configurationType: WidgetConfigurationType.FRONT_COMPONENT,
+      frontComponentId: 'saved-component',
+    };
+    expect(isWidgetConfigurationOfType(configuration, 'FrontComponentConfiguration')).toBe(true);
+    expect(isWidgetConfigurationOfType(configuration, 'FieldConfiguration')).toBe(false);
+  });
+
+  it('preserves a conflicting explicit GraphQL type', () => {
+    expect(isWidgetConfigurationOfType({
+      __typename: 'FieldsConfiguration',
+      configurationType: WidgetConfigurationType.FRONT_COMPONENT,
+    }, 'FrontComponentConfiguration')).toBe(false);
+  });
   it('returns true when __typename matches', () => {
     expect(
       isWidgetConfigurationOfType(

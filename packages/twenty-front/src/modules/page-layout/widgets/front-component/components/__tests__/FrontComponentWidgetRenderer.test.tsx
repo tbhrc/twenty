@@ -44,9 +44,11 @@ const FRONT_COMPONENT_WIDGET = {
 const renderFrontComponentWidget = ({
   layoutType,
   targetRecordIdentifier,
+  widget = FRONT_COMPONENT_WIDGET,
 }: {
   layoutType: PageLayoutType;
   targetRecordIdentifier?: TargetRecordIdentifier;
+  widget?: PageLayoutWidget;
 }) =>
   render(
     <PageLayoutEditModeProviderContext value={{ isInEditMode: false }}>
@@ -58,13 +60,24 @@ const renderFrontComponentWidget = ({
         }}
       >
         <LayoutRenderingProvider value={{ targetRecordIdentifier, layoutType }}>
-          <FrontComponentWidgetRenderer widget={FRONT_COMPONENT_WIDGET} />
+          <FrontComponentWidgetRenderer widget={widget} />
         </LayoutRenderingProvider>
       </PageLayoutContentProvider>
     </PageLayoutEditModeProviderContext>,
   );
 
 describe('FrontComponentWidgetRenderer', () => {
+  it('renders a saved native component with its Person binding without GraphQL typename', async () => {
+    renderFrontComponentWidget({
+      layoutType: PageLayoutType.RECORD_PAGE,
+      targetRecordIdentifier: { id: 'person-id', targetObjectNameSingular: 'person' },
+      widget: { ...FRONT_COMPONENT_WIDGET, configuration: {
+        configurationType: WidgetConfigurationType.FRONT_COMPONENT,
+        frontComponentId: 'front-component-id',
+      } },
+    });
+    expect(await screen.findByTestId('front-component')).toHaveTextContent('front-component-id:person:person-id');
+  });
   it('hands the component the record page record and its object', async () => {
     renderFrontComponentWidget({
       layoutType: PageLayoutType.RECORD_PAGE,
