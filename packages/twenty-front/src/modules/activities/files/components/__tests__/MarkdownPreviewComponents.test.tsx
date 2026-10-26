@@ -91,9 +91,9 @@ describe('MarkdownPreviewComponents', () => {
         </List>,
       );
 
-      expect(screen.getByRole('list')).not.toHaveStyle({
-        listStyleType: 'disc',
-      });
+      // jsdom's default stylesheet already bullets a ul, so assert that no
+      // inline override is applied instead of the computed style.
+      expect(screen.getByRole('list')).not.toHaveAttribute('style');
     });
   });
 
