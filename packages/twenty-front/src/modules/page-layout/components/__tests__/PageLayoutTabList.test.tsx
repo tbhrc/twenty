@@ -366,7 +366,7 @@ describe('PageLayoutTabList selection', () => {
       { search: '', hash: '#Files' },
       { replace: false, state: null },
     );
-    expect(screen.getByRole('button', { name: 'Tasks' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Files' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
