@@ -5,6 +5,7 @@ import { isLayoutCustomizationModeEnabledState } from '@/layout-customization/st
 import { useNumberFormat } from '@/localization/hooks/useNumberFormat';
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
 import { RecordIndexPageHeaderIcon } from '@/object-record/record-index/components/RecordIndexPageHeaderIcon';
+import { GlobalPeopleSearch } from '@/object-record/record-index/components/GlobalPeopleSearch';
 import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
 import { SidePanelPageTitleSyncEffect } from '@/side-panel/components/SidePanelPageTitleSyncEffect';
 import { SidePanelToggleButton } from '@/side-panel/components/SidePanelToggleButton';
@@ -80,6 +81,11 @@ export const RecordIndexPageHeader = () => {
           <RecordIndexPageHeaderIcon objectMetadataItem={objectMetadataItem} />
         }
         title={pageHeaderTitle}
+        searchBar={
+          objectNamePlural === 'people' && workspaceSurface.type === 'main' ? (
+            <GlobalPeopleSearch />
+          ) : undefined
+        }
         actionButton={
           isDefined(contextStoreCurrentViewId) ? (
             <>

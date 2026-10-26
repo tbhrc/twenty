@@ -13,7 +13,7 @@ import { styled } from '@linaria/react';
 import { type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { isDefined } from 'twenty-shared/utils';
-import { themeCssVariables } from 'twenty-ui/theme';
+import { MOBILE_VIEWPORT, themeCssVariables } from 'twenty-ui/theme';
 
 type PageCardHeaderProps = {
   links?: BreadcrumbProps['links'];
@@ -22,24 +22,50 @@ type PageCardHeaderProps = {
   title?: ReactNode;
   tag?: ReactNode;
   actionButton?: ReactNode;
+  searchBar?: ReactNode;
   centerTitle?: boolean;
   titleColor?: string;
 };
 
-const StyledHeader = styled.div<{ centerTitle?: boolean }>`
+const StyledHeader = styled.div<{
+  centerTitle?: boolean;
+  hasSearchBar: boolean;
+}>`
   align-items: center;
   background-color: ${themeCssVariables.background.secondary};
   border-bottom: 1px solid ${themeCssVariables.border.color.medium};
   box-sizing: border-box;
   column-gap: ${themeCssVariables.spacing[2]};
   display: grid;
-  grid-template-columns: ${({ centerTitle }) =>
-    centerTitle
-      ? 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)'
-      : 'minmax(0, auto) minmax(min-content, 1fr)'};
+  grid-template-columns: ${({ centerTitle, hasSearchBar }) =>
+    hasSearchBar
+      ? 'minmax(0, auto) minmax(160px, 420px) minmax(80px, 1fr)'
+      : centerTitle
+        ? 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)'
+        : 'minmax(0, auto) minmax(min-content, 1fr)'};
   min-height: ${APP_HEADER_HEIGHT}px;
   padding: 0 ${themeCssVariables.spacing[3]};
   width: 100%;
+
+  @media (max-width: ${MOBILE_VIEWPORT}px) {
+    grid-template-columns: ${({ hasSearchBar, centerTitle }) =>
+      hasSearchBar
+        ? 'minmax(0, auto) minmax(0, 1fr)'
+        : centerTitle
+          ? 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)'
+          : 'minmax(0, auto) minmax(min-content, 1fr)'};
+  }
+`;
+
+const StyledSearchBar = styled.div`
+  grid-column: 2;
+  min-width: 0;
+  padding: ${themeCssVariables.spacing[1]} 0;
+
+  @media (max-width: ${MOBILE_VIEWPORT}px) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 `;
 
 const StyledLeft = styled.div`
@@ -72,14 +98,25 @@ const StyledCenteredTitle = styled(StyledTitle)`
   overflow: hidden;
 `;
 
-const StyledRight = styled.div<{ centerTitle?: boolean }>`
+const StyledRight = styled.div<{
+  centerTitle?: boolean;
+  hasSearchBar: boolean;
+}>`
   align-items: center;
   display: flex;
   gap: ${themeCssVariables.spacing[2]};
-  grid-column: ${({ centerTitle }) => (centerTitle ? 3 : 2)};
+  grid-column: ${({ centerTitle, hasSearchBar }) =>
+    centerTitle || hasSearchBar ? 3 : 2};
   justify-content: flex-end;
   justify-self: end;
+  min-width: 0;
   width: 100%;
+
+  @media (max-width: ${MOBILE_VIEWPORT}px) {
+    grid-column: ${({ hasSearchBar, centerTitle }) =>
+      hasSearchBar ? 2 : centerTitle ? 3 : 2};
+    grid-row: ${({ hasSearchBar }) => (hasSearchBar ? 1 : 'auto')};
+  }
 `;
 
 const StyledSurfaceTitle = styled(StyledTitle)`
@@ -101,6 +138,7 @@ export const PageCardHeader = ({
   title,
   tag,
   actionButton,
+  searchBar,
   centerTitle = false,
   titleColor,
 }: PageCardHeaderProps) => {
@@ -154,7 +192,10 @@ export const PageCardHeader = ({
   }
 
   return (
-    <StyledHeader centerTitle={shouldCenterTitle}>
+    <StyledHeader
+      centerTitle={shouldCenterTitle}
+      hasSearchBar={isDefined(searchBar)}
+    >
       <StyledLeft>
         {!isMobile && !isNavigationDrawerExpanded && (
           <NavigationDrawerCollapseButton direction="right" />
@@ -166,13 +207,15 @@ export const PageCardHeader = ({
           <StyledTitle titleColor={titleColor}>{titleContent}</StyledTitle>
         )}
       </StyledLeft>
-      {shouldCenterTitle && (
+      {isDefined(searchBar) && <StyledSearchBar>{searchBar}</StyledSearchBar>}
+      {shouldCenterTitle && !isDefined(searchBar) && (
         <StyledCenteredTitle titleColor={titleColor}>
           {titleContent}
         </StyledCenteredTitle>
       )}
       <StyledRight
         centerTitle={shouldCenterTitle}
+        hasSearchBar={isDefined(searchBar)}
         data-click-outside-id={PAGE_ACTION_CONTAINER_CLICK_OUTSIDE_ID}
       >
         {actionButton}
