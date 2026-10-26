@@ -25,6 +25,7 @@ const person = {
 describe('GlobalPeopleSearch', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    HTMLElement.prototype.scrollIntoView = jest.fn();
     mockSearch.mockReturnValue({
       searchRecords: [person],
       loading: false,
@@ -64,6 +65,29 @@ describe('GlobalPeopleSearch', () => {
     await userEvent.type(screen.getByRole('combobox'), 'goutham');
     await userEvent.click(screen.getByRole('option'));
     expect(mockNavigate).toHaveBeenCalledWith('/person/person-1');
+  });
+
+  it('reveals a keyboard selection at the end of a long result list', async () => {
+    mockSearch.mockReturnValue({
+      searchRecords: Array.from({ length: 20 }, (_, index) => ({
+        ...person,
+        recordId: `person-${index}`,
+        label: `Person ${index}`,
+      })),
+      loading: false,
+      error: undefined,
+    });
+    render(<GlobalPeopleSearch />);
+    await userEvent.type(screen.getByRole('combobox'), 'person{ArrowUp}');
+    expect(screen.getByRole('option', { name: 'Person 19' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
+      block: 'nearest',
+    });
+    await userEvent.keyboard('{Enter}');
+    expect(mockNavigate).toHaveBeenCalledWith('/person/person-19');
   });
 
   it('clears the query and closes on Escape or outside focus', async () => {

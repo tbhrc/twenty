@@ -2,7 +2,7 @@ import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { useObjectRecordSearchRecords } from '@/object-record/hooks/useObjectRecordSearchRecords';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppPath, CoreObjectNameSingular } from 'twenty-shared/types';
 import { LightIconButton } from 'twenty-ui/components';
@@ -59,7 +59,7 @@ const StyledResults = styled.div`
   position: absolute;
   right: 0;
   top: calc(100% + ${themeCssVariables.spacing[1]});
-  z-index: 10;
+  z-index: 100;
 `;
 
 const StyledStatus = styled.div`
@@ -90,6 +90,7 @@ export const GlobalPeopleSearch = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const listId = useId();
+  const optionsRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const trimmedSearchInput = searchInput.trim();
   const [debouncedSearchInput] = useDebounce(trimmedSearchInput, 250);
@@ -106,6 +107,14 @@ export const GlobalPeopleSearch = () => {
   const visibleRecords = isSearching || error ? [] : searchRecords;
   const showResults = isOpen && trimmedSearchInput.length > 0;
   const activeRecord = visibleRecords[activeIndex];
+
+  useEffect(() => {
+    if (showResults && activeIndex >= 0) {
+      optionsRef.current?.children[activeIndex]?.scrollIntoView({
+        block: 'nearest',
+      });
+    }
+  }, [activeIndex, showResults]);
 
   const openPerson = (recordId: string) => {
     setIsOpen(false);
@@ -203,7 +212,12 @@ export const GlobalPeopleSearch = () => {
                     ? t`Top 20 matches across all people. Keep typing to narrow results.`
                     : t`Matches across all people`}
           </StyledStatus>
-          <div id={listId} role="listbox" aria-label={t`People search results`}>
+          <div
+            ref={optionsRef}
+            id={listId}
+            role="listbox"
+            aria-label={t`People search results`}
+          >
             {visibleRecords.map((record, index) => (
               <StyledResult
                 key={record.recordId}
