@@ -160,7 +160,7 @@ export const MESSAGE_QUEUE_WORKER_CONFIG: Record<
   [MessageQueue.workflowQueue]: {
     priority: 2,
     workerOptions: {
-      concurrency: 1,
+      concurrency: 5,
       lockDuration: 30_000,
       maxStalledCount: 1,
       boundedShutdownDrain: false,
