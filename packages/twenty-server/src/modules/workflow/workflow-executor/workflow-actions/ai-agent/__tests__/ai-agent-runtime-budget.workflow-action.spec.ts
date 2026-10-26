@@ -96,15 +96,36 @@ describe('workflow AI runtime budget', () => {
     expect(f.executeAgent.mock.calls[0][0].abortSignal).toBeUndefined();
     expect(jest.getTimerCount()).toBe(0);
   });
-  it('does not enable tool-completion mode without an absolute budget', async () => {
-    const f = fixture();
+  it('enables tool completion with a live signal and no duration quota', async () => {
+    const f = fixture(undefined, null);
     Object.assign(f.input.steps[0].settings.input, {
       completionToolName: 'completion',
     });
-    await expect(f.action.execute(f.input as never)).rejects.toThrow(
-      'requires an absolute workflow run budget',
-    );
-    expect(f.executeAgent).not.toHaveBeenCalled();
+    await expect(f.action.execute(f.input as never)).resolves.toMatchObject({
+      result: { response: 'done' },
+    });
+    const options = f.executeAgent.mock.calls[0][0];
+    expect(options.completionToolName).toBe('completion');
+    expect(options.abortSignal).toBeInstanceOf(AbortSignal);
+    expect(options.abortSignal.aborted).toBe(false);
+    expect(options.authContext).toBe(f.authority);
+    expect(jest.getTimerCount()).toBe(0);
+    jest.advanceTimersByTime(10 * 3_600_000);
+    expect(options.abortSignal.aborted).toBe(false);
+  });
+  it('injects the trusted native run ID before the resolved user prompt', async () => {
+    const f = fixture();
+    f.input.runInfo.workflowRunId = '11111111-1111-4111-8111-111111111111';
+    f.input.steps[0].settings.input.prompt =
+      'Use only the native run ID above.';
+    await f.action.execute(f.input as never);
+    expect(f.executeAgent.mock.calls[0][0].messages).toEqual([
+      {
+        role: 'user',
+        content:
+          'Native workflow run ID: 11111111-1111-4111-8111-111111111111\n\nUse only the native run ID above.',
+      },
+    ]);
   });
   it('throttles running diagnostics to 30 seconds and always persists a terminal failed checkpoint', async () => {
     const f = fixture(3_600_000);

@@ -3,12 +3,19 @@ const MAX_TIMER_DURATION_MS = 2_147_483_647;
 export const createWorkflowRunBudget = ({
   startedAt,
   maxRunDurationMilliseconds,
+  requireAbortSignal = false,
 }: {
   startedAt?: string | Date | null;
   maxRunDurationMilliseconds?: number;
+  requireAbortSignal?: boolean;
 }): { abortSignal?: AbortSignal; dispose: () => void } => {
   if (maxRunDurationMilliseconds === undefined) {
-    return { dispose: () => undefined };
+    return {
+      ...(requireAbortSignal
+        ? { abortSignal: new AbortController().signal }
+        : {}),
+      dispose: () => undefined,
+    };
   }
 
   if (

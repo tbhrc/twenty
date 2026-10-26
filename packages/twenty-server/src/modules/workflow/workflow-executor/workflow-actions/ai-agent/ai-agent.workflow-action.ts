@@ -58,15 +58,6 @@ export class AiAgentWorkflowAction implements WorkflowAction {
 
     const { agentId, prompt, maxRunDurationMilliseconds, completionToolName } =
       step.settings.input;
-    if (
-      completionToolName !== undefined &&
-      maxRunDurationMilliseconds === undefined
-    ) {
-      throw new WorkflowStepExecutorException(
-        'A completion tool requires an absolute workflow run budget',
-        WorkflowStepExecutorExceptionCode.INVALID_STEP_INPUT,
-      );
-    }
     const workspaceId = runInfo.workspaceId;
 
     let agent: AgentEntity | null = null;
@@ -99,6 +90,7 @@ export class AiAgentWorkflowAction implements WorkflowAction {
       budget = createWorkflowRunBudget({
         startedAt: executionContext.workflowRunStartedAt,
         maxRunDurationMilliseconds,
+        requireAbortSignal: completionToolName !== undefined,
       });
     } catch (error) {
       throw new WorkflowStepExecutorException(
@@ -121,7 +113,7 @@ export class AiAgentWorkflowAction implements WorkflowAction {
             messages: [
               {
                 role: 'user',
-                content: resolveInput(prompt, context) as string,
+                content: `Native workflow run ID: ${runInfo.workflowRunId}\n\n${resolveInput(prompt, context) as string}`,
               },
             ],
             baseSystemPrompt: WORKFLOW_BASE_SYSTEM_PROMPT,

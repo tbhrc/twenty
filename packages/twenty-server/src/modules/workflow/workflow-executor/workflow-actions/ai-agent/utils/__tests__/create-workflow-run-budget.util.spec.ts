@@ -94,6 +94,17 @@ describe('createWorkflowRunBudget', () => {
     },
   );
 
+  it('provides tool-completion cancellation without an artificial duration timer', () => {
+    const budget = createWorkflowRunBudget({ requireAbortSignal: true });
+    expect(budget.abortSignal).toBeInstanceOf(AbortSignal);
+    expect(budget.abortSignal?.aborted).toBe(false);
+    expect(jest.getTimerCount()).toBe(0);
+    jest.advanceTimersByTime(10 * HOUR);
+    expect(budget.abortSignal?.aborted).toBe(false);
+    budget.dispose();
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
   it('leaves unconfigured agents unchanged and cleans the timer after completion', () => {
     const unconfigured = createWorkflowRunBudget({});
     expect(unconfigured.abortSignal).toBeUndefined();
