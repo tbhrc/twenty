@@ -25,7 +25,11 @@ export const SidePanelPathUrlSyncEffect = () => {
     if (
       pathInUrl !== currentRoutedPath &&
       isSafeInternalPath(pathInUrl) &&
-      isWorkspaceLocationAvailableOnSurface(routeObjects, 'side-panel', pathInUrl)
+      isWorkspaceLocationAvailableOnSurface(
+        routeObjects,
+        'side-panel',
+        pathInUrl,
+      )
     ) {
       openRoutedPageInSidePanel({
         path: pathInUrl,
@@ -43,7 +47,13 @@ export const SidePanelPathUrlSyncEffect = () => {
       },
       { replace: true, state: location.state, preventScrollReset: true },
     );
-  }, [currentRoutedPath, location, navigate, openRoutedPageInSidePanel, routeObjects]);
+  }, [
+    currentRoutedPath,
+    location,
+    navigate,
+    openRoutedPageInSidePanel,
+    routeObjects,
+  ]);
 
   return null;
 };

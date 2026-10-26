@@ -14,15 +14,24 @@ describe('isWidgetConfigurationOfType', () => {
       configurationType: WidgetConfigurationType.FRONT_COMPONENT,
       frontComponentId: 'saved-component',
     };
-    expect(isWidgetConfigurationOfType(configuration, 'FrontComponentConfiguration')).toBe(true);
-    expect(isWidgetConfigurationOfType(configuration, 'FieldConfiguration')).toBe(false);
+    expect(
+      isWidgetConfigurationOfType(configuration, 'FrontComponentConfiguration'),
+    ).toBe(true);
+    expect(
+      isWidgetConfigurationOfType(configuration, 'FieldConfiguration'),
+    ).toBe(false);
   });
 
   it('preserves a conflicting explicit GraphQL type', () => {
-    expect(isWidgetConfigurationOfType({
-      __typename: 'FieldsConfiguration',
-      configurationType: WidgetConfigurationType.FRONT_COMPONENT,
-    }, 'FrontComponentConfiguration')).toBe(false);
+    expect(
+      isWidgetConfigurationOfType(
+        {
+          __typename: 'FieldsConfiguration',
+          configurationType: WidgetConfigurationType.FRONT_COMPONENT,
+        },
+        'FrontComponentConfiguration',
+      ),
+    ).toBe(false);
   });
   it('returns true when __typename matches', () => {
     expect(

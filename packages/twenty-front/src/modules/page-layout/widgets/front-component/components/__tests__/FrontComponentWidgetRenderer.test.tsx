@@ -70,13 +70,21 @@ describe('FrontComponentWidgetRenderer', () => {
   it('renders a saved native component with its Person binding without GraphQL typename', async () => {
     renderFrontComponentWidget({
       layoutType: PageLayoutType.RECORD_PAGE,
-      targetRecordIdentifier: { id: 'person-id', targetObjectNameSingular: 'person' },
-      widget: { ...FRONT_COMPONENT_WIDGET, configuration: {
-        configurationType: WidgetConfigurationType.FRONT_COMPONENT,
-        frontComponentId: 'front-component-id',
-      } },
+      targetRecordIdentifier: {
+        id: 'person-id',
+        targetObjectNameSingular: 'person',
+      },
+      widget: {
+        ...FRONT_COMPONENT_WIDGET,
+        configuration: {
+          configurationType: WidgetConfigurationType.FRONT_COMPONENT,
+          frontComponentId: 'front-component-id',
+        },
+      },
     });
-    expect(await screen.findByTestId('front-component')).toHaveTextContent('front-component-id:person:person-id');
+    expect(await screen.findByTestId('front-component')).toHaveTextContent(
+      'front-component-id:person:person-id',
+    );
   });
   it('hands the component the record page record and its object', async () => {
     renderFrontComponentWidget({

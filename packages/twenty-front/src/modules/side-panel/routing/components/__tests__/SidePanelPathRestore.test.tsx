@@ -101,9 +101,7 @@ describe('restoring the panel from the url', () => {
     });
 
     expect(recordedSearchValues).not.toContain('');
-    expect(recordedSearchValues.at(-1)).toBe(
-      '?thread=thread-1',
-    );
+    expect(recordedSearchValues.at(-1)).toBe('?thread=thread-1');
     expect(capturedStore?.get(sidePanelNavigationStackState.atom)).toHaveLength(
       1,
     );
@@ -168,9 +166,7 @@ describe('restoring the panel from the url', () => {
 
     await waitFor(() => {
       expect(openNext).toBeDefined();
-      expect(recordedSearchValues.at(-1)).toBe(
-        '?thread=thread-1',
-      );
+      expect(recordedSearchValues.at(-1)).toBe('?thread=thread-1');
     });
 
     act(() => {
@@ -180,19 +176,18 @@ describe('restoring the panel from the url', () => {
       expect(openNext?.('https://example.com/settings')).toBeNull();
     });
 
-    expect(recordedSearchValues.at(-1)).toBe(
-      '?thread=thread-1',
-    );
+    expect(recordedSearchValues.at(-1)).toBe('?thread=thread-1');
 
     act(() => openNext?.(FIELD_PATH));
 
     await waitFor(() => {
-      expect(recordedSearchValues.at(-1)).toBe(
-        '?thread=thread-1',
-      );
+      expect(recordedSearchValues.at(-1)).toBe('?thread=thread-1');
     });
 
-    expect(capturedStore?.get(sidePanelNavigationStackState.atom).at(-1)?.routedLocation?.pathname).toBe(FIELD_PATH);
+    expect(
+      capturedStore?.get(sidePanelNavigationStackState.atom).at(-1)
+        ?.routedLocation?.pathname,
+    ).toBe(FIELD_PATH);
     expect(currentLocation?.hash).toBe('#conversation');
     expect(currentLocation?.state).toEqual({ source: 'history' });
 
