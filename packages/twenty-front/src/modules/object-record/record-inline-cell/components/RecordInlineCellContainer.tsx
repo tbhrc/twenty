@@ -14,6 +14,7 @@ import { OverflowingTextWithTooltip } from 'twenty-ui/primitives/typography';
 import { Tooltip } from 'twenty-ui/primitives/surfaces';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
 import { useRecordInlineCellContext } from './RecordInlineCellContext';
+import { RecordInlineCellLabelWidthContext } from './RecordInlineCellLabelWidthContext';
 
 const StyledIconContainer = styled.div`
   align-items: center;
@@ -37,6 +38,7 @@ const StyledLabelAndIconContainer = styled.div`
   display: flex;
   gap: ${themeCssVariables.spacing[1]};
   height: 24px;
+  flex-shrink: 0;
 `;
 
 const StyledValueContainer = styled.div<{ readonly: boolean }>`
@@ -72,6 +74,7 @@ export const RecordInlineCellContainer = () => {
   const { readonly, IconLabel, label, labelWidth, showLabel } =
     useRecordInlineCellContext();
   const theme = useTheme();
+  const resizedLabelWidth = useContext(RecordInlineCellLabelWidthContext);
 
   const { fieldDefinition, onMouseEnter, onMouseLeave, anchorId } =
     useContext(FieldContext);
@@ -117,7 +120,7 @@ export const RecordInlineCellContainer = () => {
               </StyledIconContainer>
             )}
             {showLabel && (
-              <StyledLabelContainer width={labelWidth}>
+              <StyledLabelContainer width={resizedLabelWidth ?? labelWidth}>
                 <FieldDescriptionTooltip
                   label={label}
                   description={fieldDefinition?.metadata?.description}
