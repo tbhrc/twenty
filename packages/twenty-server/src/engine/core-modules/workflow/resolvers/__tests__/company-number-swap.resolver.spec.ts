@@ -25,14 +25,14 @@ describe('Company number swap original-caller visibility', () => {
     const { resolver, getRepository, query } = fixture();
     await expect(resolver.companyNumberSwap(workspace, 'caller-user-workspace', member, undefined, input, context)).resolves.toEqual({ success: true, state: 'PREVIEW' });
     expect(getRepository).toHaveBeenCalledWith('company', { intersectionOf: ['caller-role', 'app-role'] });
-    const actor = JSON.parse(query.mock.calls[2][1][1] as string);
+    const actor = JSON.parse(query.mock.calls[2]![1]![1] as string);
     expect(actor.visibleCompanyIds).toEqual(['company-a', 'company-b']);
     expect(actor.workspaceMemberId).toBe('original-caller');
     expect(actor.executionFingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(JSON.stringify(actor)).not.toContain('synthetic-test-only');
   });
 
-  it.each([null, { shouldBypassPermissionChecks: true }])('rejects missing or bypass permissions before any read or SQL', async (permissions) => {
+  it.each([null, { shouldBypassPermissionChecks: true as const }])('rejects missing or bypass permissions before any read or SQL', async (permissions) => {
     jest.mocked(resolveRolePermissionConfig).mockReturnValue(permissions);
     const { resolver, getRepository, query } = fixture();
     await expect(resolver.companyNumberSwap(workspace, 'caller-user-workspace', member, undefined, input, context)).resolves.toMatchObject({ success: false, code: 'ORIGINAL_CALLER_RECORD_PERMISSIONS_REQUIRED' });
