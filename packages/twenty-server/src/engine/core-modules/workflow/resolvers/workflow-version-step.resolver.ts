@@ -1,4 +1,4 @@
-import { UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import { ForbiddenException, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
 import { Args, Mutation, Query } from '@nestjs/graphql';
 
 import { PermissionFlagType } from 'twenty-shared/constants';
@@ -25,6 +25,9 @@ import { WorkflowVersionStepGraphqlApiExceptionFilter } from 'src/engine/core-mo
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { AuthUserWorkspaceId } from 'src/engine/decorators/auth/auth-user-workspace-id.decorator';
 import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorator';
+import { AuthWorkspaceMember } from 'src/engine/decorators/auth/auth-workspace-member.decorator';
+import { type WorkspaceMemberWorkspaceEntity } from 'src/modules/workspace-member/standard-objects/workspace-member.workspace-entity';
+import { isWorkflowFormAction } from 'src/modules/workflow/workflow-executor/workflow-actions/form/guards/is-workflow-form-action.guard';
 import { SettingsPermissionGuard } from 'src/engine/guards/settings-permission.guard';
 import { UserAuthGuard } from 'src/engine/guards/user-auth.guard';
 import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
@@ -180,9 +183,18 @@ export class WorkflowVersionStepResolver {
   @Mutation(() => Boolean)
   async submitFormStep(
     @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
+    @AuthWorkspaceMember() member: WorkspaceMemberWorkspaceEntity | undefined,
     @Args('input')
     { stepId, workflowRunId, response }: SubmitFormStepInput,
   ) {
+    const run = await this.workflowRunWorkspaceService.getWorkflowRunOrFail({ workflowRunId, workspaceId });
+    const form = run.state?.flow?.steps?.find((step) => step.id === stepId);
+
+    if (form && isWorkflowFormAction(form) && form.settings.input.some((field) => field.settings?.requiresOriginalCaller === true) &&
+      (!member?.id || run.createdBy?.workspaceMemberId !== member.id)) {
+      throw new ForbiddenException('FORM_REQUIRES_ORIGINAL_WORKFLOW_CALLER');
+    }
+
     await this.workflowRunnerWorkspaceService.submitFormStep({
       workspaceId,
       stepId,
