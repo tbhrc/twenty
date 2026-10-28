@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { ForbiddenException, UseFilters, UseGuards } from '@nestjs/common';
+import { ForbiddenException, Logger, UseFilters, UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation } from '@nestjs/graphql';
 
 import GraphQLJSON from 'graphql-type-json';
@@ -22,6 +22,8 @@ import { UserOrApplicationAuthGuard } from 'src/engine/guards/user-or-applicatio
 import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 import { PermissionsGraphqlApiExceptionFilter } from 'src/engine/metadata-modules/permissions/utils/permissions-graphql-api-exception.filter';
 import { WorkspaceOrmManager } from 'src/engine/twenty-orm/workspace-orm.manager';
+import { getWorkspaceContext } from 'src/engine/twenty-orm/storage/orm-workspace-context.storage';
+import { resolveRolePermissionConfig } from 'src/engine/twenty-orm/utils/resolve-role-permission-config.util';
 import { getWorkspaceSchemaName } from 'src/engine/workspace-datasource/utils/get-workspace-schema-name.util';
 import { type WorkspaceMemberWorkspaceEntity } from 'src/modules/workspace-member/standard-objects/workspace-member.workspace-entity';
 
@@ -63,6 +65,12 @@ export class CompanyNumberSwapResolver {
 
     try {
       return await this.workspaceOrmManager.executeInWorkspaceContext(async () => {
+        const rolePermissionConfig = resolveRolePermissionConfig(getWorkspaceContext());
+
+        if (!rolePermissionConfig || 'shouldBypassPermissionChecks' in rolePermissionConfig) {
+          throw new ForbiddenException('ORIGINAL_CALLER_RECORD_PERMISSIONS_REQUIRED');
+        }
+
         const visibleCompanyIds: string[] = [];
 
         if (input.operation !== 'receipt') {
@@ -72,7 +80,7 @@ export class CompanyNumberSwapResolver {
             return { success: false, state: 'HELD', code: 'POSITIVE_DISTINCT_COMPANY_NUMBERS_REQUIRED' };
           }
 
-          const companies = await this.workspaceOrmManager.getRepository<ObjectRecord>('company').find({
+          const companies = await this.workspaceOrmManager.getRepository<ObjectRecord>('company', rolePermissionConfig).find({
             where: { companyNumber: In(numbers) },
             select: { id: true },
             take: 2,
@@ -107,6 +115,10 @@ export class CompanyNumberSwapResolver {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
+
+      if (!/^[A-Z][A-Z0-9_]+$/.test(message)) {
+        new Logger(CompanyNumberSwapResolver.name).warn(message);
+      }
 
       return {
         success: false,
