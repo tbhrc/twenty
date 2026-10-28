@@ -22,9 +22,10 @@ describe('Company number swap original-caller visibility', () => {
   beforeEach(() => jest.mocked(resolveRolePermissionConfig).mockReturnValue({ intersectionOf: ['caller-role', 'app-role'] }));
 
   it('passes the explicit caller/App intersection to the native Company read and binds only visible UUIDs', async () => {
-    const { resolver, getRepository, query } = fixture();
+    const { resolver, find, getRepository, query } = fixture();
     await expect(resolver.companyNumberSwap(workspace, 'caller-user-workspace', member, undefined, input, context)).resolves.toEqual({ success: true, state: 'PREVIEW' });
     expect(getRepository).toHaveBeenCalledWith('company', { intersectionOf: ['caller-role', 'app-role'] });
+    expect(find).toHaveBeenCalledWith(expect.objectContaining({ withDeleted: true, select: { id: true }, take: 2 }));
     const actor = JSON.parse(query.mock.calls[2]![1]![1] as string);
     expect(actor.visibleCompanyIds).toEqual(['company-a', 'company-b']);
     expect(actor.workspaceMemberId).toBe('original-caller');
@@ -42,7 +43,7 @@ describe('Company number swap original-caller visibility', () => {
 
   it('holds a hidden or missing second Company without invoking the privileged primitive', async () => {
     const { resolver, query } = fixture([{ id: 'company-a' }]);
-    await expect(resolver.companyNumberSwap(workspace, 'caller-user-workspace', member, undefined, input, context)).resolves.toMatchObject({ success: false, code: 'TWO_CALLER_VISIBLE_ACTIVE_COMPANIES_REQUIRED' });
+    await expect(resolver.companyNumberSwap(workspace, 'caller-user-workspace', member, undefined, input, context)).resolves.toMatchObject({ success: false, code: 'TWO_CALLER_VISIBLE_COMPANIES_REQUIRED' });
     expect(query).not.toHaveBeenCalled();
   });
 

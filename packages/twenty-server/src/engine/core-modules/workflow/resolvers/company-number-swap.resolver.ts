@@ -82,12 +82,13 @@ export class CompanyNumberSwapResolver {
 
           const companies = await this.workspaceOrmManager.getRepository<ObjectRecord>('company', rolePermissionConfig).find({
             where: { companyNumber: In(numbers) },
+            withDeleted: true,
             select: { id: true },
             take: 2,
           });
 
           if (companies.length !== 2) {
-            return { success: false, state: 'HELD', code: 'TWO_CALLER_VISIBLE_ACTIVE_COMPANIES_REQUIRED' };
+            return { success: false, state: 'HELD', code: 'TWO_CALLER_VISIBLE_COMPANIES_REQUIRED' };
           }
 
           visibleCompanyIds.push(...companies.map((company) => company.id));
