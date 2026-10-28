@@ -187,13 +187,7 @@ export class WorkflowVersionStepResolver {
     @Args('input')
     { stepId, workflowRunId, response }: SubmitFormStepInput,
   ) {
-    const run = await this.workflowRunWorkspaceService.getWorkflowRunOrFail({ workflowRunId, workspaceId });
-    const form = run.state?.flow?.steps?.find((step) => step.id === stepId);
-
-    if (form && isWorkflowFormAction(form) && form.settings.input.some((field) => field.settings?.requiresOriginalCaller === true) &&
-      (!member?.id || run.createdBy?.workspaceMemberId !== member.id)) {
-      throw new ForbiddenException('FORM_REQUIRES_ORIGINAL_WORKFLOW_CALLER');
-    }
+    await this.assertOriginalCallerForProtectedRun(workspaceId, workflowRunId, member?.id);
 
     await this.workflowRunnerWorkspaceService.submitFormStep({
       workspaceId,
@@ -208,9 +202,11 @@ export class WorkflowVersionStepResolver {
   @Mutation(() => WorkflowActionDTO)
   async updateWorkflowRunStep(
     @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
+    @AuthWorkspaceMember() member: WorkspaceMemberWorkspaceEntity | undefined,
     @Args('input')
     { workflowRunId, step }: UpdateWorkflowRunStepInput,
   ): Promise<WorkflowActionDTO> {
+    await this.assertOriginalCallerForProtectedRun(workspaceId, workflowRunId, member?.id);
     await this.workflowRunWorkspaceService.updateWorkflowRunStep({
       workspaceId,
       workflowRunId,
@@ -218,6 +214,16 @@ export class WorkflowVersionStepResolver {
     });
 
     return step;
+  }
+
+  private async assertOriginalCallerForProtectedRun(workspaceId: string, workflowRunId: string, workspaceMemberId: string | undefined) {
+    const run = await this.workflowRunWorkspaceService.getWorkflowRunOrFail({ workflowRunId, workspaceId });
+    const requiresOriginalCaller = run.state?.flow?.steps?.some((step) =>
+      isWorkflowFormAction(step) && step.settings.input.some((field) => field.settings?.requiresOriginalCaller === true));
+
+    if (requiresOriginalCaller && (!workspaceMemberId || run.createdBy?.workspaceMemberId !== workspaceMemberId)) {
+      throw new ForbiddenException('FORM_REQUIRES_ORIGINAL_WORKFLOW_CALLER');
+    }
   }
 
   @Mutation(() => WorkflowVersionStepChangesDTO)

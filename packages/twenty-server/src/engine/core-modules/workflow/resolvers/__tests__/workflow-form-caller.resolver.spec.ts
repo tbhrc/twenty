@@ -8,7 +8,7 @@ const input = { stepId: 'form', workflowRunId: 'run', response: {} as JSON };
 const fixture = (protectedForm = true) => {
   const submit = jest.fn();
   const resolver = Object.assign(Object.create(WorkflowVersionStepResolver.prototype), {
-    workflowRunWorkspaceService: { getWorkflowRunOrFail: jest.fn().mockResolvedValue({
+    workflowRunWorkspaceService: { updateWorkflowRunStep: jest.fn(), getWorkflowRunOrFail: jest.fn().mockResolvedValue({
       createdBy: { workspaceMemberId: 'original-caller' },
       state: { flow: { steps: [{ id: 'form', type: 'FORM', settings: { input: [{ settings: { requiresOriginalCaller: protectedForm } }] } }] } },
     }) },
@@ -34,5 +34,12 @@ describe('original-caller confirmation forms', () => {
     const { resolver, submit } = fixture(false);
     await expect(resolver.submitFormStep(workspace, member('different-caller'), input)).resolves.toBe(true);
     expect(submit).toHaveBeenCalledTimes(1);
+  });
+
+  it('prevents another principal from removing protection or changing action inputs on the running workflow', async () => {
+    const { resolver } = fixture();
+    await expect(resolver.updateWorkflowRunStep(workspace, member('different-caller'), {
+      workflowRunId: 'run', step: { id: 'form', type: 'FORM', settings: { input: [] } },
+    } as never)).rejects.toThrow('FORM_REQUIRES_ORIGINAL_WORKFLOW_CALLER');
   });
 });
