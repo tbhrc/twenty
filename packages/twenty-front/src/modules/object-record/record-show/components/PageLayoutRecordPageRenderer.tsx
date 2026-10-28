@@ -1,3 +1,4 @@
+import { NoteRecordActions } from '@/activities/notes/components/NoteCardActions';
 import { RecordPageSidePanelCommandMenu } from '@/command-menu-item/components/RecordPageSidePanelCommandMenu';
 import { RecordPageSidePanelPinnedCommandMenuItems } from '@/command-menu-item/components/RecordPageSidePanelPinnedCommandMenuItems';
 import { RecordPageSidePanelWidgetCommandMenuItems } from '@/command-menu-item/components/RecordPageSidePanelWidgetCommandMenuItems';
@@ -40,12 +41,24 @@ const StyledContentContainer = styled.div`
   overflow-y: auto;
 `;
 
+const StyledNoteActions = styled.div`
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: ${themeCssVariables.spacing[2]};
+  justify-content: flex-end;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[4]};
+`;
+
 export const PageLayoutRecordPageRenderer = ({
   targetRecordIdentifier,
 }: {
   targetRecordIdentifier: TargetRecordIdentifier;
 }) => {
   const isInSidePanel = useWorkspaceSurface().type === 'side-panel';
+  const isNote =
+    targetRecordIdentifier.targetObjectNameSingular ===
+    CoreObjectNameSingular.Note;
   const recordDeletedAt = useAtomFamilySelectorValue(
     recordStoreFamilySelector,
     {
@@ -75,6 +88,11 @@ export const PageLayoutRecordPageRenderer = ({
       )}
 
       <StyledShowPageRightContainer data-record-show-page-body="">
+        {isInSidePanel && isNote && (
+          <StyledNoteActions aria-label="Note actions">
+            <NoteRecordActions noteId={targetRecordIdentifier.id} />
+          </StyledNoteActions>
+        )}
         <StyledContentContainer>
           <LayoutRenderingProvider
             value={{
@@ -96,7 +114,7 @@ export const PageLayoutRecordPageRenderer = ({
           </LayoutRenderingProvider>
         </StyledContentContainer>
 
-        {isInSidePanel && (
+        {isInSidePanel && !isNote && (
           <SidePanelFooter
             actions={[
               <RecordPageSidePanelCommandMenu key="options" />,

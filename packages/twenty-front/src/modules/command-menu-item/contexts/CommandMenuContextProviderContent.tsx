@@ -12,6 +12,7 @@ import { doesCommandMenuItemMatchPageLayoutId } from '@/command-menu-item/utils/
 import { resolveCommandMenuItemPinning } from '@/command-menu-item/utils/resolveCommandMenuItemPinning';
 import { doesCommandMenuItemMatchPageType } from '@/command-menu-item/utils/doesCommandMenuItemMatchPageType';
 import { doesCommandMenuItemMatchSelectionState } from '@/command-menu-item/utils/doesCommandMenuItemMatchSelectionState';
+import { doesCommandMenuItemMatchNoteSurface } from '@/command-menu-item/utils/doesCommandMenuItemMatchNoteSurface';
 import { getCommandMenuContextApiForContainerType } from '@/command-menu-item/utils/getCommandMenuContextApiForContainerType';
 import { mergeGlobalRecordCreationCommandMenuItems } from '@/command-menu-item/utils/mergeGlobalRecordCreationCommandMenuItems';
 import { useIsLayoutCustomizationAllowedOnCurrentPage } from '@/layout-customization/hooks/useIsLayoutCustomizationAllowedOnCurrentPage';
@@ -108,6 +109,13 @@ export const CommandMenuContextProviderContent = ({
       : commandMenuItems;
 
     const contextCommandMenuItems = commandMenuItemsToDisplay
+      .filter((item) =>
+        doesCommandMenuItemMatchNoteSurface(
+          item,
+          commandMenuContextApi.objectMetadataItem.nameSingular,
+          containerType,
+        ),
+      )
       .filter(
         (item) =>
           !isCoreWorkflowIndex ||
@@ -153,6 +161,7 @@ export const CommandMenuContextProviderContent = ({
     });
   }, [
     commandMenuContextApi,
+    containerType,
     commandMenuContextApiForAvailability,
     globalRecordCreationCommandMenuItems,
     shouldDisplayGlobalRecordCreationCommands,

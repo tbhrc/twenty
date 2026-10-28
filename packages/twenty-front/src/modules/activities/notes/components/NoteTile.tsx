@@ -13,6 +13,7 @@ import { RecordFieldComponentInstanceContext } from '@/object-record/record-fiel
 import { RecordInlineCell } from '@/object-record/record-inline-cell/components/RecordInlineCell';
 import { getRecordFieldInputInstanceId } from '@/object-record/utils/getRecordFieldInputId';
 import { themeCssVariables } from 'twenty-ui/theme';
+import { NoteCardActions } from '@/activities/notes/components/NoteCardActions';
 
 const StyledCard = styled.div<{ isSingleNote: boolean }>`
   align-items: flex-start;
@@ -34,10 +35,20 @@ const StyledCardDetailsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${themeCssVariables.spacing[2]};
-  height: calc(100% - 45px);
+  flex: 1;
+  min-height: 0;
   justify-content: start;
   padding: ${themeCssVariables.spacing[4]};
   width: calc(100% - ${themeCssVariables.spacing[8]});
+`;
+
+const StyledCardHeader = styled.div`
+  align-items: center;
+  align-self: stretch;
+  display: flex;
+  gap: ${themeCssVariables.spacing[2]};
+  justify-content: space-between;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[4]};
 `;
 
 const StyledNoteTitle = styled.div`
@@ -93,6 +104,10 @@ export const NoteTile = ({
 
   return (
     <StyledCard isSingleNote={isSingleNote}>
+      <StyledCardHeader>
+        <StyledNoteTitle>{note.title ?? t`Note`}</StyledNoteTitle>
+        <NoteCardActions noteId={note.id} />
+      </StyledCardHeader>
       <StyledCardDetailsContainer
         onClick={() =>
           openRecordInSidePanel({
@@ -101,7 +116,6 @@ export const NoteTile = ({
           })
         }
       >
-        <StyledNoteTitle>{note.title ?? t`Task Title`}</StyledNoteTitle>
         <StyledCardContent>{body}</StyledCardContent>
       </StyledCardDetailsContainer>
       <StyledFooter>
