@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { validate as isUuid } from 'uuid';
 
 import { msg } from '@lingui/core/macro';
 import {
@@ -314,7 +315,13 @@ export class PermissionsService {
   ): boolean {
     const rolePermissionFlags = role.rolePermissionFlags ?? [];
 
-    const permissionFlagUniversalIdentifier = SystemPermissionFlag[flag];
+    // App-owned flags already have native UUIDs and need no system enum entry.
+    const permissionFlagUniversalIdentifier = SystemPermissionFlag[flag] ??
+      (isUuid(flag) ? flag : undefined);
+
+    if (!isDefined(permissionFlagUniversalIdentifier)) {
+      return false;
+    }
 
     return rolePermissionFlags.some(
       (rolePermissionFlag) =>

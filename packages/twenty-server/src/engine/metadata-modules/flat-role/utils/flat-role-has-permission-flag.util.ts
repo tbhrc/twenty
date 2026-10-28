@@ -3,6 +3,7 @@ import {
   SystemPermissionFlag,
 } from 'twenty-shared/constants';
 import { isDefined } from 'twenty-shared/utils';
+import { validate as isUuid } from 'uuid';
 
 import { type FlatRolePermissionFlagMaps } from 'src/engine/metadata-modules/flat-role-permission-flag/types/flat-role-permission-flag-maps.type';
 import { type FlatRole } from 'src/engine/metadata-modules/flat-role/types/flat-role.type';
@@ -17,7 +18,12 @@ export const flatRoleHasPermissionFlag = ({
   flatRolePermissionFlagMaps: FlatRolePermissionFlagMaps;
 }): boolean => {
   const permissionFlagUniversalIdentifier =
-    SystemPermissionFlag[permissionFlag];
+    SystemPermissionFlag[permissionFlag] ??
+    (isUuid(permissionFlag) ? permissionFlag : undefined);
+
+  if (!isDefined(permissionFlagUniversalIdentifier)) {
+    return false;
+  }
 
   return flatRole.rolePermissionFlagIds.some((rolePermissionFlagId) => {
     const rolePermissionFlagUniversalIdentifier =

@@ -32,7 +32,7 @@ import { type WorkspaceMemberWorkspaceEntity } from 'src/modules/workspace-membe
 @UseGuards(
   WorkspaceAuthGuard,
   UserOrApplicationAuthGuard,
-  SettingsPermissionGuard('COMPANY_NUMBER_SWAP' as PermissionFlagType),
+  SettingsPermissionGuard('a218e4e7-aac0-4fad-b6f5-07e647109a43' as PermissionFlagType),
 )
 @UseFilters(
   PermissionsGraphqlApiExceptionFilter,
