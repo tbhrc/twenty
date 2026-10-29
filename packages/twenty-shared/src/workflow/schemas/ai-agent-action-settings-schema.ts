@@ -13,5 +13,6 @@ export const workflowAiAgentActionSettingsSchema =
         .max(2_147_483_647)
         .optional(),
       completionToolName: z.string().min(1).optional(),
+      toolLoadingStrategy: z.enum(['preload', 'workflow-lazy']).optional(),
     }),
   });

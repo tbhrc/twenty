@@ -96,6 +96,16 @@ describe('workflow AI runtime budget', () => {
     expect(f.executeAgent.mock.calls[0][0].abortSignal).toBeUndefined();
     expect(jest.getTimerCount()).toBe(0);
   });
+  it('passes the selected workflow tool discovery strategy to the executor', async () => {
+    const f = fixture();
+    Object.assign(f.input.steps[0].settings.input, {
+      toolLoadingStrategy: 'workflow-lazy',
+    });
+    await f.action.execute(f.input as never);
+    expect(f.executeAgent.mock.calls[0][0].toolLoadingStrategy).toBe(
+      'workflow-lazy',
+    );
+  });
   it('enables tool completion with a live signal and no duration quota', async () => {
     const f = fixture(undefined, null);
     Object.assign(f.input.steps[0].settings.input, {

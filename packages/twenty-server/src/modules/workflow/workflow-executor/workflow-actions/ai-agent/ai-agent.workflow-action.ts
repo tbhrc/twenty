@@ -56,8 +56,13 @@ export class AiAgentWorkflowAction implements WorkflowAction {
       );
     }
 
-    const { agentId, prompt, maxRunDurationMilliseconds, completionToolName } =
-      step.settings.input;
+    const {
+      agentId,
+      prompt,
+      maxRunDurationMilliseconds,
+      completionToolName,
+      toolLoadingStrategy,
+    } = step.settings.input;
     const workspaceId = runInfo.workspaceId;
 
     let agent: AgentEntity | null = null;
@@ -126,6 +131,7 @@ export class AiAgentWorkflowAction implements WorkflowAction {
             operationType: UsageOperationType.AI_WORKFLOW_TOKEN,
             abortSignal: budget.abortSignal,
             completionToolName,
+            toolLoadingStrategy,
             onExecutionCheckpoint: async (checkpoint) => {
               const now = Date.now();
               if (

@@ -3,4 +3,5 @@ export type WorkflowAiAgentActionInput = {
   prompt?: string;
   maxRunDurationMilliseconds?: number;
   completionToolName?: string;
+  toolLoadingStrategy?: 'preload' | 'workflow-lazy';
 };

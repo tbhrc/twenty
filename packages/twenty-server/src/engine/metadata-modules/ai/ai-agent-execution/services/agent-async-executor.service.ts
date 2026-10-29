@@ -206,12 +206,14 @@ export class AgentAsyncExecutorService {
     runAsRoleId,
     authContext,
     actorContext,
+    workflow = false,
   }: {
     agent: AgentEntity;
     agentRoleId: string;
     runAsRoleId?: string;
     authContext?: WorkspaceAuthContext;
     actorContext?: ActorMetadata;
+    workflow?: boolean;
   }): Promise<{ tools: ToolSet; catalogSection: string }> {
     const { userId, userWorkspaceId } = this.resolveUserIdentity(authContext);
 
@@ -236,7 +238,9 @@ export class AgentAsyncExecutorService {
     );
 
     const allowedCategories = new Set(
-      OPEN_ENDED_AGENT_REGISTRY_TOOL_CATEGORIES,
+      workflow
+        ? WORKFLOW_AGENT_REGISTRY_TOOL_CATEGORIES
+        : OPEN_ENDED_AGENT_REGISTRY_TOOL_CATEGORIES,
     );
     const excludedToolNames = new Set<string>([
       ...OUTPUT_NAVIGATION_TOOL_NAMES,
@@ -415,13 +419,17 @@ export class AgentAsyncExecutorService {
         // Registry tools are scoped exclusively by the agent permission-tab
         // role. No role means no registry tools.
         if (isDefined(agentRoleId)) {
-          if (toolLoadingStrategy === 'lazy') {
+          if (
+            toolLoadingStrategy === 'lazy' ||
+            toolLoadingStrategy === 'workflow-lazy'
+          ) {
             const lazyToolset = await this.buildLazyRegistryTools({
               agent,
               agentRoleId,
               runAsRoleId,
               authContext,
               actorContext,
+              workflow: toolLoadingStrategy === 'workflow-lazy',
             });
 
             registryTools = lazyToolset.tools;
