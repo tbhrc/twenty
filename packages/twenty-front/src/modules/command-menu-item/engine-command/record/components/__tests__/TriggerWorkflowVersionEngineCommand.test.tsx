@@ -146,3 +146,22 @@ it('keeps other existing workflows on their ordinary execution path', async () =
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   await waitFor(() => expect(mockRun).toHaveBeenCalledTimes(1));
 });
+
+it('keeps cleanup from one mounted command from closing another command confirmation', () => {
+  const first = render(<TriggerWorkflowVersionEngineCommand />);
+  const firstDialog = mockOpen.mock.calls[0][0];
+  mockContext = {
+    ...mockContext,
+    workflowId: rows[1][0],
+    workflowVersionId: rows[1][1],
+  };
+  const second = render(<TriggerWorkflowVersionEngineCommand />);
+  const secondDialog = mockOpen.mock.calls[1][0];
+  expect(firstDialog).not.toBe(secondDialog);
+  mockClose.mockClear();
+  first.unmount();
+  expect(mockClose).toHaveBeenCalledWith(firstDialog);
+  expect(mockClose).not.toHaveBeenCalledWith(secondDialog);
+  expect(mockRun).not.toHaveBeenCalled();
+  second.unmount();
+});

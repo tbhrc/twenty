@@ -162,25 +162,11 @@ export const RecordTableWidgetRendererContent = ({
     />
   ) : undefined;
 
+  // Native header actions belong to the parent record/page layout. The list
+  // provider replaces those component contexts with its related-record scope.
   return (
-    <RecordTableWidgetProvider
-      objectNameSingular={objectMetadataItem.nameSingular}
-      viewId={viewId}
-      widgetId={widgetId}
-      recordLimit={recordLimit}
-      instanceIdSuffix={instanceIdSuffix}
-      nestedRelationCreateThrough={nestedRelationCreateThrough}
-      junctionCreateThrough={junctionCreateThrough}
-      presentationViewType={presentationViewType}
-      scopeView={
-        isLayoutSwitchEnabled && !isPageLayoutInEditMode
-          ? widgetView
-          : undefined
-      }
-      isScopeRequired={isLayoutSwitchEnabled && !isPageLayoutInEditMode}
-      contextStoreViewType={getContextStoreViewType(widgetViewLayout)}
-    >
-      {headerTitle && !isPageLayoutInEditMode ? (
+    <>
+      {headerTitle && !isPageLayoutInEditMode && (
         <WidgetCardHeader
           widgetId={widgetId}
           variant="flush"
@@ -189,13 +175,30 @@ export const RecordTableWidgetRendererContent = ({
         >
           {layoutControl}
         </WidgetCardHeader>
-      ) : (
-        canSwitchLayout && (
-          <StyledLayoutControl>{layoutControl}</StyledLayoutControl>
-        )
       )}
-      {canSwitchLayout && <RecordTableWidgetToolbar />}
-      {renderWidgetForLayout[widgetViewLayout]()}
-    </RecordTableWidgetProvider>
+      <RecordTableWidgetProvider
+        objectNameSingular={objectMetadataItem.nameSingular}
+        viewId={viewId}
+        widgetId={widgetId}
+        recordLimit={recordLimit}
+        instanceIdSuffix={instanceIdSuffix}
+        nestedRelationCreateThrough={nestedRelationCreateThrough}
+        junctionCreateThrough={junctionCreateThrough}
+        presentationViewType={presentationViewType}
+        scopeView={
+          isLayoutSwitchEnabled && !isPageLayoutInEditMode
+            ? widgetView
+            : undefined
+        }
+        isScopeRequired={isLayoutSwitchEnabled && !isPageLayoutInEditMode}
+        contextStoreViewType={getContextStoreViewType(widgetViewLayout)}
+      >
+        {(!headerTitle || isPageLayoutInEditMode) && canSwitchLayout && (
+          <StyledLayoutControl>{layoutControl}</StyledLayoutControl>
+        )}
+        {canSwitchLayout && <RecordTableWidgetToolbar />}
+        {renderWidgetForLayout[widgetViewLayout]()}
+      </RecordTableWidgetProvider>
+    </>
   );
 };

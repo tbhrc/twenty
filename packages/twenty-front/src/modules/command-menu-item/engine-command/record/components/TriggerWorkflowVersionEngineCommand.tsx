@@ -8,7 +8,7 @@ import { useLazyFetchAllRecords } from '@/object-record/hooks/useLazyFetchAllRec
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { useRunWorkflowVersion } from '@/workflow/hooks/useRunWorkflowVersion';
 import { useStore } from 'jotai';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { t } from '@lingui/core/macro';
 import { ConfirmationDialog } from '@/ui/layout/dialog/components/ConfirmationDialog';
 import { useDialog } from '@/ui/layout/dialog/hooks/useDialog';
@@ -32,7 +32,7 @@ export const TriggerWorkflowVersionEngineCommand = () => {
   const confirmation = getMailboxWorkflowConfirmation(
     mountedCommandState.coreWorkflowId ?? mountedCommandState.workflowId,
   );
-  const dialogId = 'mailbox-workflow-confirmation';
+  const dialogId = 'mailbox-workflow-confirmation-' + useId();
   const [decision, setDecision] = useState<boolean | null>(
     confirmation ? null : true,
   );

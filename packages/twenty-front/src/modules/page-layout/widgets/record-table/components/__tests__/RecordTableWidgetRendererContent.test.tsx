@@ -1,13 +1,22 @@
+const mockHeaderRecordScope = jest
+  .requireActual('react')
+  .createContext('parent-record');
 jest.mock(
   '@/page-layout/widgets/widget-card/components/WidgetCardHeader',
   () => ({
-    WidgetCardHeader: ({ title, children }: any) => (
-      <div data-testid="compact-header">
-        <span>{title}</span>
-        {children}
-        <button>Add related record</button>
-      </div>
-    ),
+    WidgetCardHeader: ({ title, children }: any) => {
+      const { useContext } = jest.requireActual('react');
+      const scope = useContext(mockHeaderRecordScope);
+      return (
+        <div data-testid="compact-header">
+          <span>{title}</span>
+          {children}
+          <button disabled={scope !== 'parent-record'}>
+            Add related record
+          </button>
+        </div>
+      );
+    },
   }),
 );
 jest.mock(
@@ -52,7 +61,11 @@ jest.mock(
   () => ({
     RecordTableWidgetProvider: (props: { children: React.ReactNode }) => {
       mockProviderProps(props);
-      return props.children;
+      return (
+        <mockHeaderRecordScope.Provider value="related-list">
+          {props.children}
+        </mockHeaderRecordScope.Provider>
+      );
     },
   }),
 );
@@ -374,6 +387,9 @@ it('keeps Candidates, Board/List and native header actions in one compact header
     screen.getByRole('button', { name: 'Add related record' }),
   );
   expect(screen.getAllByText('Candidates')).toHaveLength(1);
+  expect(
+    screen.getByRole('button', { name: 'Add related record' }),
+  ).toBeEnabled();
   await userEvent.click(screen.getByRole('button', { name: 'List' }));
   expect(screen.getByText('record table widget')).toBeVisible();
 });

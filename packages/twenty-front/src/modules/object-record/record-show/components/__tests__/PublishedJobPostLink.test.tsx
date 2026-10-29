@@ -3,6 +3,7 @@ import { PublishedJobPostLink } from '../PublishedJobPostLink';
 it('exposes the existing published Job URL as a safe external link', () => {
   const record = {
     id: 'fixture',
+    __typename: 'Vacancy',
     publicationState: 'PUBLISHED',
     businessContext: 'TALENT_BRIDGE',
     publicSlug: 'facility-engineer',
@@ -19,7 +20,11 @@ it('exposes the existing published Job URL as a safe external link', () => {
 it('does not display a guessed link for an unpublished Job', () => {
   render(
     <PublishedJobPostLink
-      record={{ id: 'fixture', publicationState: 'UNPUBLISHED' }}
+      record={{
+        id: 'fixture',
+        __typename: 'Vacancy',
+        publicationState: 'UNPUBLISHED',
+      }}
     />,
   );
   expect(screen.queryByRole('link')).not.toBeInTheDocument();
