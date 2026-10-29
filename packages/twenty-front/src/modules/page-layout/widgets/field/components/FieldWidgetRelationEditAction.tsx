@@ -84,9 +84,16 @@ export const FieldWidgetRelationEditAction = ({
     ? relationValue.length > 0
     : isDefined(relationValue);
 
+  // Candidates remains an add action even after the first application exists.
+  // Keep the same native relation dropdown and persistence behavior.
+  const isJobCandidates =
+    objectMetadataItem.nameSingular === 'vacancy' &&
+    fieldDefinition.metadata.fieldName === 'applications' &&
+    fieldDefinition.metadata.relationType === RelationType.ONE_TO_MANY;
   const isEditAction =
-    fieldDefinition.metadata.relationType === RelationType.MANY_TO_ONE ||
-    hasAtLeastOneRelationRecord;
+    !isJobCandidates &&
+    (fieldDefinition.metadata.relationType === RelationType.MANY_TO_ONE ||
+      hasAtLeastOneRelationRecord);
 
   const TriggerIcon = isEditAction ? IconPencil : IconPlus;
   const triggerLabel = isEditAction ? t`Edit relation` : t`Add relation`;
