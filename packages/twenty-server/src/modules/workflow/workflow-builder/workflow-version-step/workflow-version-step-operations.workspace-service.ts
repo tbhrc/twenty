@@ -557,7 +557,7 @@ export class WorkflowVersionStepOperationsWorkspaceService {
             prompt:
               'You are a helpful AI assistant. Complete the task based on the workflow context.',
             modelId: AUTO_SELECT_WORKSPACE_DEFAULT_MODEL_ID,
-            roleId: defaultWorkflowAgentRoleId(Object.values(flatRoleMaps.byId)),
+            roleId: defaultWorkflowAgentRoleId(Object.values(flatRoleMaps.byUniversalIdentifier)),
             responseFormat: { type: 'text' },
             isCustom: true,
           },
@@ -855,7 +855,7 @@ export class WorkflowVersionStepOperationsWorkspaceService {
             modelConfiguration: existingAgent.modelConfiguration ?? undefined,
             roleId:
               existingAgent.roleId ??
-              defaultWorkflowAgentRoleId(Object.values(flatRoleMaps.byId)),
+              defaultWorkflowAgentRoleId(Object.values(flatRoleMaps.byUniversalIdentifier)),
             isCustom: true,
           },
           workspaceId,
