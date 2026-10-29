@@ -42,6 +42,7 @@ import {
 import { WorkflowCommonWorkspaceService } from 'src/modules/workflow/common/workspace-services/workflow-common.workspace-service';
 import { type OutputSchema } from 'src/modules/workflow/workflow-builder/workflow-schema/types/output-schema.type';
 import { CodeStepBuildService } from 'src/modules/workflow/workflow-builder/workflow-version-step/code-step/services/code-step-build.service';
+import { defaultWorkflowAgentRoleId } from 'src/modules/workflow/workflow-builder/workflow-version-step/utils/default-workflow-agent-role.util';
 import { type BaseWorkflowActionSettings } from 'src/modules/workflow/workflow-executor/workflow-actions/types/workflow-action-settings.type';
 import {
   type WorkflowAction,
@@ -544,6 +545,10 @@ export class WorkflowVersionStepOperationsWorkspaceService {
         };
       }
       case WorkflowActionType.AI_AGENT: {
+        const { flatRoleMaps } = await this.workspaceCacheService.getOrRecompute(
+          workspaceId,
+          ['flatRoleMaps'],
+        );
         const newAgent = await this.agentService.createOneAgent(
           {
             label: 'Workflow Agent ' + baseStep.id.substring(0, 4),
@@ -552,6 +557,7 @@ export class WorkflowVersionStepOperationsWorkspaceService {
             prompt:
               'You are a helpful AI assistant. Complete the task based on the workflow context.',
             modelId: AUTO_SELECT_WORKSPACE_DEFAULT_MODEL_ID,
+            roleId: defaultWorkflowAgentRoleId(Object.values(flatRoleMaps.byId)),
             responseFormat: { type: 'text' },
             isCustom: true,
           },
@@ -833,6 +839,11 @@ export class WorkflowVersionStepOperationsWorkspaceService {
 
         const clonedStepId = v4();
 
+        const { flatRoleMaps } = await this.workspaceCacheService.getOrRecompute(
+          workspaceId,
+          ['flatRoleMaps'],
+        );
+
         const clonedAgent = await this.agentService.createOneAgent(
           {
             label: existingAgent.label + ' ' + clonedStepId.substring(0, 4),
@@ -842,6 +853,9 @@ export class WorkflowVersionStepOperationsWorkspaceService {
             modelId: existingAgent.modelId,
             responseFormat: existingAgent.responseFormat ?? undefined,
             modelConfiguration: existingAgent.modelConfiguration ?? undefined,
+            roleId:
+              existingAgent.roleId ??
+              defaultWorkflowAgentRoleId(Object.values(flatRoleMaps.byId)),
             isCustom: true,
           },
           workspaceId,
