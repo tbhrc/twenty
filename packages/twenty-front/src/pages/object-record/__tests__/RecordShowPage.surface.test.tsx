@@ -20,6 +20,7 @@ let mockRecordResource: {
 
 jest.mock('react-router-dom', () => ({
   useParams: () => mockParameters,
+  useLocation: () => ({ pathname: '/object/person/record-1' }),
 }));
 
 jest.mock('@/workspace/hooks/useIsFeatureEnabled', () => ({

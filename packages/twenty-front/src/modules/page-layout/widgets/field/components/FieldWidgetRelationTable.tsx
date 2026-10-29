@@ -249,6 +249,7 @@ export const FieldWidgetRelationTable = ({
           objectMetadataId={tableObjectMetadataId}
           viewId={viewId}
           widgetId={widget.id}
+          headerTitle={widget.title}
           isUIEditable={!isPageLayoutInEditMode && isUIEditable}
           isEmptyStateHidden
           isLayoutSwitchEnabled

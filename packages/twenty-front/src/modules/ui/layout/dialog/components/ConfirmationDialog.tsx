@@ -38,6 +38,7 @@ export const ConfirmationDialog = ({
   onConfirmClick,
   onClose,
   confirmButtonText,
+  cancelButtonText,
   confirmationValue,
   confirmationPlaceholder,
   confirmButtonColor = 'danger',
@@ -124,7 +125,9 @@ export const ConfirmationDialog = ({
               fullWidth
               data-testid="confirmation-modal-cancel-button"
               variant="outline"
-            >{t`Cancel`}</StyledCenteredButton>
+            >
+              {cancelButtonText ?? t`Cancel`}
+            </StyledCenteredButton>
           )}
 
           {AdditionalButtons}

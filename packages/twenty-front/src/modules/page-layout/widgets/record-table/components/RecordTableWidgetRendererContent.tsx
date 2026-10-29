@@ -1,3 +1,4 @@
+import { WidgetCardHeader } from '@/page-layout/widgets/widget-card/components/WidgetCardHeader';
 import { usePageLayoutPersonalPreference } from '@/page-layout/hooks/usePageLayoutPersonalPreference';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
@@ -48,6 +49,7 @@ type RecordTableWidgetRendererContentProps = {
   objectMetadataId: string;
   viewId: string;
   widgetId: string;
+  headerTitle?: string;
   isUIEditable?: boolean;
   isLayoutSwitchEnabled?: boolean;
   isEmptyStateHidden?: boolean;
@@ -61,6 +63,7 @@ export const RecordTableWidgetRendererContent = ({
   objectMetadataId,
   viewId,
   widgetId,
+  headerTitle,
   isUIEditable = false,
   isLayoutSwitchEnabled = false,
   isEmptyStateHidden = false,
@@ -142,6 +145,23 @@ export const RecordTableWidgetRendererContent = ({
     ),
   } satisfies Record<RecordTableWidgetLayout, () => ReactNode>;
 
+  const layoutControl = canSwitchLayout ? (
+    <SegmentedControl
+      aria-label={t`Record layout`}
+      itemWidth="content"
+      value={widgetViewLayout}
+      onValueChange={setPreferredLayout}
+      options={[
+        {
+          value: ViewType.KANBAN,
+          label: t`Board`,
+          startIcon: <IconLayoutKanban />,
+        },
+        { value: ViewType.TABLE, label: t`List`, startIcon: <IconList /> },
+      ]}
+    />
+  ) : undefined;
+
   return (
     <RecordTableWidgetProvider
       objectNameSingular={objectMetadataItem.nameSingular}
@@ -160,23 +180,19 @@ export const RecordTableWidgetRendererContent = ({
       isScopeRequired={isLayoutSwitchEnabled && !isPageLayoutInEditMode}
       contextStoreViewType={getContextStoreViewType(widgetViewLayout)}
     >
-      {canSwitchLayout && (
-        <StyledLayoutControl>
-          <SegmentedControl
-            aria-label={t`Record layout`}
-            itemWidth="content"
-            value={widgetViewLayout}
-            onValueChange={setPreferredLayout}
-            options={[
-              {
-                value: ViewType.KANBAN,
-                label: t`Board`,
-                startIcon: <IconLayoutKanban />,
-              },
-              { value: ViewType.TABLE, label: t`List`, startIcon: <IconList /> },
-            ]}
-          />
-        </StyledLayoutControl>
+      {headerTitle && !isPageLayoutInEditMode ? (
+        <WidgetCardHeader
+          widgetId={widgetId}
+          variant="flush"
+          isInEditMode={false}
+          title={headerTitle}
+        >
+          {layoutControl}
+        </WidgetCardHeader>
+      ) : (
+        canSwitchLayout && (
+          <StyledLayoutControl>{layoutControl}</StyledLayoutControl>
+        )
       )}
       {canSwitchLayout && <RecordTableWidgetToolbar />}
       {renderWidgetForLayout[widgetViewLayout]()}

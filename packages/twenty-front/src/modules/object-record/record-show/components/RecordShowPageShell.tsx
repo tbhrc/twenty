@@ -1,3 +1,4 @@
+import { PublishedJobPostLink } from '@/object-record/record-show/components/PublishedJobPostLink';
 import { type ErrorLike } from '@apollo/client';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -82,6 +83,9 @@ export const RecordShowPageShell = ({
             >
               {!isInSidePanel && (
                 <>
+                  {objectNameSingular === 'vacancy' && !loading && !error && (
+                    <PublishedJobPostLink record={record} />
+                  )}
                   <RecordShowCommandMenu />
                   {!isLayoutCustomizationModeEnabled && (
                     <SidePanelToggleButton />

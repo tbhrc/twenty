@@ -1,4 +1,16 @@
 jest.mock(
+  '@/page-layout/widgets/widget-card/components/WidgetCardHeader',
+  () => ({
+    WidgetCardHeader: ({ title, children }: any) => (
+      <div data-testid="compact-header">
+        <span>{title}</span>
+        {children}
+        <button>Add related record</button>
+      </div>
+    ),
+  }),
+);
+jest.mock(
   '@/object-record/record-table-widget/components/RecordTableWidgetToolbar',
   () => ({ RecordTableWidgetToolbar: () => <div>widget toolbar</div> }),
 );
@@ -332,4 +344,36 @@ it('requires immutable scope before a live relation view becomes available', () 
   );
   expect(mockProviderProps.mock.lastCall[0].isScopeRequired).toBe(true);
   expect(mockProviderProps.mock.lastCall[0].scopeView).toBeUndefined();
+});
+
+it('keeps Candidates, Board/List and native header actions in one compact header', async () => {
+  mockIsPageLayoutInEditMode.mockReturnValue(false);
+  mockUseViewById.mockReturnValue({
+    view: {
+      id: 'view',
+      type: ViewType.KANBAN_WIDGET,
+      mainGroupByFieldMetadataId: 'stage',
+    },
+  });
+  render(
+    <RecordTableWidgetRendererContent
+      objectMetadataId="applications"
+      viewId="view"
+      widgetId="candidates"
+      headerTitle="Candidates"
+      isLayoutSwitchEnabled
+    />,
+  );
+  const header = screen.getByTestId('compact-header');
+  expect(header).toContainElement(screen.getByText('Candidates'));
+  expect(header).toContainElement(
+    screen.getByRole('button', { name: 'Board' }),
+  );
+  expect(header).toContainElement(screen.getByRole('button', { name: 'List' }));
+  expect(header).toContainElement(
+    screen.getByRole('button', { name: 'Add related record' }),
+  );
+  expect(screen.getAllByText('Candidates')).toHaveLength(1);
+  await userEvent.click(screen.getByRole('button', { name: 'List' }));
+  expect(screen.getByText('record table widget')).toBeVisible();
 });

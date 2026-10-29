@@ -25,6 +25,7 @@ export type WidgetCardHeaderProps = {
   onRemove?: (e?: React.MouseEvent) => void;
   forbiddenDisplay?: ReactNode;
   className?: string;
+  children?: ReactNode;
   isResizing?: boolean;
 };
 
@@ -85,6 +86,7 @@ export const WidgetCardHeader = ({
   onRemove,
   forbiddenDisplay,
   className,
+  children,
 }: WidgetCardHeaderProps) => {
   const theme = useTheme();
   const { formatNumber } = useNumberFormat();
@@ -104,13 +106,26 @@ export const WidgetCardHeader = ({
       <AnimatePresence initial={false}>
         {!isEmpty && isInEditMode && <WidgetGrip className="drag-handle" />}
       </AnimatePresence>
-      <StyledTitleContainer>
+      <StyledTitleContainer
+        style={
+          children
+            ? {
+                flex: '0 1 auto',
+                maxWidth: '45%',
+                marginRight: 'var(--t-spacing-3)',
+              }
+            : undefined
+        }
+      >
         <OverflowingTextWithTooltip text={isEmpty ? t`Add Widget` : title} />
         {isDefined(widgetHeaderCount) && (
           <StyledCount>{formatNumber(widgetHeaderCount)}</StyledCount>
         )}
       </StyledTitleContainer>
-      <StyledRightContainer>
+      {children}
+      <StyledRightContainer
+        style={children ? { marginLeft: 'auto' } : undefined}
+      >
         {hasAccess && <WidgetCardHeaderActionsRenderer />}
         {isDefined(forbiddenDisplay) && forbiddenDisplay}
         <AnimatePresence initial={false}>

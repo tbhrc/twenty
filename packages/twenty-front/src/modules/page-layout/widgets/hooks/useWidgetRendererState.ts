@@ -67,8 +67,17 @@ export const useWidgetRendererState = (widget: PageLayoutWidget) => {
 
   const hasHeaderAction = isDefined(getWidgetHeaderActionDefinition(widget));
 
+  // Saved relation views render title, layout selector and native actions in
+  // one compact content row, including solo tabs. Edit mode keeps the normal card.
+  const hasCompactRelationHeader =
+    !isPageLayoutInEditMode &&
+    widget.type === WidgetType.FIELD &&
+    isDefined(
+      (widget.configuration as { viewId?: string | null } | null)?.viewId,
+    );
   const showHeader =
-    presentation === 'solo' ? hasHeaderAction : !hideHeaderInViewMode;
+    !hasCompactRelationHeader &&
+    (presentation === 'solo' ? hasHeaderAction : !hideHeaderInViewMode);
 
   const handleClick = () => {
     openWidgetSettingsInSidePanel({

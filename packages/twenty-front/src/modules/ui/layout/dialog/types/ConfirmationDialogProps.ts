@@ -9,6 +9,7 @@ export type ConfirmationDialogProps = {
   onClose?: () => void;
   onConfirmClick: () => void;
   confirmButtonText?: string;
+  cancelButtonText?: string;
   confirmationPlaceholder?: string;
   confirmationValue?: string;
   confirmButtonColor?: ButtonColor;

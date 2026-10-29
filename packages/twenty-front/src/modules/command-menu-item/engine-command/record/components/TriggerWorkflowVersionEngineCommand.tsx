@@ -8,7 +8,11 @@ import { useLazyFetchAllRecords } from '@/object-record/hooks/useLazyFetchAllRec
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { useRunWorkflowVersion } from '@/workflow/hooks/useRunWorkflowVersion';
 import { useStore } from 'jotai';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { t } from '@lingui/core/macro';
+import { ConfirmationDialog } from '@/ui/layout/dialog/components/ConfirmationDialog';
+import { useDialog } from '@/ui/layout/dialog/hooks/useDialog';
+import { getMailboxWorkflowConfirmation } from '@/command-menu-item/engine-command/utils/getMailboxWorkflowConfirmation';
 import {
   CoreObjectNameSingular,
   type RecordGqlOperationFilter,
@@ -25,6 +29,28 @@ export const TriggerWorkflowVersionEngineCommand = () => {
     );
   }
 
+  const confirmation = getMailboxWorkflowConfirmation(
+    mountedCommandState.coreWorkflowId ?? mountedCommandState.workflowId,
+  );
+  const dialogId = 'mailbox-workflow-confirmation';
+  const [decision, setDecision] = useState<boolean | null>(
+    confirmation ? null : true,
+  );
+  const decisionMade = useRef(false);
+  const { openDialog, closeDialog } = useDialog();
+
+  useEffect(() => {
+    if (!confirmation) return;
+    openDialog(dialogId);
+    return () => closeDialog(dialogId);
+  }, [confirmation, openDialog, closeDialog]);
+
+  const decide = (confirmed: boolean) => {
+    if (decisionMade.current) return;
+    decisionMade.current = true;
+    setDecision(confirmed);
+  };
+
   const noMatchFilter: RecordGqlOperationFilter = { id: { in: [] } };
 
   const { fetchAllRecords } = useLazyFetchAllRecords({
@@ -38,6 +64,7 @@ export const TriggerWorkflowVersionEngineCommand = () => {
   const { runWorkflowVersion } = useRunWorkflowVersion();
 
   const execute = useCallback(async () => {
+    if (decision !== true) return;
     let selectedRecords: ObjectRecord[];
 
     if (mountedCommandState.targetedRecordsRule.mode === 'selection') {
@@ -79,7 +106,32 @@ export const TriggerWorkflowVersionEngineCommand = () => {
         payload,
       });
     }
-  }, [mountedCommandState, fetchAllRecords, runWorkflowVersion, store]);
+  }, [
+    decision,
+    mountedCommandState,
+    fetchAllRecords,
+    runWorkflowVersion,
+    store,
+  ]);
 
-  return <HeadlessEngineCommandWrapperEffect execute={execute} />;
+  return (
+    <>
+      {confirmation && (
+        <ConfirmationDialog
+          dialogId={dialogId}
+          title={t`Run CV ingestion?`}
+          subtitle={t`Run CV ingestion for ${confirmation.mailbox} for the past 7 days now? Existing completed items are reused. A saved checkpoint resumes its original window.`}
+          confirmButtonText={t`Yes`}
+          cancelButtonText={t`No`}
+          confirmButtonColor="neutral"
+          onConfirmClick={() => decide(true)}
+          onClose={() => decide(false)}
+        />
+      )}
+      <HeadlessEngineCommandWrapperEffect
+        execute={execute}
+        ready={decision !== null}
+      />
+    </>
+  );
 };
