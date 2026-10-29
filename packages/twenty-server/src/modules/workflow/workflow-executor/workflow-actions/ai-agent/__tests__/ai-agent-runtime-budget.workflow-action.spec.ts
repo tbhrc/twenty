@@ -96,6 +96,11 @@ describe('workflow AI runtime budget', () => {
     expect(f.executeAgent.mock.calls[0][0].abortSignal).toBeUndefined();
     expect(jest.getTimerCount()).toBe(0);
   });
+  it('defaults workflow agents to the shared on-demand tool catalog', async () => {
+    const f = fixture();
+    await f.action.execute(f.input as never);
+    expect(f.executeAgent.mock.calls[0][0].toolLoadingStrategy).toBe('lazy');
+  });
   it('passes the selected workflow tool discovery strategy to the executor', async () => {
     const f = fixture();
     Object.assign(f.input.steps[0].settings.input, {
