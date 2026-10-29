@@ -6,18 +6,25 @@ export const isMatchingRawJsonFilter = ({
   value,
 }: {
   rawJsonFilter: RawJsonFilter;
-  value: string;
+  value: unknown;
 }) => {
   switch (true) {
     case rawJsonFilter.like !== undefined: {
-      const regexCaseInsensitive = convertLikePatternToRegexOrThrow({
+      const regexCaseSensitive = convertLikePatternToRegexOrThrow({
         pattern: rawJsonFilter.like,
-        isCaseInsensitive: true,
       });
 
       const stringValue = JSON.stringify(value, null, 1);
 
-      return regexCaseInsensitive.test(stringValue);
+      return regexCaseSensitive.test(stringValue);
+    }
+    case rawJsonFilter.ilike !== undefined: {
+      const regexCaseInsensitive = convertLikePatternToRegexOrThrow({
+        pattern: rawJsonFilter.ilike,
+        isCaseInsensitive: true,
+      });
+
+      return regexCaseInsensitive.test(JSON.stringify(value, null, 1));
     }
     case rawJsonFilter.is !== undefined: {
       if (rawJsonFilter.is === 'NULL') {

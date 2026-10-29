@@ -11,6 +11,19 @@ const createFieldMetadata = (type: FieldMetadataType): FlatFieldMetadata =>
   }) as FlatFieldMetadata;
 
 describe('validateOperatorForFieldTypeOrThrow', () => {
+  it.each(['is', 'like', 'ilike'] as const)(
+    'accepts %s for RAW_JSON fields',
+    (operator) => {
+      expect(() =>
+        validateOperatorForFieldTypeOrThrow(
+          operator,
+          createFieldMetadata(FieldMetadataType.RAW_JSON),
+          'emails.additionalEmails',
+        ),
+      ).not.toThrow();
+    },
+  );
+
   it('should not throw when operator is valid for TEXT field', () => {
     const fieldMetadata = createFieldMetadata(FieldMetadataType.TEXT);
 

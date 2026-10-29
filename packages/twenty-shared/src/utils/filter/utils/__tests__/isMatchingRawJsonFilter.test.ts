@@ -2,6 +2,15 @@ import { isMatchingRawJsonFilter } from '@/utils/filter/utils/isMatchingRawJsonF
 
 describe('isMatchingRawJsonFilter', () => {
   describe('like', () => {
+    it('preserves SQL LIKE case sensitivity', () => {
+      expect(
+        isMatchingRawJsonFilter({
+          rawJsonFilter: { like: '%mixed@example.invalid%' },
+          value: 'MiXeD@Example.invalid',
+        }),
+      ).toBe(false);
+    });
+
     it('should match using wildcard pattern', () => {
       expect(
         isMatchingRawJsonFilter({
@@ -50,6 +59,37 @@ describe('isMatchingRawJsonFilter', () => {
           value: { key: 'value' } as any,
         }),
       ).toBe(true);
+    });
+  });
+
+  describe('ilike', () => {
+    it('matches structured additional email and secondary link values', () => {
+      expect(
+        isMatchingRawJsonFilter({
+          rawJsonFilter: { ilike: '%"mixed@example.invalid"%' },
+          value: ['MiXeD@Example.invalid'],
+        }),
+      ).toBe(true);
+      expect(
+        isMatchingRawJsonFilter({
+          rawJsonFilter: { ilike: '%linkedin.com/in/mixed%' },
+          value: [{ url: 'https://www.LinkedIn.com/in/MiXeD' }],
+        }),
+      ).toBe(true);
+    });
+
+    it.each([
+      ['%mixed@example.invalid%', 'MiXeD@Example.invalid', true],
+      ['%other@example.invalid%', 'MiXeD@Example.invalid', false],
+      ['%linkedin.com/in/mixed%', 'https://www.LinkedIn.com/in/MiXeD', true],
+      [String.raw`%a\_b\%c%`, 'A_B%C', true],
+      [String.raw`%a\_b\%c%`, 'AxBzzzC', false],
+      ["%x' OR true --%", "X' OR true --", true],
+      [String.raw`%a.c%`, 'abc', false],
+    ])('matches %s against %s as %s', (pattern, value, expected) => {
+      expect(
+        isMatchingRawJsonFilter({ rawJsonFilter: { ilike: pattern }, value }),
+      ).toBe(expected);
     });
   });
 
