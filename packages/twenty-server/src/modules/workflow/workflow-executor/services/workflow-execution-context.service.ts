@@ -13,7 +13,7 @@ import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/use
 import { RoleService } from 'src/engine/metadata-modules/role/role.service';
 import { UserRoleService } from 'src/engine/metadata-modules/user-role/user-role.service';
 import { STANDARD_ROLE } from 'src/engine/workspace-manager/twenty-standard-application/constants/standard-role.constant';
-import { type WorkflowRunWorkspaceEntity } from 'src/modules/workflow/common/standard-objects/workflow-run.workspace-entity';
+import { WorkflowRunStatus, type WorkflowRunWorkspaceEntity } from 'src/modules/workflow/common/standard-objects/workflow-run.workspace-entity';
 import { type WorkflowExecutionContext } from 'src/modules/workflow/workflow-executor/types/workflow-execution-context.type';
 import { WorkflowRunWorkspaceService as WorkflowRunService } from 'src/modules/workflow/workflow-runner/workflow-run/workflow-run.workspace-service';
 
@@ -27,6 +27,11 @@ export class WorkflowExecutionContextService {
     private readonly applicationService: ApplicationService,
     private readonly roleService: RoleService,
   ) {}
+
+  async isStopRequested(runInfo: { workflowRunId: string; workspaceId: string }): Promise<boolean> {
+    const run = await this.workflowRunService.getWorkflowRunOrFail(runInfo);
+    return [WorkflowRunStatus.STOPPING, WorkflowRunStatus.STOPPED].includes(run.status);
+  }
 
   async getExecutionContext(runInfo: {
     workflowRunId: string;

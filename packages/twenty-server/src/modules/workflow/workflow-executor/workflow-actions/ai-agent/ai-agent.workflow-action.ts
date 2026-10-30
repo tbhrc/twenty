@@ -22,6 +22,7 @@ import { type WorkflowActionOutput } from 'src/modules/workflow/workflow-executo
 import { findStepOrThrow } from 'src/modules/workflow/workflow-executor/utils/find-step-or-throw.util';
 import { buildAiAgentStepLog } from 'src/modules/workflow/workflow-executor/workflow-actions/ai-agent/utils/build-ai-agent-step-log.util';
 import { createWorkflowRunBudget } from 'src/modules/workflow/workflow-executor/workflow-actions/ai-agent/utils/create-workflow-run-budget.util';
+import { watchWorkflowStop } from 'src/modules/workflow/workflow-executor/workflow-actions/ai-agent/utils/watch-workflow-stop.util';
 import { WorkflowRunStepLogWorkspaceService } from 'src/modules/workflow/workflow-runner/workflow-run/workflow-run-step-log.workspace-service';
 
 import { isWorkflowAiAgentAction } from './guards/is-workflow-ai-agent-action.guard';
@@ -108,9 +109,15 @@ export class AiAgentWorkflowAction implements WorkflowAction {
     let executionResult: AgentExecutionResult;
     let lastCheckpointAt = startedAtMs;
     let finalCheckpointPersisted = false;
+    const stop = watchWorkflowStop(() =>
+      this.workflowExecutionContextService.isStopRequested(runInfo),
+    );
+    const abortSignal = budget.abortSignal
+      ? AbortSignal.any([budget.abortSignal, stop.signal])
+      : stop.signal;
 
     try {
-      budget.abortSignal?.throwIfAborted();
+      abortSignal.throwIfAborted();
       executionResult = await runWithAgentAbortSignal(
         () =>
           this.aiAgentExecutionService.executeAgent({
@@ -129,7 +136,7 @@ export class AiAgentWorkflowAction implements WorkflowAction {
             workspaceId,
             userWorkspaceId,
             operationType: UsageOperationType.AI_WORKFLOW_TOKEN,
-            abortSignal: budget.abortSignal,
+            abortSignal,
             completionToolName,
             toolLoadingStrategy: toolLoadingStrategy ?? 'lazy',
             onExecutionCheckpoint: async (checkpoint) => {
@@ -157,14 +164,18 @@ export class AiAgentWorkflowAction implements WorkflowAction {
                 finalCheckpointPersisted = true;
             },
           }),
-        budget.abortSignal,
+        abortSignal,
       );
     } catch (error) {
+      if (stop.signal.aborted) {
+        return { error: 'WORKFLOW_STOP_REQUESTED', isUserError: true };
+      }
       if (budget.abortSignal?.aborted) {
         return { error: 'WORKFLOW_RUN_DURATION_EXCEEDED', isUserError: true };
       }
       throw error;
     } finally {
+      stop.dispose();
       budget.dispose();
     }
 

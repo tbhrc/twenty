@@ -6,9 +6,11 @@ function fixture(duration?: number, startedAt: string | null = START) {
     .mockResolvedValue({ result: { response: 'done' } });
   const authority = { type: 'application' },
     initiator = { source: 'WORKFLOW' };
+  const isStopRequested = jest.fn().mockResolvedValue(false);
   const action = new AiAgentWorkflowAction(
     { executeAgent } as never,
     {
+      isStopRequested,
       getExecutionContext: jest.fn().mockResolvedValue({
         authContext: authority,
         initiator,
@@ -39,7 +41,7 @@ function fixture(duration?: number, startedAt: string | null = START) {
     context: {},
     runInfo: { workflowRunId: 'run', workspaceId: 'workspace' },
   };
-  return { action, input, executeAgent, authority };
+  return { action, input, executeAgent, authority, isStopRequested };
 }
 describe('workflow AI runtime budget', () => {
   beforeEach(() => {
@@ -75,6 +77,17 @@ describe('workflow AI runtime budget', () => {
     expect(f.executeAgent.mock.calls[0][0].abortSignal.aborted).toBe(true);
     expect(jest.getTimerCount()).toBe(0);
   });
+  it('releases a running step when the native workflow is stopped', async () => {
+    const f = fixture();
+    f.executeAgent.mockImplementation(() => new Promise(() => undefined));
+    const result = f.action.execute(f.input as never);
+    await jest.advanceTimersByTimeAsync(0);
+    f.isStopRequested.mockResolvedValue(true);
+    await jest.advanceTimersByTimeAsync(2_000);
+    await expect(result).resolves.toEqual({ error: 'WORKFLOW_STOP_REQUESTED', isUserError: true });
+    expect(f.executeAgent.mock.calls[0][0].abortSignal.aborted).toBe(true);
+    expect(jest.getTimerCount()).toBe(0);
+  });
   it('denies exactly-expired work and missing startedAt without calling the agent', async () => {
     jest.advanceTimersByTime(3_600_000);
     const expired = fixture(3_600_000);
@@ -93,7 +106,7 @@ describe('workflow AI runtime budget', () => {
     await expect(f.action.execute(f.input as never)).resolves.toMatchObject({
       result: { response: 'done' },
     });
-    expect(f.executeAgent.mock.calls[0][0].abortSignal).toBeUndefined();
+    expect(f.executeAgent.mock.calls[0][0].abortSignal).toBeInstanceOf(AbortSignal);
     expect(jest.getTimerCount()).toBe(0);
   });
   it('defaults workflow agents to the shared on-demand tool catalog', async () => {
