@@ -1,4 +1,5 @@
 import { NoteRecordActions } from '@/activities/notes/components/NoteCardActions';
+import { NoteRecordTimestamps } from '@/activities/notes/components/NoteRecordTimestamps';
 import { RecordPageSidePanelCommandMenu } from '@/command-menu-item/components/RecordPageSidePanelCommandMenu';
 import { RecordPageSidePanelPinnedCommandMenuItems } from '@/command-menu-item/components/RecordPageSidePanelPinnedCommandMenuItems';
 import { RecordPageSidePanelWidgetCommandMenuItems } from '@/command-menu-item/components/RecordPageSidePanelWidgetCommandMenuItems';
@@ -50,6 +51,11 @@ const StyledNoteActions = styled.div`
   padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[4]};
 `;
 
+const StyledNoteTimestamps = styled.div`
+  flex-shrink: 0;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[4]};
+`;
+
 export const PageLayoutRecordPageRenderer = ({
   targetRecordIdentifier,
 }: {
@@ -88,6 +94,11 @@ export const PageLayoutRecordPageRenderer = ({
       )}
 
       <StyledShowPageRightContainer data-record-show-page-body="">
+        {isNote && (
+          <StyledNoteTimestamps>
+            <NoteRecordTimestamps noteId={targetRecordIdentifier.id} />
+          </StyledNoteTimestamps>
+        )}
         {isInSidePanel && isNote && (
           <StyledNoteActions aria-label="Note actions">
             <NoteRecordActions noteId={targetRecordIdentifier.id} />

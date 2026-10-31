@@ -14,6 +14,7 @@ import { RecordInlineCell } from '@/object-record/record-inline-cell/components/
 import { getRecordFieldInputInstanceId } from '@/object-record/utils/getRecordFieldInputId';
 import { themeCssVariables } from 'twenty-ui/theme';
 import { NoteCardActions } from '@/activities/notes/components/NoteCardActions';
+import { NoteTimestamps } from '@/activities/notes/components/NoteTimestamps';
 
 const StyledCard = styled.div<{ isSingleNote: boolean }>`
   align-items: flex-start;
@@ -22,7 +23,7 @@ const StyledCard = styled.div<{ isSingleNote: boolean }>`
   border-radius: ${themeCssVariables.border.radius.md};
   display: flex;
   flex-direction: column;
-  height: 300px;
+  height: 360px;
   justify-content: space-between;
   width: 100%;
 `;
@@ -33,11 +34,11 @@ const StyledCardDetailsContainer = styled.div`
   box-sizing: border-box;
   cursor: pointer;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: ${themeCssVariables.spacing[2]};
-  flex: 1;
-  min-height: 0;
   justify-content: start;
+  min-height: 0;
   padding: ${themeCssVariables.spacing[4]};
   width: calc(100% - ${themeCssVariables.spacing[8]});
 `;
@@ -79,6 +80,13 @@ const StyledFooter = styled.div`
   width: calc(100% - ${themeCssVariables.spacing[4]});
 `;
 
+const StyledTimestampContainer = styled.div`
+  box-sizing: border-box;
+  flex-shrink: 0;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[4]};
+  width: 100%;
+`;
+
 export const NoteTile = ({
   note,
   isSingleNote,
@@ -118,6 +126,9 @@ export const NoteTile = ({
       >
         <StyledCardContent>{body}</StyledCardContent>
       </StyledCardDetailsContainer>
+      <StyledTimestampContainer>
+        <NoteTimestamps note={note} />
+      </StyledTimestampContainer>
       <StyledFooter>
         <FieldContextProvider
           objectNameSingular={CoreObjectNameSingular.Note}
