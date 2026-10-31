@@ -7,7 +7,7 @@ import { useNumberFormat } from '@/localization/hooks/useNumberFormat';
 import { ObjectMetadataIcon } from '@/object-metadata/components/ObjectMetadataIcon';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
-import { useAggregateRecords } from '@/object-record/hooks/useAggregateRecords';
+import { useLatestAllocatedJobNumber } from '@/object-record/hooks/useLatestAllocatedJobNumber';
 import { useFindOneRecord } from '@/object-record/hooks/useFindOneRecord';
 import { useIsRecordFieldReadOnly } from '@/object-record/read-only/hooks/useIsRecordFieldReadOnly';
 import { FieldContext } from '@/object-record/record-field/ui/contexts/FieldContext';
@@ -18,14 +18,12 @@ import { getRecordShowPageBreadcrumbPaginationLabel } from '@/object-record/reco
 import { recordStoreIdentifierFamilySelector } from '@/object-record/record-store/states/selectors/recordStoreIdentifierFamilySelector';
 import { RecordTitleCell } from '@/object-record/record-title-cell/components/RecordTitleCell';
 import { RecordTitleCellContainerType } from '@/object-record/record-title-cell/types/RecordTitleCellContainerType';
-import { AggregateOperations } from '@/object-record/record-table/constants/AggregateOperations';
 import { useIsMobile } from 'twenty-ui/utilities';
 import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { styled } from '@linaria/react';
 import { useState } from 'react';
 import { FieldMetadataType } from 'twenty-shared/types';
-import { FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION } from 'twenty-shared/constants';
 import { isDefined } from 'twenty-shared/utils';
 import { Avatar } from 'twenty-ui/primitives/data-display';
 import { themeCssVariables } from 'twenty-ui/theme';
@@ -154,18 +152,7 @@ export const ObjectRecordShowPageBreadcrumb = ({
   const { navigateToIndexView, rankInView, totalCount } =
     useRecordShowPagePagination(objectNameSingular, objectRecordId);
 
-  const allJobs = useAggregateRecords({
-    objectNameSingular,
-    recordGqlFieldsAggregate: {
-      [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: [AggregateOperations.COUNT],
-    },
-    skip: !isJob,
-    fetchPolicy: 'network-only',
-  });
-  const allJobsTotal =
-    allJobs.data[FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]?.[
-      AggregateOperations.COUNT
-    ];
+  const allocation = useLatestAllocatedJobNumber({ skip: !isJob });
 
   const { viewName, groupValueLabel, isGroupByActive, isGroupValueLoading } =
     useRecordShowPageGroupByBreadcrumbInfo({
@@ -175,10 +162,11 @@ export const ObjectRecordShowPageBreadcrumb = ({
 
   const { formatNumber } = useNumberFormat();
 
-  const jobTotalLabel = allJobs.loading
+  const jobTotalLabel = allocation.loading
     ? '…'
-    : !allJobs.error && typeof allJobsTotal === 'number'
-      ? formatNumber(allJobsTotal)
+    : !allocation.error &&
+        typeof allocation.latestAllocatedJobNumber === 'number'
+      ? formatNumber(allocation.latestAllocatedJobNumber)
       : '?';
   const paginationInformation = isJob
     ? permanentRecordNumber === null

@@ -4,7 +4,7 @@ import { Dropdown } from '@/ui/layout/dropdown/components/Dropdown';
 import { StyledDropdownButtonContainer } from '@/ui/layout/dropdown/components/StyledDropdownButtonContainer';
 import { isDropdownOpenComponentState } from '@/ui/layout/dropdown/states/isDropdownOpenComponentState';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
-import { useGetRecordIndexTotalCount } from '@/views/hooks/internal/useGetRecordIndexTotalCount';
+import { useRecordIndexDisplayNumber } from '@/views/hooks/internal/useRecordIndexDisplayNumber';
 import { useGetCurrentViewOnly } from '@/views/hooks/useGetCurrentViewOnly';
 import { ViewPickerContentCreateMode } from '@/views/view-picker/components/ViewPickerContentCreateMode';
 import { ViewPickerContentEditMode } from '@/views/view-picker/components/ViewPickerContentEditMode';
@@ -53,7 +53,7 @@ export const ViewPickerDropdown = () => {
 
   const { updateViewFromCurrentState } = useUpdateViewFromCurrentState();
 
-  const { totalCount } = useGetRecordIndexTotalCount();
+  const visibleNumber = useRecordIndexDisplayNumber();
 
   const { formatNumber } = useNumberFormat();
 
@@ -96,7 +96,7 @@ export const ViewPickerDropdown = () => {
             <OverflowingTextWithTooltip text={currentView?.name ?? t`All`} />
           </StyledViewName>
           <StyledDropdownLabelAdornments>
-            {isDefined(totalCount) && <>· {formatNumber(totalCount)} </>}
+            {isDefined(visibleNumber) && <>· {formatNumber(visibleNumber)} </>}
             <IconChevronDown size={theme.icon.size.sm} />
           </StyledDropdownLabelAdornments>
         </StyledDropdownButtonContainer>

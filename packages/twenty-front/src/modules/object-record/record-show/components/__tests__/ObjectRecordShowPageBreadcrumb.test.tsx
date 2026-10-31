@@ -1,10 +1,9 @@
 import { ObjectRecordShowPageBreadcrumb } from '@/object-record/record-show/components/ObjectRecordShowPageBreadcrumb';
 import { render, screen } from '@testing-library/react';
-import { FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION } from 'twenty-shared/constants';
 
 const mockUseFindOneRecord = jest.fn();
 const mockUsePagination = jest.fn();
-const mockUseAggregateRecords = jest.fn();
+const mockUseLatestAllocatedJobNumber = jest.fn();
 let mockIsMobile = false;
 
 jest.mock('@/localization/hooks/useNumberFormat', () => ({
@@ -25,8 +24,9 @@ jest.mock('@/object-metadata/hooks/useObjectMetadataItem', () => ({
 jest.mock('@/object-record/hooks/useFindOneRecord', () => ({
   useFindOneRecord: (...args: unknown[]) => mockUseFindOneRecord(...args),
 }));
-jest.mock('@/object-record/hooks/useAggregateRecords', () => ({
-  useAggregateRecords: (...args: unknown[]) => mockUseAggregateRecords(...args),
+jest.mock('@/object-record/hooks/useLatestAllocatedJobNumber', () => ({
+  useLatestAllocatedJobNumber: (...args: unknown[]) =>
+    mockUseLatestAllocatedJobNumber(...args),
 }));
 jest.mock('@/object-record/read-only/hooks/useIsRecordFieldReadOnly', () => ({
   useIsRecordFieldReadOnly: () => true,
@@ -83,7 +83,7 @@ const renderBreadcrumb = () =>
     />,
   );
 
-describe('compact permanent Job number and unfiltered total', () => {
+describe('compact permanent Job number and allocation high-water mark', () => {
   beforeEach(() => {
     mockIsMobile = false;
     Object.assign(window, {
@@ -106,26 +106,21 @@ describe('compact permanent Job number and unfiltered total', () => {
       isLoadingPagination: false,
       hasPaginationError: false,
     });
-    mockUseAggregateRecords.mockReturnValue({
-      data: { [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: { COUNT: 235 } },
+    mockUseLatestAllocatedJobNumber.mockReturnValue({
+      latestAllocatedJobNumber: 241,
       loading: false,
       error: undefined,
     });
   });
 
-  it('uses permanent8 and all-jobs235, never view rank188 or filtered4', () => {
+  it('uses permanent8 and allocated241, never view rank188 or filtered4', () => {
     renderBreadcrumb();
-    expect(screen.getByText('(8/235)')).toBeVisible();
+    expect(screen.getByText('(8/241)')).toBeVisible();
     expect(
       screen.queryByText(/Position|current view|Job 8/),
     ).not.toBeInTheDocument();
-    expect(mockUseAggregateRecords).toHaveBeenCalledWith({
-      objectNameSingular: 'vacancy',
-      recordGqlFieldsAggregate: {
-        [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: ['COUNT'],
-      },
+    expect(mockUseLatestAllocatedJobNumber).toHaveBeenCalledWith({
       skip: false,
-      fetchPolicy: 'network-only',
     });
     expect(mockUseFindOneRecord).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -137,7 +132,7 @@ describe('compact permanent Job number and unfiltered total', () => {
   it('retains the same compact counter on mobile', () => {
     mockIsMobile = true;
     renderBreadcrumb();
-    expect(screen.getByText('(8/235)')).toBeVisible();
+    expect(screen.getByText('(8/241)')).toBeVisible();
     expect(
       screen.queryByText('Vibe Coder / AI Developer / Claude Code Expert'),
     ).not.toBeInTheDocument();
@@ -152,13 +147,13 @@ describe('compact permanent Job number and unfiltered total', () => {
       expected: '(8/?)',
     },
   ])('does not present an unverified cached count: %p', (state) => {
-    mockUseAggregateRecords.mockReturnValue({
-      data: { [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: { COUNT: 235 } },
+    mockUseLatestAllocatedJobNumber.mockReturnValue({
+      latestAllocatedJobNumber: 241,
       ...state,
     });
     renderBreadcrumb();
     expect(screen.getByText(state.expected)).toBeVisible();
-    expect(screen.queryByText('(8/235)')).not.toBeInTheDocument();
+    expect(screen.queryByText('(8/241)')).not.toBeInTheDocument();
     expect(screen.queryByText(/Position/)).not.toBeInTheDocument();
   });
 
@@ -186,9 +181,9 @@ describe('compact permanent Job number and unfiltered total', () => {
         objectLabel="Jobs"
       />,
     );
-    expect(screen.getByText('(8/235)')).toBeVisible();
-    mockUseAggregateRecords.mockReturnValue({
-      data: { [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: { COUNT: 236 } },
+    expect(screen.getByText('(8/241)')).toBeVisible();
+    mockUseLatestAllocatedJobNumber.mockReturnValue({
+      latestAllocatedJobNumber: 242,
       loading: false,
     });
     rerender(
@@ -198,7 +193,7 @@ describe('compact permanent Job number and unfiltered total', () => {
         objectLabel="Jobs"
       />,
     );
-    expect(screen.getByText('(8/236)')).toBeVisible();
-    expect(screen.queryByText('(8/235)')).not.toBeInTheDocument();
+    expect(screen.getByText('(8/242)')).toBeVisible();
+    expect(screen.queryByText('(8/241)')).not.toBeInTheDocument();
   });
 });
