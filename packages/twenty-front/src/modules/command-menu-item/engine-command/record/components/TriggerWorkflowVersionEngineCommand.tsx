@@ -36,6 +36,8 @@ export const TriggerWorkflowVersionEngineCommand = () => {
   const [decision, setDecision] = useState<boolean | null>(
     confirmation ? null : true,
   );
+  // Duplicate clicks must be fenced synchronously before React rerenders.
+  // oxlint-disable-next-line twenty/no-state-useref
   const decisionMade = useRef(false);
   const { openDialog, closeDialog } = useDialog();
 
@@ -43,7 +45,7 @@ export const TriggerWorkflowVersionEngineCommand = () => {
     if (!confirmation) return;
     openDialog(dialogId);
     return () => closeDialog(dialogId);
-  }, [confirmation, openDialog, closeDialog]);
+  }, [confirmation, openDialog, closeDialog, dialogId]);
 
   const decide = (confirmed: boolean) => {
     if (decisionMade.current) return;
@@ -120,10 +122,11 @@ export const TriggerWorkflowVersionEngineCommand = () => {
         <ConfirmationDialog
           dialogId={dialogId}
           title={t`Run CV ingestion?`}
-          subtitle={t`Run CV ingestion for ${confirmation.mailbox} for the past 7 days now? Existing completed items are reused. A saved checkpoint resumes its original window.`}
+          subtitle={t`Run CV ingestion for ${confirmation.mailbox} for the past 7 days now?\n\nExisting completed items are reused.\n\nA saved checkpoint resumes its original window.`}
           confirmButtonText={t`Yes`}
           cancelButtonText={t`No`}
-          confirmButtonColor="neutral"
+          confirmButtonColor="accent"
+          confirmButtonFirst
           onConfirmClick={() => decide(true)}
           onClose={() => decide(false)}
         />

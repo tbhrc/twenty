@@ -8,5 +8,6 @@ const MAILBOX_CONFIRMATIONS: Record<string, { mailbox: string }> = {
     mailbox: 'careers@talentbridgedubai.com',
   },
 };
-export const getMailboxWorkflowConfirmation = (workflowId: string) =>
-  MAILBOX_CONFIRMATIONS[workflowId];
+export const getMailboxWorkflowConfirmation = (
+  workflowId: string,
+): { mailbox: string } | undefined => MAILBOX_CONFIRMATIONS[workflowId];

@@ -25,6 +25,7 @@ const StyledDescription = styled(Dialog.Description)`
     font-size: inherit;
     line-height: inherit;
     margin-bottom: ${themeCssVariables.spacing[6]};
+    white-space: pre-wrap;
   }
 `;
 
@@ -44,10 +45,20 @@ export const ConfirmationDialog = ({
   confirmButtonColor = 'danger',
   AdditionalButtons,
   hideCancelButton = false,
+  confirmButtonFirst = false,
 }: ConfirmationDialogProps) => {
   const { i18n, t } = useLingui();
   const translatedConfirmButtonText =
     confirmButtonText ?? i18n._(defaultConfirmButtonText);
+  const formattedSubtitle =
+    typeof subtitle === 'string' && !subtitle.includes('\n')
+      ? Array.from(
+          new Intl.Segmenter(i18n.locale || 'en', {
+            granularity: 'sentence',
+          }).segment(subtitle),
+          (item) => item.segment.trim(),
+        ).join('\n\n')
+      : subtitle;
   const [inputConfirmationValue, setInputConfirmationValue] =
     useState<string>('');
 
@@ -102,7 +113,7 @@ export const ConfirmationDialog = ({
           <Dialog.Title>{title}</Dialog.Title>
           <StyledDescription render={<div />}>
             <Section.Root align="center" color="primary">
-              {subtitle}
+              {formattedSubtitle}
             </Section.Root>
           </StyledDescription>
           {isNonEmptyString(confirmationValue) && (
@@ -119,6 +130,18 @@ export const ConfirmationDialog = ({
               />
             </Section.Root>
           )}
+          {confirmButtonFirst && (
+            <StyledCenteredButton
+              onClick={handleConfirmClick}
+              disabled={!isValidValue || loading}
+              fullWidth
+              data-testid="confirmation-modal-confirm-button"
+              variant={confirmButtonColor === 'neutral' ? 'outline' : 'solid'}
+              color={confirmButtonColor}
+            >
+              {translatedConfirmButtonText}
+            </StyledCenteredButton>
+          )}
           {!hideCancelButton && (
             <StyledCenteredButton
               onClick={handleCancelClick}
@@ -132,16 +155,18 @@ export const ConfirmationDialog = ({
 
           {AdditionalButtons}
 
-          <StyledCenteredButton
-            onClick={handleConfirmClick}
-            disabled={!isValidValue || loading}
-            fullWidth
-            data-testid="confirmation-modal-confirm-button"
-            variant={confirmButtonColor === 'neutral' ? 'outline' : 'solid'}
-            color={confirmButtonColor}
-          >
-            {translatedConfirmButtonText}
-          </StyledCenteredButton>
+          {!confirmButtonFirst && (
+            <StyledCenteredButton
+              onClick={handleConfirmClick}
+              disabled={!isValidValue || loading}
+              fullWidth
+              data-testid="confirmation-modal-confirm-button"
+              variant={confirmButtonColor === 'neutral' ? 'outline' : 'solid'}
+              color={confirmButtonColor}
+            >
+              {translatedConfirmButtonText}
+            </StyledCenteredButton>
+          )}
         </Dialog.Popup>
       )}
     </DialogInstance>

@@ -12,6 +12,7 @@ import { RecordInlineCell } from '@/object-record/record-inline-cell/components/
 import { getRecordFieldInputInstanceId } from '@/object-record/utils/getRecordFieldInputId';
 import { getObjectPermissionsFromMapByObjectMetadataId } from '@/settings/roles/role-permissions/objects-permissions/utils/getObjectPermissionsFromMapByObjectMetadataId';
 import { type ObjectPermissions } from 'twenty-shared/types';
+import { FieldMetadataType } from '~/generated-metadata/graphql';
 
 type FieldsWidgetFieldItemProps = {
   fieldMetadataItem: FieldMetadataItem;
@@ -60,7 +61,9 @@ export const FieldsWidgetFieldItem = ({
         isLabelIdentifier: false,
         fieldDefinition,
         useUpdateRecord,
-        isDisplayModeFixHeight: true,
+        isDisplayModeFixHeight:
+          fieldMetadataItem.type !== FieldMetadataType.RAW_JSON &&
+          fieldMetadataItem.type !== FieldMetadataType.TEXT,
         isRecordFieldReadOnly: isRecordFieldReadOnly({
           isRecordReadOnly,
           objectPermissions: getObjectPermissionsFromMapByObjectMetadataId({

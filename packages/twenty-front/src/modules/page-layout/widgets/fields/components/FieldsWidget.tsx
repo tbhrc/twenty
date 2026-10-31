@@ -1,4 +1,7 @@
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
+import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
+import { JobPublication } from '@/page-layout/widgets/fields/components/JobPublication';
+import { canReadJobPublication } from '@/page-layout/widgets/fields/utils/getJobPublication';
 import { RecordFieldsScopeContextProvider } from '@/object-record/record-field-list/contexts/RecordFieldsScopeContext';
 import { RecordFieldListComponentInstanceContext } from '@/object-record/record-field-list/states/contexts/RecordFieldListComponentInstanceContext';
 import { FieldDescriptionTooltipProvider } from '@/object-record/record-field/ui/components/FieldDescriptionTooltipProvider';
@@ -60,6 +63,14 @@ export const FieldsWidget = ({ widget }: FieldsWidgetProps) => {
   });
 
   const fieldsConfiguration = widget.configuration as FieldsConfiguration;
+  const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
+  const permissions =
+    objectPermissionsByObjectMetadataId[objectMetadataItem.id];
+  const canReadPublication = canReadJobPublication(
+    targetRecord.targetObjectNameSingular,
+    objectMetadataItem.fields,
+    permissions,
+  );
 
   const { groups, displayMode } = useFieldsWidgetGroupsForDisplay({
     widgetId: widget.id,
@@ -128,6 +139,9 @@ export const FieldsWidget = ({ widget }: FieldsWidgetProps) => {
             <FieldsWidgetResizableLabelColumn
               scopeKey={`${objectMetadataItem.id}:${isInSidePanel ? 'side-panel' : 'main'}`}
             >
+              {canReadPublication && (
+                <JobPublication recordId={targetRecord.id} />
+              )}
               {shouldDisplayGroupHeaders ? (
                 groups.map((group) => (
                   <FieldsWidgetGroupContainer key={group.id} title={group.name}>

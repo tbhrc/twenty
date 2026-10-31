@@ -15,4 +15,5 @@ export type ConfirmationDialogProps = {
   confirmButtonColor?: ButtonColor;
   AdditionalButtons?: ReactNode;
   hideCancelButton?: boolean;
+  confirmButtonFirst?: boolean;
 };

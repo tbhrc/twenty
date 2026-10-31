@@ -30,7 +30,9 @@ const StyledRecordInlineCellNormalModeOuterContainer = styled.div<
   display: flex;
   height: ${({ isDisplayModeFixHeight }) =>
     isDisplayModeFixHeight ? '16px' : 'auto'};
+  max-width: 100%;
   min-height: 16px;
+  min-width: 0;
   outline: 1px solid
     ${({ isHovered, readonly }) =>
       isHovered && readonly
@@ -46,6 +48,7 @@ const StyledRecordInlineCellNormalModeInnerContainer = styled.div`
   align-items: center;
   color: ${themeCssVariables.font.color.primary};
   height: fit-content;
+  min-width: 0;
 
   overflow: hidden;
   padding-bottom: 2px;
@@ -53,6 +56,7 @@ const StyledRecordInlineCellNormalModeInnerContainer = styled.div`
 
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 100%;
 `;
 
 const StyledEmptyField = styled.div`

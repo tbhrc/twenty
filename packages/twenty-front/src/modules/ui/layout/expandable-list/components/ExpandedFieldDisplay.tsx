@@ -18,6 +18,7 @@ const StyledExpandedFieldContainer = styled.div`
   flex-direction: column;
   gap: ${themeCssVariables.spacing[1]};
   height: 300px;
+  max-width: calc(100vw - 32px);
   overflow: auto;
   overflow-y: auto;
   padding: ${themeCssVariables.spacing[2]};

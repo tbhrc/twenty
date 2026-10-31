@@ -3,32 +3,51 @@ import { I18nProvider } from '@lingui/react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type ReactNode } from 'react';
-
 import { JsonFieldDisplay } from '@/object-record/record-field/ui/meta-types/display/components/JsonFieldDisplay';
-
-jest.mock('@/object-record/record-field/ui/meta-types/hooks/useJsonFieldDisplay', () => ({
-  useJsonFieldDisplay: () => ({ fieldValue: { documents: [{ name: 'Original.pdf', sha256: 'private-hash' }] }, isRecordFieldReadOnly: true }),
-}));
-jest.mock('~/hooks/useCopyToClipboard', () => ({ useCopyToClipboard: () => ({ copyToClipboard: jest.fn() }) }));
-jest.mock('@/ui/field/display/components/JsonDisplay/JsonDisplay', () => ({ JsonDisplay: ({ text }: { text: string }) => <span>{text}</span> }));
-jest.mock('@/ui/layout/expandable-list/components/ExpandedFieldDisplay', () => ({
-  ExpandedFieldDisplay: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-}));
-jest.mock('twenty-ui/components', () => ({ JsonTree: ({ value }: { value: unknown }) => <pre>{JSON.stringify(value)}</pre> }));
-
+jest.mock(
+  '@/object-record/record-field/ui/meta-types/hooks/useJsonFieldDisplay',
+  () => ({
+    useJsonFieldDisplay: () => ({
+      fieldValue: {
+        documents: [{ name: 'Original.pdf', sha256: 'private-hash' }],
+      },
+      isRecordFieldReadOnly: true,
+    }),
+  }),
+);
+jest.mock(
+  '@/ui/layout/expandable-list/components/ExpandedFieldDisplay',
+  () => ({
+    ExpandedFieldDisplay: ({ children }: { children: ReactNode }) => (
+      <div>{children}</div>
+    ),
+  }),
+);
 describe('JsonFieldDisplay', () => {
-  it('keeps timeline JSON compact until the user opens the original details', async () => {
-    render(<I18nProvider i18n={i18n}><JsonFieldDisplay compact /></I18nProvider>);
-    expect(screen.getByText('Details')).toBeInTheDocument();
-    expect(screen.queryByText(/private-hash/)).not.toBeInTheDocument();
-    await userEvent.click(screen.getByText('Details'));
-    expect(screen.getByText(/private-hash/)).toBeInTheDocument();
-    expect(screen.getByText(/Original.pdf/)).toBeInTheDocument();
+  it('opens readable compact details from the keyboard and restores focus on Escape', async () => {
+    const { container } = render(
+      <I18nProvider i18n={i18n}>
+        <JsonFieldDisplay compact />
+      </I18nProvider>,
+    );
+    const button = screen.getByRole('button', { name: 'View details' });
+    expect(screen.queryByText('private-hash')).toBeNull();
+    button.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getByText('Original.pdf')).toBeVisible();
+    expect(container.textContent).not.toMatch(/[{}]/);
+    button.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(button).toHaveFocus();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
   });
-
-  it('preserves the existing JSON presentation outside the timeline', () => {
-    render(<I18nProvider i18n={i18n}><JsonFieldDisplay /></I18nProvider>);
-    expect(screen.getByText(/private-hash/)).toBeInTheDocument();
-    expect(screen.queryByText('Details')).not.toBeInTheDocument();
+  it('renders detail fields readably with all source values preserved', () => {
+    render(
+      <I18nProvider i18n={i18n}>
+        <JsonFieldDisplay compact={false} />
+      </I18nProvider>,
+    );
+    expect(screen.getByText('Documents')).toBeVisible();
+    expect(screen.getByText('private-hash')).toBeVisible();
   });
 });
