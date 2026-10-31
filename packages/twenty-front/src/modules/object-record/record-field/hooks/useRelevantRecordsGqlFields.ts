@@ -61,11 +61,6 @@ export const useRelevantRecordsGqlFields = ({
     ...visibleRecordFieldMetadataItems,
     ...(recordFilterFields ?? []),
     ...additionalFieldMetadataItems,
-    ...objectMetadataItem.fields.filter(
-      (field) =>
-        objectMetadataItem.nameSingular === 'application' &&
-        field.name === 'person',
-    ),
   ].filter(filterDuplicatesById);
 
   const allDepthOneGqlFields = generateDepthRecordGqlFieldsFromFields({
