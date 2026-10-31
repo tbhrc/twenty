@@ -19,8 +19,16 @@ import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/
 import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { useContext } from 'react';
 import { t } from '@lingui/core/macro';
+import { styled } from '@linaria/react';
 import { getRecordBoardCardFields } from '@/object-record/record-board/record-board-card/utils/getRecordBoardCardFields';
 import { isDefined } from 'twenty-shared/utils';
+
+const StyledCreationDate = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+`;
 
 export const RecordBoardCardBody = () => {
   const { recordId, isRecordReadOnly, isDragOverlay } = useContext(
@@ -118,12 +126,18 @@ export const RecordBoardCardBody = () => {
                 }}
               >
                 {objectMetadataItem.nameSingular === 'application' &&
-                  fieldMetadataItem.name === 'createdAt' && (
+                fieldMetadataItem.name === 'createdAt' ? (
+                  <StyledCreationDate>
                     <span>{t`Created`}</span>
-                  )}
-                <RecordInlineCell
-                  instanceIdPrefix={RECORD_BOARD_CARD_INPUT_ID_PREFIX}
-                />
+                    <RecordInlineCell
+                      instanceIdPrefix={RECORD_BOARD_CARD_INPUT_ID_PREFIX}
+                    />
+                  </StyledCreationDate>
+                ) : (
+                  <RecordInlineCell
+                    instanceIdPrefix={RECORD_BOARD_CARD_INPUT_ID_PREFIX}
+                  />
+                )}
               </RecordFieldComponentInstanceContext.Provider>
             </FieldContext.Provider>
           </StopPropagationContainer>
