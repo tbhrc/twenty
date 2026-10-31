@@ -19,6 +19,7 @@ import { ObjectMetadataEntity } from 'src/engine/metadata-modules/object-metadat
 import { ObjectMetadataResolver } from 'src/engine/metadata-modules/object-metadata/object-metadata.resolver';
 import { ObjectMetadataService } from 'src/engine/metadata-modules/object-metadata/object-metadata.service';
 import { ObjectRecordCountService } from 'src/engine/metadata-modules/object-metadata/object-record-count.service';
+import { JobNumberAllocationResolver } from 'src/engine/metadata-modules/object-metadata/job-number-allocation.resolver';
 import { ObjectMetadataToolsFactory } from 'src/engine/metadata-modules/object-metadata/tools/object-metadata-tools.factory';
 import { PermissionsModule } from 'src/engine/metadata-modules/permissions/permissions.module';
 import { ViewFieldModule } from 'src/engine/metadata-modules/view-field/view-field.module';
@@ -60,6 +61,7 @@ import { provideWorkspaceScopedRepository } from 'src/engine/twenty-orm/workspac
     ObjectMetadataService,
     ObjectMetadataResolver,
     ObjectRecordCountService,
+    JobNumberAllocationResolver,
     MostlyEmptyFieldsService,
     ObjectMetadataToolsFactory,
     provideWorkspaceScopedRepository(ObjectMetadataEntity),

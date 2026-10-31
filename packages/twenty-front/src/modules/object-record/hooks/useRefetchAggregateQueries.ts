@@ -1,9 +1,11 @@
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
+import { useRefetchJobNumberAllocation } from '@/object-record/hooks/useRefetchJobNumberAllocation';
 import { getGroupByAggregateQueryName } from '@/object-record/record-aggregate/utils/getGroupByAggregateQueryName';
 import { getAggregateQueryName } from '@/object-record/utils/getAggregateQueryName';
 
 export const useRefetchAggregateQueries = () => {
   const apolloCoreClient = useApolloCoreClient();
+  const refetchJobNumberAllocation = useRefetchJobNumberAllocation();
 
   const refetchAggregateQueries = async ({
     objectMetadataNamePlural,
@@ -16,9 +18,12 @@ export const useRefetchAggregateQueries = () => {
       objectMetadataNamePlural,
     });
 
-    await apolloCoreClient.refetchQueries({
-      include: [queryName, groupByAggregateQueryName],
-    });
+    await Promise.all([
+      apolloCoreClient.refetchQueries({
+        include: [queryName, groupByAggregateQueryName],
+      }),
+      refetchJobNumberAllocation(objectMetadataNamePlural),
+    ]);
   };
 
   return {
