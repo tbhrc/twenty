@@ -138,7 +138,8 @@ export class AiAgentWorkflowAction implements WorkflowAction {
             operationType: UsageOperationType.AI_WORKFLOW_TOKEN,
             abortSignal,
             completionToolName,
-            toolLoadingStrategy: toolLoadingStrategy ?? 'lazy',
+            toolLoadingStrategy:
+              toolLoadingStrategy ?? (completionToolName ? 'preload' : 'lazy'),
             onExecutionCheckpoint: async (checkpoint) => {
               const now = Date.now();
               if (

@@ -84,7 +84,10 @@ describe('workflow AI runtime budget', () => {
     await jest.advanceTimersByTimeAsync(0);
     f.isStopRequested.mockResolvedValue(true);
     await jest.advanceTimersByTimeAsync(2_000);
-    await expect(result).resolves.toEqual({ error: 'WORKFLOW_STOP_REQUESTED', isUserError: true });
+    await expect(result).resolves.toEqual({
+      error: 'WORKFLOW_STOP_REQUESTED',
+      isUserError: true,
+    });
     expect(f.executeAgent.mock.calls[0][0].abortSignal.aborted).toBe(true);
     expect(jest.getTimerCount()).toBe(0);
   });
@@ -106,13 +109,23 @@ describe('workflow AI runtime budget', () => {
     await expect(f.action.execute(f.input as never)).resolves.toMatchObject({
       result: { response: 'done' },
     });
-    expect(f.executeAgent.mock.calls[0][0].abortSignal).toBeInstanceOf(AbortSignal);
+    expect(f.executeAgent.mock.calls[0][0].abortSignal).toBeInstanceOf(
+      AbortSignal,
+    );
     expect(jest.getTimerCount()).toBe(0);
   });
   it('defaults workflow agents to the shared on-demand tool catalog', async () => {
     const f = fixture();
     await f.action.execute(f.input as never);
     expect(f.executeAgent.mock.calls[0][0].toolLoadingStrategy).toBe('lazy');
+  });
+  it('preloads tools when the step requires a completion tool', async () => {
+    const f = fixture();
+    Object.assign(f.input.steps[0].settings.input, {
+      completionToolName: 'completion',
+    });
+    await f.action.execute(f.input as never);
+    expect(f.executeAgent.mock.calls[0][0].toolLoadingStrategy).toBe('preload');
   });
   it('passes the selected workflow tool discovery strategy to the executor', async () => {
     const f = fixture();
