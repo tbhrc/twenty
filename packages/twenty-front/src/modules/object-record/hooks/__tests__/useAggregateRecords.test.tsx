@@ -78,6 +78,22 @@ describe('useAggregateRecords', () => {
     expect(result.current.error).toBeUndefined();
   });
 
+  it('supports an explicit network refresh policy for live count consumers', () => {
+    renderHook(
+      () =>
+        useAggregateRecords({
+          objectNameSingular: 'opportunity',
+          recordGqlFieldsAggregate: { name: [AggregateOperations.COUNT] },
+          fetchPolicy: 'network-only',
+        }),
+      { wrapper: Wrapper },
+    );
+    expect(useQuery).toHaveBeenCalledWith(
+      AGGREGATE_QUERY,
+      expect.objectContaining({ fetchPolicy: 'network-only' }),
+    );
+  });
+
   it('should handle loading state', () => {
     (useQuery as unknown as jest.Mock).mockReturnValue({
       data: undefined,

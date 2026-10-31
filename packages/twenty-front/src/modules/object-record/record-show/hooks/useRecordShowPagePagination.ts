@@ -5,6 +5,7 @@ import {
 } from '@/app/routing/record-routes/router';
 import { getAppPath } from '@/app/routing/record-routes/getAppPath';
 import { useStore } from 'jotai';
+import { useState } from 'react';
 import { parsePath, useSearchParams } from 'react-router-dom';
 
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
@@ -67,19 +68,15 @@ export const useRecordShowPagePagination = (
 
   const reversedOrderBy = reverseOrderBy(orderBy);
 
-  const {
-    loading: loadingCurrentRecord,
-    records: currentRecords,
-    error: currentRecordError,
-  } = useFindManyRecords({
-    filter: { id: { eq: objectRecordId } },
-    orderBy,
-    limit: 1,
-    objectNameSingular,
-    recordGqlFields: { ...orderByGqlFields, deletedAt: true },
-    fetchPolicy: 'network-only',
-    withSoftDeleted: true,
-  });
+  const { loading: loadingCurrentRecord, records: currentRecords } =
+    useFindManyRecords({
+      filter: { id: { eq: objectRecordId } },
+      orderBy,
+      limit: 1,
+      objectNameSingular,
+      recordGqlFields: { ...orderByGqlFields, deletedAt: true },
+      withSoftDeleted: true,
+    });
 
   const currentRecord = currentRecords[0];
   const isCurrentRecordDeleted = isDefined(currentRecord?.deletedAt);
@@ -134,20 +131,9 @@ export const useRecordShowPagePagination = (
   );
 
   const {
-    loading: loadingViewMembership,
-    totalCount: viewMembershipCount,
-    error: viewMembershipError,
-  } = useFindManyRecords({
-    ...baseNeighborOptions,
-    fetchPolicy: 'network-only',
-    filter: combineFilters([mergedFilter, { id: { eq: objectRecordId } }]),
-  });
-
-  const {
     loading: loadingRecordBefore,
     records: recordsBefore,
     totalCount: totalCountBefore,
-    error: recordBeforeError,
   } = useFindManyRecords({
     ...baseNeighborOptions,
     fetchPolicy: 'network-only',
@@ -159,7 +145,6 @@ export const useRecordShowPagePagination = (
     loading: loadingRecordAfter,
     records: recordsAfter,
     totalCount: totalCountAfter,
-    error: recordAfterError,
   } = useFindManyRecords({
     ...baseNeighborOptions,
     fetchPolicy: 'network-only',
@@ -190,7 +175,6 @@ export const useRecordShowPagePagination = (
     loadingRecordAfter ||
     loadingRecordBefore ||
     loadingCurrentRecord ||
-    loadingViewMembership ||
     !hasKeysetFilters ||
     (isAtLastRecord && loadingFirstRecord) ||
     (isAtFirstRecord && loadingLastRecord);
@@ -289,33 +273,33 @@ export const useRecordShowPagePagination = (
     setLastShowPageRecordId(objectRecordId);
   };
 
-  const rankInView =
-    viewMembershipCount === 1 && isDefined(totalCountBefore)
-      ? totalCountBefore
-      : -1;
+  const rankInView = isDefined(totalCountBefore) ? totalCountBefore : -1;
   const totalCount =
-    isDefined(totalCountBefore) &&
-    isDefined(totalCountAfter) &&
-    isDefined(viewMembershipCount)
-      ? viewMembershipCount + totalCountBefore + totalCountAfter
+    rankInView > -1 && isDefined(totalCountAfter)
+      ? 1 + rankInView + totalCountAfter
       : 0;
+
+  const [cachedPagination, setCachedPagination] = useState({
+    rankInView,
+    totalCount,
+  });
+
+  if (!loading && rankInView > -1) {
+    if (
+      cachedPagination.rankInView !== rankInView ||
+      cachedPagination.totalCount !== totalCount
+    ) {
+      setCachedPagination({ rankInView, totalCount });
+    }
+  }
 
   return {
     isLoadingPagination: loading,
-    hasPaginationError:
-      isDefined(currentRecordError) ||
-      isDefined(recordBeforeError) ||
-      isDefined(recordAfterError) ||
-      isDefined(viewMembershipError) ||
-      (!loading &&
-        (!isDefined(totalCountBefore) ||
-          !isDefined(totalCountAfter) ||
-          !isDefined(viewMembershipCount))),
     navigateToPreviousRecord,
     navigateToNextRecord,
     navigateToIndexView,
-    rankInView,
-    totalCount,
+    rankInView: loading ? cachedPagination.rankInView : rankInView,
+    totalCount: loading ? cachedPagination.totalCount : totalCount,
     objectMetadataItem,
   };
 };

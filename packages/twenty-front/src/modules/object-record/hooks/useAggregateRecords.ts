@@ -1,3 +1,4 @@
+import { type WatchQueryFetchPolicy } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
 
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
@@ -22,11 +23,13 @@ export const useAggregateRecords = <T extends AggregateRecordsData>({
   filter,
   recordGqlFieldsAggregate,
   skip,
+  fetchPolicy,
 }: {
   objectNameSingular: string;
   recordGqlFieldsAggregate: RecordGqlFieldsAggregate;
   filter?: RecordGqlOperationFilter;
   skip?: boolean;
+  fetchPolicy?: WatchQueryFetchPolicy;
 }) => {
   const { objectMetadataItem } = useObjectMetadataItem({
     objectNameSingular,
@@ -53,6 +56,7 @@ export const useAggregateRecords = <T extends AggregateRecordsData>({
         filter,
       },
       client: apolloCoreClient,
+      fetchPolicy,
     },
   );
 

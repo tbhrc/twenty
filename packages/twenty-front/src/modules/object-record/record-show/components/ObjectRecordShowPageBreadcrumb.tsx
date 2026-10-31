@@ -7,6 +7,7 @@ import { useNumberFormat } from '@/localization/hooks/useNumberFormat';
 import { ObjectMetadataIcon } from '@/object-metadata/components/ObjectMetadataIcon';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
+import { useAggregateRecords } from '@/object-record/hooks/useAggregateRecords';
 import { useFindOneRecord } from '@/object-record/hooks/useFindOneRecord';
 import { useIsRecordFieldReadOnly } from '@/object-record/read-only/hooks/useIsRecordFieldReadOnly';
 import { FieldContext } from '@/object-record/record-field/ui/contexts/FieldContext';
@@ -17,12 +18,14 @@ import { getRecordShowPageBreadcrumbPaginationLabel } from '@/object-record/reco
 import { recordStoreIdentifierFamilySelector } from '@/object-record/record-store/states/selectors/recordStoreIdentifierFamilySelector';
 import { RecordTitleCell } from '@/object-record/record-title-cell/components/RecordTitleCell';
 import { RecordTitleCellContainerType } from '@/object-record/record-title-cell/types/RecordTitleCellContainerType';
+import { AggregateOperations } from '@/object-record/record-table/constants/AggregateOperations';
 import { useIsMobile } from 'twenty-ui/utilities';
 import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { styled } from '@linaria/react';
 import { useState } from 'react';
 import { FieldMetadataType } from 'twenty-shared/types';
+import { FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION } from 'twenty-shared/constants';
 import { isDefined } from 'twenty-shared/utils';
 import { Avatar } from 'twenty-ui/primitives/data-display';
 import { themeCssVariables } from 'twenty-ui/theme';
@@ -80,12 +83,6 @@ const StyledPaginationInformation = styled.span`
   flex-shrink: 0;
 `;
 
-const StyledRecordIdentity = styled.span`
-  flex-shrink: 0;
-  font-weight: ${themeCssVariables.font.weight.semiBold};
-  white-space: nowrap;
-`;
-
 export const ObjectRecordShowPageBreadcrumb = ({
   objectNameSingular,
   objectRecordId,
@@ -100,6 +97,7 @@ export const ObjectRecordShowPageBreadcrumb = ({
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const isMobile = useIsMobile();
+  const isJob = objectNameSingular === 'vacancy';
 
   const { objectMetadataItem } = useObjectMetadataItem({
     objectNameSingular,
@@ -108,7 +106,9 @@ export const ObjectRecordShowPageBreadcrumb = ({
   const routeDefinition = getRecordRouteDefinitions().find(
     (definition) => definition.objectNameSingular === objectNameSingular,
   );
-  const identifierFieldName = routeDefinition?.recordIdentifierField;
+  const identifierFieldName = isJob
+    ? routeDefinition?.recordIdentifierField
+    : undefined;
   const hasIdentifierField = objectMetadataItem.fields.some(
     (field) => field.name === identifierFieldName,
   );
@@ -150,13 +150,21 @@ export const ObjectRecordShowPageBreadcrumb = ({
     fieldMetadataId: labelIdentifierFieldMetadataItem?.id ?? '',
   });
 
-  const {
-    navigateToIndexView,
-    rankInView,
-    totalCount,
-    isLoadingPagination,
-    hasPaginationError,
-  } = useRecordShowPagePagination(objectNameSingular, objectRecordId);
+  const { navigateToIndexView, rankInView, totalCount } =
+    useRecordShowPagePagination(objectNameSingular, objectRecordId);
+
+  const allJobs = useAggregateRecords({
+    objectNameSingular,
+    recordGqlFieldsAggregate: {
+      [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: [AggregateOperations.COUNT],
+    },
+    skip: !isJob,
+    fetchPolicy: 'network-only',
+  });
+  const allJobsTotal =
+    allJobs.data[FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]?.[
+      AggregateOperations.COUNT
+    ];
 
   const { viewName, groupValueLabel, isGroupByActive, isGroupValueLoading } =
     useRecordShowPageGroupByBreadcrumbInfo({
@@ -166,17 +174,23 @@ export const ObjectRecordShowPageBreadcrumb = ({
 
   const { formatNumber } = useNumberFormat();
 
-  const paginationInformation = getRecordShowPageBreadcrumbPaginationLabel({
-    isLoading: isLoadingPagination,
-    hasError: hasPaginationError,
-    isRecordInView: rankInView >= 0,
-    rank: formatNumber(rankInView + 1),
-    total: formatNumber(totalCount),
-    isGroupByActive,
-    viewName,
-    isGroupValueLoading,
-    groupValueLabel,
-  });
+  const jobTotalLabel = allJobs.loading
+    ? '…'
+    : !allJobs.error && typeof allJobsTotal === 'number'
+      ? formatNumber(allJobsTotal)
+      : '?';
+  const paginationInformation = isJob
+    ? permanentRecordNumber === null
+      ? ''
+      : `(${formatNumber(permanentRecordNumber)}/${jobTotalLabel})`
+    : getRecordShowPageBreadcrumbPaginationLabel({
+        rank: formatNumber(rankInView + 1),
+        total: formatNumber(totalCount),
+        isGroupByActive,
+        viewName,
+        isGroupValueLoading,
+        groupValueLabel,
+      });
 
   if (!loading && isInitialLoad) {
     setIsInitialLoad(false);
@@ -213,12 +227,6 @@ export const ObjectRecordShowPageBreadcrumb = ({
           <span>{' / '}</span>
         </StyledEditableTitlePrefix>
       )}
-      {permanentRecordNumber !== null && (
-        <StyledRecordIdentity>
-          {objectMetadataItem.labelSingular}{' '}
-          {formatNumber(permanentRecordNumber)}
-        </StyledRecordIdentity>
-      )}
       <StyledTitle isEmphasized={isMobile}>
         <FieldContext.Provider
           value={{
@@ -249,7 +257,7 @@ export const ObjectRecordShowPageBreadcrumb = ({
           />
         </FieldContext.Provider>
       </StyledTitle>
-      {!isMobile && paginationInformation && (
+      {(!isMobile || isJob) && paginationInformation && (
         <StyledPaginationInformation>
           {paginationInformation}
         </StyledPaginationInformation>

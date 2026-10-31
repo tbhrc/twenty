@@ -1,8 +1,10 @@
 import { ObjectRecordShowPageBreadcrumb } from '@/object-record/record-show/components/ObjectRecordShowPageBreadcrumb';
 import { render, screen } from '@testing-library/react';
+import { FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION } from 'twenty-shared/constants';
 
 const mockUseFindOneRecord = jest.fn();
 const mockUsePagination = jest.fn();
+const mockUseAggregateRecords = jest.fn();
 let mockIsMobile = false;
 
 jest.mock('@/localization/hooks/useNumberFormat', () => ({
@@ -22,6 +24,9 @@ jest.mock('@/object-metadata/hooks/useObjectMetadataItem', () => ({
 }));
 jest.mock('@/object-record/hooks/useFindOneRecord', () => ({
   useFindOneRecord: (...args: unknown[]) => mockUseFindOneRecord(...args),
+}));
+jest.mock('@/object-record/hooks/useAggregateRecords', () => ({
+  useAggregateRecords: (...args: unknown[]) => mockUseAggregateRecords(...args),
 }));
 jest.mock('@/object-record/read-only/hooks/useIsRecordFieldReadOnly', () => ({
   useIsRecordFieldReadOnly: () => true,
@@ -78,7 +83,7 @@ const renderBreadcrumb = () =>
     />,
   );
 
-describe('record header identity and view position', () => {
+describe('compact permanent Job number and unfiltered total', () => {
   beforeEach(() => {
     mockIsMobile = false;
     Object.assign(window, {
@@ -96,18 +101,32 @@ describe('record header identity and view position', () => {
       record: { id: 'job-8', jobNumber: 8 },
     });
     mockUsePagination.mockReturnValue({
-      rankInView: 2,
-      totalCount: 235,
+      rankInView: 187,
+      totalCount: 4,
       isLoadingPagination: false,
       hasPaginationError: false,
     });
+    mockUseAggregateRecords.mockReturnValue({
+      data: { [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: { COUNT: 235 } },
+      loading: false,
+      error: undefined,
+    });
   });
 
-  it('separates permanent Job8 from position3 and the real count235', () => {
+  it('uses permanent8 and all-jobs235, never view rank188 or filtered4', () => {
     renderBreadcrumb();
-    expect(screen.getByText('Job 8')).toBeVisible();
-    expect(screen.getByText('Position 3 of 235 in current view')).toBeVisible();
-    expect(screen.queryByText('(3/235)')).not.toBeInTheDocument();
+    expect(screen.getByText('(8/235)')).toBeVisible();
+    expect(
+      screen.queryByText(/Position|current view|Job 8/),
+    ).not.toBeInTheDocument();
+    expect(mockUseAggregateRecords).toHaveBeenCalledWith({
+      objectNameSingular: 'vacancy',
+      recordGqlFieldsAggregate: {
+        [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: ['COUNT'],
+      },
+      skip: false,
+      fetchPolicy: 'network-only',
+    });
     expect(mockUseFindOneRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         recordGqlFields: { name: true, jobNumber: true },
@@ -115,24 +134,28 @@ describe('record header identity and view position', () => {
     );
   });
 
-  it('keeps the permanent identity on mobile while omitting navigation counts', () => {
+  it('retains the same compact counter on mobile', () => {
     mockIsMobile = true;
     renderBreadcrumb();
-    expect(screen.getByText('Job 8')).toBeVisible();
+    expect(screen.getByText('(8/235)')).toBeVisible();
     expect(screen.queryByText(/Position/)).not.toBeInTheDocument();
   });
 
   it.each([
-    { isLoadingPagination: true, hasPaginationError: false },
-    { isLoadingPagination: false, hasPaginationError: true },
-  ])('does not present old or failed counts: %p', (state) => {
-    mockUsePagination.mockReturnValue({
-      rankInView: 2,
-      totalCount: 235,
+    { loading: true, error: undefined, expected: '(8/…)' },
+    {
+      loading: false,
+      error: new Error('Count unavailable'),
+      expected: '(8/?)',
+    },
+  ])('does not present an unverified cached count: %p', (state) => {
+    mockUseAggregateRecords.mockReturnValue({
+      data: { [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: { COUNT: 235 } },
       ...state,
     });
     renderBreadcrumb();
-    expect(screen.getByText('Job 8')).toBeVisible();
+    expect(screen.getByText(state.expected)).toBeVisible();
+    expect(screen.queryByText('(8/235)')).not.toBeInTheDocument();
     expect(screen.queryByText(/Position/)).not.toBeInTheDocument();
   });
 
@@ -142,11 +165,10 @@ describe('record header identity and view position', () => {
       record: { id: 'job-8' },
     });
     renderBreadcrumb();
-    expect(screen.queryByText('Job 8')).not.toBeInTheDocument();
-    expect(screen.getByText('Position 3 of 235 in current view')).toBeVisible();
+    expect(screen.queryByText(/\(.*\/.*\)/)).not.toBeInTheDocument();
   });
 
-  it('updates the view position/count independently of permanent identity', () => {
+  it('keeps the all-jobs denominator across view changes and refreshes it independently', () => {
     const { rerender } = renderBreadcrumb();
     mockUsePagination.mockReturnValue({
       rankInView: 0,
@@ -161,8 +183,19 @@ describe('record header identity and view position', () => {
         objectLabel="Jobs"
       />,
     );
-    expect(screen.getByText('Job 8')).toBeVisible();
-    expect(screen.getByText('Position 1 of 4 in current view')).toBeVisible();
-    expect(screen.queryByText(/235/)).not.toBeInTheDocument();
+    expect(screen.getByText('(8/235)')).toBeVisible();
+    mockUseAggregateRecords.mockReturnValue({
+      data: { [FIELD_FOR_TOTAL_COUNT_AGGREGATE_OPERATION]: { COUNT: 236 } },
+      loading: false,
+    });
+    rerender(
+      <ObjectRecordShowPageBreadcrumb
+        objectNameSingular="vacancy"
+        objectRecordId="job-8"
+        objectLabel="Jobs"
+      />,
+    );
+    expect(screen.getByText('(8/236)')).toBeVisible();
+    expect(screen.queryByText('(8/235)')).not.toBeInTheDocument();
   });
 });
