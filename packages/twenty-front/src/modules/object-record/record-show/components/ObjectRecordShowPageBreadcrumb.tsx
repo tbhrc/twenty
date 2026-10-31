@@ -1,4 +1,8 @@
 import { allowRequestsToTwentyIconsState } from '@/client-config/states/allowRequestsToTwentyIcons';
+import {
+  getRecordRouteDefinitions,
+  parseRecordRouteIdentifier,
+} from '@/app/routing/record-routes/recordRouteDefinitions';
 import { useNumberFormat } from '@/localization/hooks/useNumberFormat';
 import { ObjectMetadataIcon } from '@/object-metadata/components/ObjectMetadataIcon';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
@@ -28,6 +32,8 @@ const StyledEditableTitleContainer = styled.div`
   align-items: center;
   display: flex;
   flex-direction: row;
+  gap: ${themeCssVariables.spacing[1]};
+  min-width: 0;
   overflow-x: hidden;
   width: 100%;
 `;
@@ -53,6 +59,7 @@ const StyledTitle = styled.div<{ isEmphasized: boolean }>`
   font-weight: ${({ isEmphasized }) =>
     isEmphasized ? themeCssVariables.font.weight.semiBold : 'inherit'};
   max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   width: fit-content;
 `;
@@ -70,6 +77,13 @@ const StyledAvatarContainer = styled.div`
 
 const StyledPaginationInformation = styled.span`
   color: ${themeCssVariables.font.color.tertiary};
+  flex-shrink: 0;
+`;
+
+const StyledRecordIdentity = styled.span`
+  flex-shrink: 0;
+  font-weight: ${themeCssVariables.font.weight.semiBold};
+  white-space: nowrap;
 `;
 
 export const ObjectRecordShowPageBreadcrumb = ({
@@ -87,17 +101,32 @@ export const ObjectRecordShowPageBreadcrumb = ({
 
   const isMobile = useIsMobile();
 
-  const { loading } = useFindOneRecord({
+  const { objectMetadataItem } = useObjectMetadataItem({
+    objectNameSingular,
+  });
+
+  const routeDefinition = getRecordRouteDefinitions().find(
+    (definition) => definition.objectNameSingular === objectNameSingular,
+  );
+  const identifierFieldName = routeDefinition?.recordIdentifierField;
+  const hasIdentifierField = objectMetadataItem.fields.some(
+    (field) => field.name === identifierFieldName,
+  );
+
+  const { loading, record } = useFindOneRecord({
     objectNameSingular,
     objectRecordId,
     recordGqlFields: {
       [labelIdentifierFieldMetadataItem?.name ?? 'name']: true,
+      ...(hasIdentifierField && identifierFieldName
+        ? { [identifierFieldName]: true }
+        : {}),
     },
   });
 
-  const { objectMetadataItem } = useObjectMetadataItem({
-    objectNameSingular,
-  });
+  const permanentRecordNumber = parseRecordRouteIdentifier(
+    identifierFieldName ? record?.[identifierFieldName] : undefined,
+  );
 
   const allowRequestsToTwentyIcons = useAtomStateValue(
     allowRequestsToTwentyIconsState,
@@ -121,8 +150,13 @@ export const ObjectRecordShowPageBreadcrumb = ({
     fieldMetadataId: labelIdentifierFieldMetadataItem?.id ?? '',
   });
 
-  const { navigateToIndexView, rankInView, totalCount } =
-    useRecordShowPagePagination(objectNameSingular, objectRecordId);
+  const {
+    navigateToIndexView,
+    rankInView,
+    totalCount,
+    isLoadingPagination,
+    hasPaginationError,
+  } = useRecordShowPagePagination(objectNameSingular, objectRecordId);
 
   const { viewName, groupValueLabel, isGroupByActive, isGroupValueLoading } =
     useRecordShowPageGroupByBreadcrumbInfo({
@@ -133,6 +167,9 @@ export const ObjectRecordShowPageBreadcrumb = ({
   const { formatNumber } = useNumberFormat();
 
   const paginationInformation = getRecordShowPageBreadcrumbPaginationLabel({
+    isLoading: isLoadingPagination,
+    hasError: hasPaginationError,
+    isRecordInView: rankInView >= 0,
     rank: formatNumber(rankInView + 1),
     total: formatNumber(totalCount),
     isGroupByActive,
@@ -176,6 +213,12 @@ export const ObjectRecordShowPageBreadcrumb = ({
           <span>{' / '}</span>
         </StyledEditableTitlePrefix>
       )}
+      {permanentRecordNumber !== null && (
+        <StyledRecordIdentity>
+          {objectMetadataItem.labelSingular}{' '}
+          {formatNumber(permanentRecordNumber)}
+        </StyledRecordIdentity>
+      )}
       <StyledTitle isEmphasized={isMobile}>
         <FieldContext.Provider
           value={{
@@ -206,7 +249,7 @@ export const ObjectRecordShowPageBreadcrumb = ({
           />
         </FieldContext.Provider>
       </StyledTitle>
-      {!isMobile && (
+      {!isMobile && paginationInformation && (
         <StyledPaginationInformation>
           {paginationInformation}
         </StyledPaginationInformation>

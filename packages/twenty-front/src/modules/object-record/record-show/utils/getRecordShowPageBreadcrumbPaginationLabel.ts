@@ -8,6 +8,9 @@ export const getRecordShowPageBreadcrumbPaginationLabel = ({
   viewName,
   isGroupValueLoading,
   groupValueLabel,
+  isLoading = false,
+  hasError = false,
+  isRecordInView = true,
 }: {
   rank: string;
   total: string;
@@ -15,14 +18,23 @@ export const getRecordShowPageBreadcrumbPaginationLabel = ({
   viewName?: string;
   isGroupValueLoading: boolean;
   groupValueLabel?: string;
+  isLoading?: boolean;
+  hasError?: boolean;
+  isRecordInView?: boolean;
 }): string => {
+  if (isLoading || hasError) return '';
+
+  if (!isRecordInView) {
+    return t`Not in current view (${total} records)`;
+  }
+
   if (!isGroupByActive || !isNonEmptyString(viewName)) {
-    return `(${rank}/${total})`;
+    return t`Position ${rank} of ${total} in current view`;
   }
 
   if (isGroupValueLoading || !isNonEmptyString(groupValueLabel)) {
-    return t`(${rank}/${total} in ${viewName})`;
+    return t`Position ${rank} of ${total} in ${viewName}`;
   }
 
-  return t`(${rank}/${total} in ${viewName} → ${groupValueLabel})`;
+  return t`Position ${rank} of ${total} in ${viewName} → ${groupValueLabel}`;
 };
