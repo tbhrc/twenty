@@ -6,6 +6,7 @@ import { useRecordIndexContextOrThrow } from '@/object-record/record-index/conte
 import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { useContext } from 'react';
+import { getRecordBoardCardFields } from '@/object-record/record-board/record-board-card/utils/getRecordBoardCardFields';
 import { isDefined } from 'twenty-shared/utils';
 
 export const useRecordBoardCardMetadataFromPosition = () => {
@@ -25,10 +26,12 @@ export const useRecordBoardCardMetadataFromPosition = () => {
 
   const { labelIdentifierFieldMetadataItem } = useRecordIndexContextOrThrow();
 
-  const visibleRecordFieldsFiltered = visibleRecordFields.filter(
-    (recordField) =>
-      labelIdentifierFieldMetadataItem?.id !== recordField.fieldMetadataItemId,
-  );
+  const visibleRecordFieldsFiltered = getRecordBoardCardFields({
+    objectNameSingular: objectMetadataItem.nameSingular,
+    recordFields: visibleRecordFields,
+    fieldMetadataItems: objectMetadataItem.fields,
+    labelIdentifierFieldMetadataItemId: labelIdentifierFieldMetadataItem?.id,
+  });
 
   const hoveredRecordField = isDefined(recordBoardCardHoverPosition)
     ? visibleRecordFieldsFiltered.at(recordBoardCardHoverPosition)

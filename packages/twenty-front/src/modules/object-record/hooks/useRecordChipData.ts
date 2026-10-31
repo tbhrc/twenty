@@ -2,6 +2,8 @@ import { PreComputedChipGeneratorsContext } from '@/object-metadata/contexts/Pre
 import { type RecordChipData } from '@/object-record/record-field/ui/types/RecordChipData';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { useContext } from 'react';
+import { t } from '@lingui/core/macro';
+import { getApplicationDisplayName } from '@/object-record/utils/getApplicationDisplayName';
 import { isDefined } from 'twenty-shared/utils';
 
 type UseRecordChipDataArgs = {
@@ -29,6 +31,11 @@ export const useRecordChipData = ({
   }
 
   return {
-    recordChipData: identifierChipGenerator(record),
+    recordChipData: {
+      ...identifierChipGenerator(record),
+      ...(objectNameSingular === 'application'
+        ? { name: getApplicationDisplayName(record) || t`Candidate` }
+        : {}),
+    },
   };
 };

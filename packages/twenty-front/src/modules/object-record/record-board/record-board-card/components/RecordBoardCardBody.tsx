@@ -18,6 +18,8 @@ import { getRecordFieldInputInstanceId } from '@/object-record/utils/getRecordFi
 import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
 import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { useContext } from 'react';
+import { t } from '@lingui/core/macro';
+import { getRecordBoardCardFields } from '@/object-record/record-board/record-board-card/utils/getRecordBoardCardFields';
 import { isDefined } from 'twenty-shared/utils';
 
 export const RecordBoardCardBody = () => {
@@ -25,7 +27,8 @@ export const RecordBoardCardBody = () => {
     RecordBoardCardContext,
   );
 
-  const { updateOneRecord, objectPermissions } = useContext(RecordBoardContext);
+  const { updateOneRecord, objectPermissions, objectMetadataItem } =
+    useContext(RecordBoardContext);
 
   const {
     labelIdentifierFieldMetadataItem,
@@ -49,10 +52,12 @@ export const RecordBoardCardBody = () => {
     visibleRecordFieldsComponentSelector,
   );
 
-  const visibleRecordFieldsExceptLabelIdentifier = visibleRecordFields.filter(
-    (recordField) =>
-      recordField.fieldMetadataItemId !== labelIdentifierFieldMetadataItem?.id,
-  );
+  const visibleRecordFieldsExceptLabelIdentifier = getRecordBoardCardFields({
+    objectNameSingular: objectMetadataItem.nameSingular,
+    recordFields: visibleRecordFields,
+    fieldMetadataItems: Object.values(fieldMetadataItemByFieldMetadataItemId),
+    labelIdentifierFieldMetadataItemId: labelIdentifierFieldMetadataItem?.id,
+  });
 
   const setRecordBoardCardHoverPosition = useSetAtomComponentState(
     recordBoardCardHoverPositionComponentState,
@@ -112,6 +117,10 @@ export const RecordBoardCardBody = () => {
                   }),
                 }}
               >
+                {objectMetadataItem.nameSingular === 'application' &&
+                  fieldMetadataItem.name === 'createdAt' && (
+                    <span>{t`Created`}</span>
+                  )}
                 <RecordInlineCell
                   instanceIdPrefix={RECORD_BOARD_CARD_INPUT_ID_PREFIX}
                 />
