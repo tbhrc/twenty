@@ -98,6 +98,7 @@ export const ObjectRecordShowPageBreadcrumb = ({
 
   const isMobile = useIsMobile();
   const isJob = objectNameSingular === 'vacancy';
+  const isCompactJobHeader = isMobile && isJob;
 
   const { objectMetadataItem } = useObjectMetadataItem({
     objectNameSingular,
@@ -203,6 +204,7 @@ export const ObjectRecordShowPageBreadcrumb = ({
   return (
     <StyledEditableTitleContainer data-testid="top-bar-title">
       {isMobile ? (
+        !isCompactJobHeader &&
         isDefined(recordIdentifier) && (
           <StyledAvatarContainer>
             <Avatar
@@ -227,36 +229,38 @@ export const ObjectRecordShowPageBreadcrumb = ({
           <span>{' / '}</span>
         </StyledEditableTitlePrefix>
       )}
-      <StyledTitle isEmphasized={isMobile}>
-        <FieldContext.Provider
-          value={{
-            recordId: objectRecordId,
-            isLabelIdentifier: false,
-            fieldDefinition: {
-              type:
-                labelIdentifierFieldMetadataItem?.type ||
-                FieldMetadataType.TEXT,
-              iconName: '',
-              fieldMetadataId: labelIdentifierFieldMetadataItem?.id ?? '',
-              label: labelIdentifierFieldMetadataItem?.label || '',
-              metadata: {
-                fieldName: labelIdentifierFieldMetadataItem?.name || '',
-                objectMetadataNameSingular: objectNameSingular,
+      {!isCompactJobHeader && (
+        <StyledTitle isEmphasized={isMobile}>
+          <FieldContext.Provider
+            value={{
+              recordId: objectRecordId,
+              isLabelIdentifier: false,
+              fieldDefinition: {
+                type:
+                  labelIdentifierFieldMetadataItem?.type ||
+                  FieldMetadataType.TEXT,
+                iconName: '',
+                fieldMetadataId: labelIdentifierFieldMetadataItem?.id ?? '',
+                label: labelIdentifierFieldMetadataItem?.label || '',
+                metadata: {
+                  fieldName: labelIdentifierFieldMetadataItem?.name || '',
+                  objectMetadataNameSingular: objectNameSingular,
+                },
+                defaultValue: labelIdentifierFieldMetadataItem?.defaultValue,
               },
-              defaultValue: labelIdentifierFieldMetadataItem?.defaultValue,
-            },
-            useUpdateRecord: useUpdateOneObjectRecordMutation,
-            isCentered: false,
-            isDisplayModeFixHeight: true,
-            isRecordFieldReadOnly: isLabelIdentifierReadOnly,
-          }}
-        >
-          <RecordTitleCell
-            sizeVariant={isMobile ? 'sm' : 'xs'}
-            containerType={RecordTitleCellContainerType.PageHeader}
-          />
-        </FieldContext.Provider>
-      </StyledTitle>
+              useUpdateRecord: useUpdateOneObjectRecordMutation,
+              isCentered: false,
+              isDisplayModeFixHeight: true,
+              isRecordFieldReadOnly: isLabelIdentifierReadOnly,
+            }}
+          >
+            <RecordTitleCell
+              sizeVariant={isMobile ? 'sm' : 'xs'}
+              containerType={RecordTitleCellContainerType.PageHeader}
+            />
+          </FieldContext.Provider>
+        </StyledTitle>
+      )}
       {(!isMobile || isJob) && paginationInformation && (
         <StyledPaginationInformation>
           {paginationInformation}

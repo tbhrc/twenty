@@ -16,6 +16,7 @@ import { isDefined } from 'twenty-shared/utils';
 import { MOBILE_VIEWPORT, themeCssVariables } from 'twenty-ui/theme';
 
 type PageCardHeaderProps = {
+  minimumBreadcrumbWidth?: number;
   links?: BreadcrumbProps['links'];
   breadcrumb?: ReactNode;
   icon?: ReactNode;
@@ -30,6 +31,7 @@ type PageCardHeaderProps = {
 const StyledHeader = styled.div<{
   centerTitle?: boolean;
   hasSearchBar: boolean;
+  minimumBreadcrumbWidth?: number;
 }>`
   align-items: center;
   background-color: ${themeCssVariables.background.secondary};
@@ -48,12 +50,18 @@ const StyledHeader = styled.div<{
   width: 100%;
 
   @media (max-width: ${MOBILE_VIEWPORT}px) {
-    grid-template-columns: ${({ hasSearchBar, centerTitle }) =>
-      hasSearchBar
-        ? 'minmax(0, auto) minmax(0, 1fr)'
-        : centerTitle
-          ? 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)'
-          : 'minmax(0, auto) minmax(min-content, 1fr)'};
+    grid-template-columns: ${({
+      hasSearchBar,
+      centerTitle,
+      minimumBreadcrumbWidth,
+    }) =>
+      minimumBreadcrumbWidth
+        ? `minmax(${minimumBreadcrumbWidth}px, auto) minmax(0, 1fr)`
+        : hasSearchBar
+          ? 'minmax(0, auto) minmax(0, 1fr)'
+          : centerTitle
+            ? 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)'
+            : 'minmax(0, auto) minmax(min-content, 1fr)'};
   }
 `;
 
@@ -101,6 +109,7 @@ const StyledCenteredTitle = styled(StyledTitle)`
 const StyledRight = styled.div<{
   centerTitle?: boolean;
   hasSearchBar: boolean;
+  minimumBreadcrumbWidth?: number;
 }>`
   align-items: center;
   display: flex;
@@ -113,6 +122,11 @@ const StyledRight = styled.div<{
   width: 100%;
 
   @media (max-width: ${MOBILE_VIEWPORT}px) {
+    overflow-x: ${({ minimumBreadcrumbWidth }) =>
+      minimumBreadcrumbWidth ? 'auto' : 'visible'};
+    justify-content: ${({ minimumBreadcrumbWidth }) =>
+      minimumBreadcrumbWidth ? 'flex-start' : 'flex-end'};
+    scrollbar-width: none;
     grid-column: ${({ hasSearchBar, centerTitle }) =>
       hasSearchBar ? 2 : centerTitle ? 3 : 2};
     grid-row: ${({ hasSearchBar }) => (hasSearchBar ? 1 : 'auto')};
@@ -132,6 +146,7 @@ const StyledSurfaceActions = styled.div`
 `;
 
 export const PageCardHeader = ({
+  minimumBreadcrumbWidth,
   links,
   breadcrumb,
   icon,
@@ -193,6 +208,7 @@ export const PageCardHeader = ({
 
   return (
     <StyledHeader
+      minimumBreadcrumbWidth={minimumBreadcrumbWidth}
       centerTitle={shouldCenterTitle}
       hasSearchBar={isDefined(searchBar)}
     >
@@ -214,6 +230,7 @@ export const PageCardHeader = ({
         </StyledCenteredTitle>
       )}
       <StyledRight
+        minimumBreadcrumbWidth={minimumBreadcrumbWidth}
         centerTitle={shouldCenterTitle}
         hasSearchBar={isDefined(searchBar)}
         data-click-outside-id={PAGE_ACTION_CONTAINER_CLICK_OUTSIDE_ID}

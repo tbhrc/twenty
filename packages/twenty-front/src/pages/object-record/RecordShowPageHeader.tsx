@@ -32,6 +32,7 @@ const RecordShowPageMainHeader = ({
 
   return (
     <PageCardHeader
+      minimumBreadcrumbWidth={objectNameSingular === 'vacancy' ? 72 : undefined}
       breadcrumb={
         <ObjectRecordShowPageBreadcrumb
           objectNameSingular={objectNameSingular}

@@ -138,6 +138,9 @@ describe('compact permanent Job number and unfiltered total', () => {
     mockIsMobile = true;
     renderBreadcrumb();
     expect(screen.getByText('(8/235)')).toBeVisible();
+    expect(
+      screen.queryByText('Vibe Coder / AI Developer / Claude Code Expert'),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Position/)).not.toBeInTheDocument();
   });
 
