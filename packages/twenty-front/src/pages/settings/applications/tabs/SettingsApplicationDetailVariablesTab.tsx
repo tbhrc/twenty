@@ -14,7 +14,7 @@ const StyledContainer = styled.div`
 `;
 
 type SettingsApplicationDetailVariablesTabProps = {
-  applicationVariables: ApplicationVariable[];
+  applicationVariables: Omit<ApplicationVariable, 'isRequired'>[];
   onVariableChange: (key: string, value: string) => void;
 };
 

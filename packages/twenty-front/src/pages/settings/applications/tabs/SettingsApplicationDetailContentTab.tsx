@@ -21,8 +21,10 @@ import { normalizeSearchText } from '~/utils/normalizeSearchText';
 
 type InstalledApplicationForContentTab = Omit<
   Application,
-  'objects' | 'frontComponents' | 'commandMenuItems' | 'settingsMenuItems'
+  'objects' | 'frontComponents' | 'commandMenuItems' | 'settingsMenuItems' | 'applicationVariables'
 > & {
+  applicationVariables: (Omit<Application['applicationVariables'][number], 'isRequired'> &
+    Partial<Pick<Application['applicationVariables'][number], 'isRequired'>>)[];
   objects: { id: string }[];
   frontComponents?: {
     id: string;

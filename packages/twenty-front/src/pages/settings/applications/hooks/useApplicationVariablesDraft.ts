@@ -16,7 +16,8 @@ export const useApplicationVariablesDraft = ({
   applicationVariables,
 }: {
   applicationId: string;
-  applicationVariables: ApplicationVariable[];
+  applicationVariables: (Omit<ApplicationVariable, 'isRequired'> &
+    Partial<Pick<ApplicationVariable, 'isRequired'>>)[];
 }) => {
   const [draftValueByKey, setDraftValueByKey] = useAtomFamilyState(
     applicationVariablesDraftFamilyState,

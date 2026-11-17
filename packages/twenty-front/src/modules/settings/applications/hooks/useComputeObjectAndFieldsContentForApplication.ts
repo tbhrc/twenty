@@ -15,6 +15,7 @@ type InstalledApplicationForObjectAndFields = Omit<
   | 'frontComponents'
   | 'commandMenuItems'
   | 'settingsMenuItems'
+  | 'applicationVariables'
 > & {
   objects: { id: string }[];
 };

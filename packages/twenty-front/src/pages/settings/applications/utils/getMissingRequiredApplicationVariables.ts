@@ -5,8 +5,8 @@ import { type ApplicationVariable } from '~/generated-metadata/graphql';
 export const getMissingRequiredApplicationVariables = <
   RequirableApplicationVariable extends Pick<
     ApplicationVariable,
-    'key' | 'label' | 'value' | 'isRequired'
-  >,
+    'key' | 'label' | 'value'
+  > & Partial<Pick<ApplicationVariable, 'isRequired'>>,
 >(
   applicationVariables: RequirableApplicationVariable[],
 ): RequirableApplicationVariable[] =>

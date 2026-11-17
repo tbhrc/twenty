@@ -35,6 +35,8 @@ import {
 } from 'twenty-ui/icon';
 import { Button } from 'twenty-ui/primitives/input';
 import {
+  type Application,
+  type FindOneApplicationQuery,
   FindMarketplaceAppDetailDocument,
   FindOneApplicationDocument,
   IsApplicationStoppedDocument,
@@ -78,7 +80,12 @@ export const SettingsApplicationDetails = () => {
 
   useRefetchOnApplicationOperation({ applicationId, refetch });
 
-  const application = data?.findOneApplication;
+  // Optional capabilities are absent on the currently deployed metadata schema.
+  // Preserve absence instead of manufacturing a health result or menu entries.
+  const application:
+    | (NonNullable<FindOneApplicationQuery['findOneApplication']> &
+        Partial<Pick<Application, 'settingsMenuItems' | 'healthCheckLogicFunctionId'>>)
+    | undefined = data?.findOneApplication;
 
   const { data: detailData } = useQuery(FindMarketplaceAppDetailDocument, {
     variables: { universalIdentifier: application?.universalIdentifier ?? '' },
