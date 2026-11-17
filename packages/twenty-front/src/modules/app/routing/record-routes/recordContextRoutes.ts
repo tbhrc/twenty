@@ -15,6 +15,11 @@ export type RecordContextRouteDefinition = {
     verifyFieldPath?: string[];
   }[];
   views?: Record<string, string>;
+  recordProfile?: {
+    relationParameter: string;
+    contextParameters?: Record<string, string>;
+    views?: string[];
+  };
 };
 
 const name = (value: unknown): value is string =>
@@ -41,6 +46,7 @@ export const getRecordContextRouteDefinitions =
         views,
         recordIdentifier,
         canonical,
+        recordProfile,
       } = candidate;
       if (
         typeof path !== 'string' ||
@@ -68,6 +74,34 @@ export const getRecordContextRouteDefinitions =
             ),
         ) ||
         (canonical !== undefined && canonical !== false) ||
+        (recordProfile !== undefined &&
+          (!recordProfile ||
+            !name(recordProfile.relationParameter) ||
+            !relations.some(
+              (relation) =>
+                relation.parameter === recordProfile.relationParameter,
+            ) ||
+            (recordProfile.views !== undefined &&
+              (!Array.isArray(recordProfile.views) ||
+                recordProfile.views.some(
+                  (view: unknown) =>
+                    typeof view !== 'string' ||
+                    !Object.hasOwn(views ?? {}, view),
+                ))) ||
+            (recordProfile.contextParameters !== undefined &&
+              (!recordProfile.contextParameters ||
+                typeof recordProfile.contextParameters !== 'object' ||
+                Array.isArray(recordProfile.contextParameters) ||
+                Object.entries(recordProfile.contextParameters).some(
+                  ([parameter, query]) =>
+                    !relations.some(
+                      (relation) => relation.parameter === parameter,
+                    ) ||
+                    !name(query) ||
+                    ['panel', 'viewId'].includes(query),
+                ) ||
+                new Set(Object.values(recordProfile.contextParameters)).size !==
+                  Object.keys(recordProfile.contextParameters).length)))) ||
         relations.some(
           (relation) =>
             relation.verifyFieldPath !== undefined &&
@@ -172,6 +206,21 @@ export const getRecordContextRouteDefinitions =
         ...(canonical === false ? { canonical: false as const } : {}),
         objectNameSingular,
         objectNamePlural,
+        ...(recordProfile
+          ? {
+              recordProfile: {
+                ...recordProfile,
+                ...(recordProfile.views
+                  ? { views: [...recordProfile.views] }
+                  : {}),
+                ...(recordProfile.contextParameters
+                  ? {
+                      contextParameters: { ...recordProfile.contextParameters },
+                    }
+                  : {}),
+              },
+            }
+          : {}),
         relations: relations.map((relation) => ({
           ...relation,
           ...(relation.fieldPath ? { fieldPath: [...relation.fieldPath] } : {}),

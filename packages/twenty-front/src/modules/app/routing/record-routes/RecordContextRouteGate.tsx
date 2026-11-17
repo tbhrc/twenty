@@ -17,6 +17,10 @@ import {
 import { parseRecordRouteIdentifier } from './recordRouteDefinitions';
 import { type RecordContextResult } from './resolveNativeRecordContext';
 import { useRecordRouteVersion } from './router';
+import {
+  getRecordContextProfileLocation,
+  isRecordContextProfileView,
+} from './recordContextProfile';
 
 export const RecordContextRouteGate = ({
   definition: configuredDefinition,
@@ -139,7 +143,27 @@ export const RecordContextRouteGate = ({
     result?.status === 'ready'
       ? `${result.path}${view ? `/${view}` : ''}`
       : undefined;
+  const profileLocation = useMemo(
+    () =>
+      definition
+        ? getRecordContextProfileLocation(
+            definition,
+            result,
+            view,
+            location.search,
+          )
+        : null,
+    [definition, result, view, location.search],
+  );
+  const profileRequested = definition
+    ? isRecordContextProfileView(definition, view)
+    : false;
   useEffect(() => {
+    if (profileRequested) {
+      if (profileLocation)
+        navigate(profileLocation, { replace: true, state: location.state });
+      return;
+    }
     if (
       result?.status === 'ready' &&
       (location.pathname.replace(/\/$/, '') !== canonicalPath ||
@@ -156,6 +180,8 @@ export const RecordContextRouteGate = ({
     }
   }, [
     result,
+    profileRequested,
+    profileLocation,
     canonicalPath,
     view,
     navigate,
@@ -167,5 +193,8 @@ export const RecordContextRouteGate = ({
   if (!definition || retainNativePermissions) return children;
   if (!result) return <RecordIndexSkeletonLoader />;
   if (result.status !== 'ready') return <WorkspaceRouteUnavailable />;
+  if (profileRequested && !profileLocation)
+    return <WorkspaceRouteUnavailable />;
+  if (profileLocation) return <RecordIndexSkeletonLoader />;
   return children;
 };
