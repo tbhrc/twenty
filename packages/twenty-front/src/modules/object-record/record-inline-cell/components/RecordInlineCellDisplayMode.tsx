@@ -9,6 +9,7 @@ import {
   type RecordInlineCellContextProps,
 } from '@/object-record/record-inline-cell/components/RecordInlineCellContext';
 import { RecordInlineCellButton } from '@/object-record/record-inline-cell/components/RecordInlineCellEditButton';
+import { RecordInlineCellLabelWidthContext } from '@/object-record/record-inline-cell/components/RecordInlineCellLabelWidthContext';
 import { useLingui } from '@lingui/react/macro';
 import { useContext } from 'react';
 import { themeCssVariables } from 'twenty-ui/theme';
@@ -57,6 +58,14 @@ const StyledRecordInlineCellNormalModeInnerContainer = styled.div`
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
+
+  @media (max-width: 600px) {
+    &[data-profile-field='true'] {
+      overflow-wrap: anywhere;
+      text-overflow: clip;
+      white-space: normal;
+    }
+  }
 `;
 
 const StyledEmptyField = styled.div`
@@ -75,6 +84,7 @@ export const RecordInlineCellDisplayMode = ({
   onClick?: () => void;
 }>) => {
   const { t } = useLingui();
+  const profileLabelWidth = useContext(RecordInlineCellLabelWidthContext);
 
   const { editModeContentOnly, label, buttonIcon, readonly } =
     useRecordInlineCellContext();
@@ -109,7 +119,9 @@ export const RecordInlineCellDisplayMode = ({
         readonly={readonly}
         onClick={onClick}
       >
-        <StyledRecordInlineCellNormalModeInnerContainer>
+        <StyledRecordInlineCellNormalModeInnerContainer
+          data-profile-field={profileLabelWidth !== undefined}
+        >
           {shouldShowValue ? (
             children
           ) : shouldShowEmptyPlaceholder ? (

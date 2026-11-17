@@ -53,6 +53,12 @@ const StyledLabelContainer = styled.div<{ width?: number }>`
   color: ${themeCssVariables.font.color.tertiary};
   font-size: ${themeCssVariables.font.size.sm};
   width: ${({ width }) => (width !== undefined ? `${width}px` : 'auto')};
+
+  @media (max-width: 600px) {
+    &[data-profile-field='true'] {
+      width: auto;
+    }
+  }
 `;
 
 const StyledInlineCellBaseContainer = styled.div<{ readonly: boolean }>`
@@ -64,6 +70,15 @@ const StyledInlineCellBaseContainer = styled.div<{ readonly: boolean }>`
   height: fit-content;
   user-select: none;
   width: 100%;
+
+  @media (max-width: 600px) {
+    &[data-profile-field='true'] {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 0;
+      padding-bottom: ${themeCssVariables.spacing[2]};
+    }
+  }
 `;
 
 export const StyledSkeletonDiv = styled.div`
@@ -101,6 +116,7 @@ export const RecordInlineCellContainer = () => {
 
   return (
     <StyledInlineCellBaseContainer
+      data-profile-field={resizedLabelWidth !== undefined}
       readonly={readonly ?? false}
       onMouseEnter={handleContainerMouseEnter}
       onMouseLeave={handleContainerMouseLeave}
@@ -120,7 +136,10 @@ export const RecordInlineCellContainer = () => {
               </StyledIconContainer>
             )}
             {showLabel && (
-              <StyledLabelContainer width={resizedLabelWidth ?? labelWidth}>
+              <StyledLabelContainer
+                width={resizedLabelWidth ?? labelWidth}
+                data-profile-field={resizedLabelWidth !== undefined}
+              >
                 <FieldDescriptionTooltip
                   label={label}
                   description={fieldDefinition?.metadata?.description}

@@ -29,6 +29,10 @@ const StyledResizeHandle = styled.div`
   width: 10px;
   z-index: 2;
 
+  @media (max-width: 600px) {
+    display: none;
+  }
+
   &::after {
     background: ${themeCssVariables.border.color.medium};
     bottom: 0;
