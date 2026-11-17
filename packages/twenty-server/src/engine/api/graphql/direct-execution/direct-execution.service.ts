@@ -238,9 +238,14 @@ export class DirectExecutionService {
       const topLevelFields = graphQLExtractTopLevelFields(
         document,
         req.body.operationName,
+        req.body.variables ?? {},
       );
 
       this.checkRootResolverLimitsOrThrow(topLevelFields);
+
+      if (topLevelFields.length === 0) {
+        return { data: {} };
+      }
 
       const fragmentMap = graphQLBuildFragmentMap(document);
       const variables = req.body.variables ?? {};
